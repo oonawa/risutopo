@@ -1,26 +1,46 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+	--color-background: var(--background);
+	--color-background-light-1: var(--background-light-1);
+	--color-background-light-2: var(--background-light-2);
+	--color-foreground: var(--foreground);
+	--color-forgeround-dark-1: var(--forgeround-dark-1);
+	--color-foreground-dark-2: var(--foreground-dark-2);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--radius-2xl: calc(var(--radius) + 8px);
+	--radius-3xl: calc(var(--radius) + 12px);
+	--radius-4xl: calc(var(--radius) + 16px);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Hiragino Sans",
+		"Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans", "Meiryo",
+		sans-serif;
+}
+
+:root {
+	--radius: 0.625rem;
+
+	--background: #212f2c;
+	--background-light-1: #304c44;
+	--background-light-2: #51766c;
+	--background-dark-1: #1a1c1b;
+
+	--foreground: #ecf2f1;
+	--forgeround-dark-1: #dbe8e5;
+	--forgeround-dark-2: #c9d9d5;
+}
+
+@layer base {
+	body {
+		@apply bg-background text-foreground;
+	}
 }
