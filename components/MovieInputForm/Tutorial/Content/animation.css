@@ -1,0 +1,18 @@
+@keyframes tapShake {
+	0%,
+	33.33%,
+	66.66%,
+	100% {
+		transform: translateX(0);
+	}
+	16.66%,
+	50%,
+	83.33% {
+		transform: translateX(-20px);
+	}
+}
+
+.animate-tap-shake {
+	animation: tapShake 1.5s ease-in-out;
+	animation-delay: 0.3s;
+}

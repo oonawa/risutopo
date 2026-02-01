@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
-import MovieTitleForm from "@/components/MovieTitleForm";
-import PcForm from "@/components/MovieTitleForm/PcForm";
-import MobileForm from "@/components/MovieTitleForm/MobileForm";
+import MovieTitleForm from "@/components/MovieInputForm";
+import PcForm from "@/components/MovieInputForm/PcForm";
+import MobileForm from "@/components/MovieInputForm/MobileForm";
 
 export default async function Home() {
 	const headersList = await headers();
@@ -16,8 +16,8 @@ export default async function Home() {
 			<MovieTitleForm
 				initialIsMobile={isMobileUA}
 				userAgent={userAgent}
-				PcForm={<PcForm userAgent={userAgent} />}
-				MobileForm={<MobileForm userAgent={userAgent} />}
+				PcForm={<PcForm />}
+				MobileForm={<MobileForm />}
 			/>
 		</div>
 	);

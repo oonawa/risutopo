@@ -8,8 +8,9 @@
 	--color-background-light-1: var(--background-light-1);
 	--color-background-light-2: var(--background-light-2);
 	--color-foreground: var(--foreground);
-	--color-forgeround-dark-1: var(--forgeround-dark-1);
+	--color-foreground-dark-1: var(--foreground-dark-1);
 	--color-foreground-dark-2: var(--foreground-dark-2);
+	--color-foreground-dark-3: var(--foreground-dark-3);
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
@@ -35,8 +36,9 @@ body {
 	--background-dark-1: #1a1c1b;
 
 	--foreground: #ecf2f1;
-	--forgeround-dark-1: #dbe8e5;
-	--forgeround-dark-2: #c9d9d5;
+	--foreground-dark-1: #dbe8e5;
+	--foreground-dark-2: #c9d9d5;
+	--foreground-dark-3: #acc3bd;
 }
 
 @layer base {
