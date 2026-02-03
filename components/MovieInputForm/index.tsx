@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Tab from "./Tab";
+import WebBrowserIcon from "../ui/Icons/WebBrowserIcon";
+import MobileDeviceIcon from "../ui/Icons/MobileDeviceIcon";
 
 type Props = {
 	initialIsMobile: boolean;
@@ -28,20 +30,21 @@ export default function MovieInputForm({
 	);
 
 	return (
-		<div className="flex justify-center md:p-4 w-[90dvw] md:w-[60dvw] max-w-150 h-full max-h-[70dvh]">
-			<div className="absolute grid grid-cols-2 gap-2 border border-background-light-2 rounded-full p-2 bg-background">
+		<div className="flex flex-col items-center justify-center md:p-4 w-[90dvw] md:w-[60dvw] max-w-150 h-full max-h-[70dvh]">
+			<div className="w-full h-full flex items-center">
+				{activeTab === "pc" ? PcForm : MobileForm}
+			</div>
+
+			<div className="max-w-[50dvw] grid grid-cols-2 gap-2 border border-background-light-1 rounded-full p-2 bg-background">
 				<Tab onClick={() => setActiveTab("pc")} isActive={activeTab === "pc"}>
-					PC
+					<WebBrowserIcon className="size-5" />
 				</Tab>
 				<Tab
 					onClick={() => setActiveTab("mobile")}
 					isActive={activeTab === "mobile"}
 				>
-					モバイル
+					<MobileDeviceIcon className="size-5" />
 				</Tab>
-			</div>
-			<div className="w-full h-full flex items-center">
-				{activeTab === "pc" ? PcForm : MobileForm}
 			</div>
 		</div>
 	);

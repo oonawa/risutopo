@@ -215,7 +215,7 @@ export default function TutorialContent() {
 								style={{ maxHeight: isAccordionOpen ? "300px" : "0px" }}
 							>
 								<div className="w-full px-2 py-4 md:p-4 rounded-lg bg-background-light-1 mt-2">
-									<blockquote className="text-sm md:text-base line-clamp-3 border-l-2 border-background-light-2 pl-2 md:pl-4 text-foreground-dark-3">
+									<blockquote className="text-sm md:text-base break-all line-clamp-3 border-l-2 border-background-light-2 pl-2 md:pl-4 text-foreground-dark-3">
 										{selectedService.shareLinkExample}
 									</blockquote>
 								</div>
