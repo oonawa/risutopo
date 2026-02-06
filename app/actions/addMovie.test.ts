@@ -66,7 +66,10 @@ describe("addMovie", () => {
 	beforeEach(async () => {
 		const [user] = await db
 			.insert(usersTable)
-			.values({ name: "テスト太郎", nickname: "テスト" })
+			.values({
+				publicId: "test",
+				email: "xxxxxxx@risutopo.com",
+			})
 			.returning();
 		testUserId = user.id;
 

@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
-import { Textarea } from "../ui/textarea";
+import { Textarea } from "../../ui/textarea";
 
 type Props = ComponentProps<"textarea"> & {
 	onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;

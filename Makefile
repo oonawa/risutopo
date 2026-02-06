@@ -7,6 +7,9 @@ seed:
 push:
 	npm run db:push
 
+generate:
+	npm run db:generate
+
 migrate:
 	npm run db:migrate
 
