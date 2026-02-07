@@ -10,8 +10,6 @@ import {
 	streamingServicesTable,
 } from "@/db/schema";
 
-// --- 型定義 ---
-
 type MovieInfo = {
 	title: string;
 	url: string;

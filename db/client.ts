@@ -22,3 +22,6 @@ const client =
 			});
 
 export const db = drizzle(client);
+
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Executor = Pick<Tx, "select" | "insert" | "update" | "delete" | "query">;
