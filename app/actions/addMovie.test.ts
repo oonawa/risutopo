@@ -82,10 +82,15 @@ describe("addMovie", () => {
 		testListId = list.id;
 	});
 
-	it("Netflix：ジュラシック・パークをリスト追加", async () => {
+	it("【モバイル】Netflix：ジュラシック・パークをリスト追加", async () => {
 		const shareLink = `「 ジュラシック・パーク 」 をNetflix で今 す ぐチ ェ ッ ク\n\nhttps://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more`;
 
-		await addMovie(shareLink, testListId);
+		await addMovie({
+			listId: testListId,
+			mobile: {
+				shareLink,
+			},
+		});
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
@@ -96,10 +101,15 @@ describe("addMovie", () => {
 		});
 	});
 
-	it("U-NEXT：ジュラシック・パークをリスト追加", async () => {
+	it("【モバイル】U-NEXT：ジュラシック・パークをリスト追加", async () => {
 		const shareLink = `「ジュラシック・パーク」をU-NEXTで視聴 https://video-share.unext.jp/video/title/SID0021132?utm_source=com.apple.UIKit.activity.CopyToPasteboard&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883`;
 
-		await addMovie(shareLink, testListId);
+		await addMovie({
+			listId: testListId,
+			mobile: {
+				shareLink,
+			},
+		});
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
@@ -110,10 +120,15 @@ describe("addMovie", () => {
 		});
 	});
 
-	it("Hulu：ジュラシック・パークをリスト追加", async () => {
+	it("【モバイル】Hulu：ジュラシック・パークをリスト追加", async () => {
 		const shareLink = `Huluで「ジュラシック･パーク」を視聴中! https://www.hulu.jp/jurassic-park`;
 
-		await addMovie(shareLink, testListId);
+		await addMovie({
+			listId: testListId,
+			mobile: {
+				shareLink,
+			},
+		});
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
@@ -123,10 +138,15 @@ describe("addMovie", () => {
 		});
 	});
 
-	it("Prime Video：ジュラシック・パークをリスト追加", async () => {
+	it("【モバイル】Prime Video：ジュラシック・パークをリスト追加", async () => {
 		const shareLink = `やあ、ジュラシック・パーク (吹替版)を観ているよ。Prime Videoを今すぐチェックする https://watch.amazon.co.jp/detail?gti=amzn1.dv.gti.7ea9f6d9-bdc8-9b2e-97a9-c341306e36ef&territory=JP&ref_=share_ios_movie&r=web`;
 
-		await addMovie(shareLink, testListId);
+		await addMovie({
+			listId: testListId,
+			mobile: {
+				shareLink,
+			},
+		});
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
@@ -137,10 +157,104 @@ describe("addMovie", () => {
 		});
 	});
 
-	it("Disney+：ダイナソーをリスト追加", async () => {
+	it("【モバイル】Disney+：ダイナソーをリスト追加", async () => {
 		const shareLink = `https://disneyplus.com/ja/browse/entity-fe34a97c-8f83-4c39-a08e-afc288e14d64?sharesource=iOS Disney+の「ダイナソー」がおすすめなので、チェックしてみてください。`;
 
-		await addMovie(shareLink, testListId);
+		await addMovie({
+			listId: testListId,
+			mobile: {
+				shareLink,
+			},
+		});
+
+		await expectMovieRegistered({
+			title: "ダイナソー",
+			slug: SUPPORTED_SERVICES.DISNEY_PLUS.slug,
+			watchUrl:
+				"https://disneyplus.com/ja/browse/entity-fe34a97c-8f83-4c39-a08e-afc288e14d64?sharesource=iOS",
+			listId: testListId,
+		});
+	});
+
+	it("【PC】Netflix：ジュラシック・パークをリスト追加", async () => {
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ジュラシック・パーク",
+				url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
+			},
+		});
+
+		await expectMovieRegistered({
+			title: "ジュラシック・パーク",
+			slug: SUPPORTED_SERVICES.NETFLIX.slug,
+			watchUrl:
+				"https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
+			listId: testListId,
+		});
+	});
+
+	it("【PC】U-NEXT：ジュラシック・パークをリスト追加", async () => {
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ジュラシック・パーク",
+				url: "https://video-share.unext.jp/video/title/SID0021132?utm_source=com.apple.UIKit.activity.CopyToPasteboard&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
+			},
+		});
+
+		await expectMovieRegistered({
+			title: "ジュラシック・パーク",
+			slug: SUPPORTED_SERVICES.U_NEXT.slug,
+			watchUrl:
+				"https://video-share.unext.jp/video/title/SID0021132?utm_source=com.apple.UIKit.activity.CopyToPasteboard&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
+			listId: testListId,
+		});
+	});
+
+	it("【PC】Hulu：ジュラシック・パークをリスト追加", async () => {
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ジュラシック・パーク",
+				url: "https://www.hulu.jp/jurassic-park",
+			},
+		});
+
+		await expectMovieRegistered({
+			title: "ジュラシック・パーク",
+			slug: SUPPORTED_SERVICES.HULU.slug,
+			watchUrl: "https://www.hulu.jp/jurassic-park",
+			listId: testListId,
+		});
+	});
+
+	it("【PC】Prime Video：ジュラシック・パークをリスト追加", async () => {
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ジュラシック・パーク",
+				url: "https://watch.amazon.co.jp/detail?gti=amzn1.dv.gti.7ea9f6d9-bdc8-9b2e-97a9-c341306e36ef&territory=JP&ref_=share_ios_movie&r=web",
+			},
+		});
+
+		await expectMovieRegistered({
+			title: "ジュラシック・パーク",
+			slug: SUPPORTED_SERVICES.PRIME_VIDEO.slug,
+			watchUrl:
+				"https://watch.amazon.co.jp/detail?gti=amzn1.dv.gti.7ea9f6d9-bdc8-9b2e-97a9-c341306e36ef&territory=JP&ref_=share_ios_movie&r=web",
+			listId: testListId,
+		});
+	});
+
+	it("【PC】Disney+：ダイナソーをリスト追加", async () => {
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ダイナソー",
+				url: "https://disneyplus.com/ja/browse/entity-fe34a97c-8f83-4c39-a08e-afc288e14d64?sharesource=iOS",
+			},
+		});
 
 		await expectMovieRegistered({
 			title: "ダイナソー",

@@ -28,7 +28,12 @@ export default function MobileFormTextarea({ listId }: Props) {
 	const handleListRegistration = useCallback(
 		async (shareLink: string) => {
 			if (listId === null) return;
-			const data = await addMovie(shareLink, listId);
+			const data = await addMovie({
+				listId,
+				mobile: {
+					shareLink,
+				},
+			});
 		},
 		[listId],
 	);

@@ -14,6 +14,7 @@ import type { Tx } from "@/db/client";
 import { SUPPORTED_SERVICES } from "@/app/consts";
 import type { SupportedServiceSlug } from "@/app/consts";
 import { movieShareLinkSchema } from "../movieShareLinkSchema";
+import { movieInfoSchema } from "../movieInfoSchema";
 
 type MovieInfo = {
 	title: string;
@@ -21,12 +22,83 @@ type MovieInfo = {
 	serviceSlug: SupportedServiceSlug;
 };
 
-export async function addMovie(
-	pastedText: string,
-	listId: number,
-): Promise<Result<MovieInfo>> {
-	const result = validateMovieShareLink(pastedText);
+type Args = {
+	listId: number;
+} & (
+	| {
+			mobile: { shareLink: string };
+			browser?: never;
+	  }
+	| {
+			browser: { title: string; url: string };
+			mobile?: never;
+	  }
+);
 
+export async function addMovie({
+	listId,
+	mobile,
+	browser,
+}: Args): Promise<Result<MovieInfo>> {
+	const movieInfoResult = mobile
+		? buildMovieInfoFromMobile(mobile.shareLink)
+		: buildMovieInfoFromBrowser(browser);
+
+	if (!movieInfoResult.success) {
+		return movieInfoResult;
+	}
+
+	const movieInfo = movieInfoResult.data;
+	const streamingServiceId = await findStreamingServiceId(
+		movieInfo.serviceSlug,
+	);
+	if (!streamingServiceId) {
+		return {
+			success: false,
+			error: {
+				message:
+					"ストリーミングサービスを読み取れませんでした。もう一度やり直してください。",
+			},
+		};
+	}
+
+	try {
+		await db.transaction(async (tx) => {
+			const movieId = await findOrCreateMovie(tx, movieInfo.title);
+
+			const movieServiceId = await createMovieService(
+				tx,
+				movieId,
+				streamingServiceId,
+				movieInfo.url,
+			);
+			await createListMovie(tx, listId, movieServiceId);
+		});
+
+		return {
+			success: true,
+			data: movieInfo,
+		};
+	} catch (err) {
+		console.error(err);
+
+		return {
+			success: false,
+			error: { message: "すみませんが、もう一度やり直してください。" },
+		};
+	}
+}
+
+function validateMovieShareLink(shareLink: string) {
+	return movieShareLinkSchema.safeParse({ value: shareLink });
+}
+
+function validateMovieInfo(title: string, url: string) {
+	return movieInfoSchema.safeParse({ title, url });
+}
+
+function buildMovieInfoFromMobile(shareLink: string): Result<MovieInfo> {
+	const result = validateMovieShareLink(shareLink);
 	if (!result.success) {
 		return {
 			success: false,
@@ -34,7 +106,7 @@ export async function addMovie(
 		};
 	}
 
-	const url = extractUrl(pastedText);
+	const url = extractUrl(shareLink);
 	if (!url) {
 		return {
 			success: false,
@@ -64,7 +136,7 @@ export async function addMovie(
 		};
 	}
 
-	const movieInfo = buildMovieInfo(url, matcher, pastedText);
+	const movieInfo = buildMovieInfo(url, matcher, shareLink);
 	if (!movieInfo) {
 		return {
 			success: false,
@@ -74,48 +146,55 @@ export async function addMovie(
 		};
 	}
 
-	const streamingServiceId = await findStreamingServiceId(
-		movieInfo.serviceSlug,
-	);
-	if (!streamingServiceId) {
-		return {
-			success: false,
-			error: {
-				message:
-					"ストリーミングサービスを読み取れませんでした。もう一度やり直してください。",
-			},
-		};
-	}
+	return { success: true, data: movieInfo };
+}
 
-	try {
-		await db.transaction(async (tx) => {
-			const movieId = await findOrCreateMovie(tx, movieInfo.title);
-
-			const movieServiceId = await createMovieService(
-				tx,
-				movieId,
-				streamingServiceId,
-				movieInfo.url,
-			);
-			await createListMovie(tx, listId, movieServiceId);
-		});
-	} catch (err) {
-		console.error(err);
-
+function buildMovieInfoFromBrowser(
+	browser: { title: string; url: string } | undefined,
+): Result<MovieInfo> {
+	if (!browser) {
 		return {
 			success: false,
 			error: { message: "すみませんが、もう一度やり直してください。" },
 		};
 	}
 
+	const result = validateMovieInfo(browser.title, browser.url);
+	if (!result.success) {
+		return {
+			success: false,
+			error: { message: "もう一度やり直してください。" },
+		};
+	}
+
+	const hostname = parseHostname(browser.url);
+	if (!hostname) {
+		return {
+			success: false,
+			error: {
+				message: "URLを読み取れませんでした。もう一度やり直してください。",
+			},
+		};
+	}
+
+	const matcher = findMatcher(hostname);
+	if (!matcher) {
+		return {
+			success: false,
+			error: {
+				message: "URLを読み取れませんでした。もう一度やり直してください。",
+			},
+		};
+	}
+
 	return {
 		success: true,
-		data: movieInfo,
+		data: {
+			title: normalizeTitle(browser.title),
+			url: browser.url,
+			serviceSlug: matcher.slug,
+		},
 	};
-}
-
-function validateMovieShareLink(shareLink: string) {
-	return movieShareLinkSchema.safeParse({ value: shareLink });
 }
 
 type ServiceMatcher = {
