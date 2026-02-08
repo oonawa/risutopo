@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import crypto from "crypto";
 import { eq, and, gt } from "drizzle-orm";
 import { db } from "@/db/client";
+import type { Tx } from "@/db/client";
 import { authTokensTable, usersTable } from "@/db/schema";
 import { loginCodeSchema } from "../loginSchemas";
 import { generateSessionToken, generateTempSessionToken } from "@/lib/auth";
@@ -12,10 +13,13 @@ import { addDays } from "@/lib/auth";
 import { checkRateLimit, recordAttempt } from "@/lib/rateLimit";
 import { generateDeviceId } from "@/lib/devices";
 
-export async function verifyLoginCode(loginCode: string): Promise<
+export async function verifyLoginCode(
+	loginCode: string,
+	now: Date,
+): Promise<
 	Result<{
 		email: string;
-		needsRegistration: boolean;
+		isNewUser: boolean;
 	}>
 > {
 	const result = validateLoginCode(loginCode);
@@ -28,18 +32,19 @@ export async function verifyLoginCode(loginCode: string): Promise<
 	}
 
 	const headersList = await headers();
-	const ipAddress =
-		headersList.get("x-forwarded-for")?.split(",")[0] ||
-		headersList.get("x-real-ip") ||
-		"unknown";
-	const userAgent = headersList.get("user-agent") || "Unknown";
-	const deviceId = generateDeviceId(userAgent);
 
-	const rateLimit = await checkRateLimit(ipAddress, "code_verify");
+	const { limit, ipAddress } = await checkRateLimit({
+		ipAddress:
+			headersList.get("x-forwarded-for")?.split(",")[0] ||
+			headersList.get("x-real-ip") ||
+			"unknown",
+		attemptType: "code_verify",
+	});
 
-	if (!rateLimit.allowed && rateLimit.retryAfter) {
-		const minutesUntilRetry = Math.ceil(
-			(rateLimit.retryAfter.getTime() - Date.now()) / 60000,
+	if (!limit.allowed && limit.retryAfter) {
+		const minutesUntilRetry = calcurateMinutesUntilRetry(
+			limit.retryAfter.getTime(),
+			now.getTime(),
 		);
 
 		return {
@@ -50,20 +55,11 @@ export async function verifyLoginCode(loginCode: string): Promise<
 		};
 	}
 
-	const now = new Date();
+	const deviceId = generateDeviceId(headersList.get("user-agent") || "Unknown");
 
 	try {
-		const result = await db.transaction(async (tx) => {
-			const [token] = await tx
-				.select()
-				.from(authTokensTable)
-				.where(
-					and(
-						eq(authTokensTable.token, hashLoginCode(loginCode)),
-						eq(authTokensTable.tokenType, "login_code"),
-						gt(authTokensTable.expiresAt, now),
-					),
-				);
+		const txResult = await db.transaction(async (tx) => {
+			const token = await searchLoginCode({ tx, inputtedCode: loginCode, now });
 
 			if (!token) {
 				await recordAttempt({
@@ -98,42 +94,28 @@ export async function verifyLoginCode(loginCode: string): Promise<
 				.where(eq(usersTable.email, token.email));
 
 			if (user) {
-				await tx
-					.delete(authTokensTable)
-					.where(
-						and(
-							eq(authTokensTable.tokenType, "session_token"),
-							eq(authTokensTable.userId, user.id),
-							eq(authTokensTable.deviceId, deviceId),
-						),
-					);
-
-				const sessionToken = await generateSessionToken({
-					userId: user.id,
-					email: user.email,
+				const { sessionToken: newToken, expiresAt } = await updateSessionToken({
+					tx,
+					user,
 					deviceId,
-				});
-
-				const expiresAt = addDays(now, 30);
-
-				await tx.insert(authTokensTable).values({
-					token: sessionToken,
-					tokenType: "session_token",
-					deviceId,
-					email: user.email,
-					userId: user.id,
-					createdAt: now,
-					expiresAt: expiresAt,
+					now,
 				});
 
 				return {
 					success: true,
-					token: sessionToken,
-					user,
-					needsRegistration: false,
-					expiresAt,
+					data: {
+						token: newToken,
+						email: user.email,
+						isNewUser: false,
+						expiresAt,
+					},
 				};
 			}
+
+			await insertTempToken({
+                tempToken: generateTempSessionToken(),
+                expiresAt: addMinutes(now, 15)
+            });
 
 			const tempToken = generateTempSessionToken();
 			const expiresAt = addMinutes(now, 15);
@@ -150,44 +132,35 @@ export async function verifyLoginCode(loginCode: string): Promise<
 
 			return {
 				success: true,
-				token: tempToken,
-				user: { id: null, email: token.email },
-				needsRegistration: true,
-				expiresAt,
+				data: {
+					token: tempToken,
+					email: token.email,
+					isNewUser: true,
+					expiresAt,
+				},
 			};
 		});
 
-		const cookieStore = await cookies();
-
-		if (result.token && result.success) {
-			if (result.needsRegistration) {
-				cookieStore.set("temp_session_token", result.token, {
-					httpOnly: true,
-					secure: true,
-					sameSite: "lax",
-					expires: result.expiresAt,
-				});
-			} else {
-				cookieStore.set("session_token", result.token, {
-					httpOnly: true,
-					secure: true,
-					sameSite: "lax",
-					expires: result.expiresAt,
-				});
-			}
-
+		if (txResult.error) {
 			return {
-				data: {
-					email: result.user.email,
-					needsRegistration: result.needsRegistration,
-				},
-				success: true,
+				success: false,
+				error: txResult.error,
 			};
 		}
 
+		const { email, isNewUser, token, expiresAt } = txResult.data;
+		await setCookie({
+			isNewUser: isNewUser,
+			token,
+			expiresAt,
+		});
+
 		return {
-			success: false,
-			error: { message: "ログインに失敗しました。もう一度お試しください。" },
+			data: {
+				email,
+				isNewUser: isNewUser,
+			},
+			success: true,
 		};
 	} catch (err) {
 		console.error(err);
@@ -202,10 +175,113 @@ function validateLoginCode(loginCode: string) {
 	return loginCodeSchema.safeParse({ value: loginCode });
 }
 
+async function searchLoginCode({
+	tx,
+	inputtedCode,
+	now,
+}: {
+	tx: Tx;
+	inputtedCode: string;
+	now: Date;
+}) {
+	const [token] = await tx
+		.select()
+		.from(authTokensTable)
+		.where(
+			and(
+				eq(authTokensTable.token, hashLoginCode(inputtedCode)),
+				eq(authTokensTable.tokenType, "login_code"),
+				gt(authTokensTable.expiresAt, now),
+			),
+		);
+	return token;
+}
+
+async function updateSessionToken({
+	tx,
+	user,
+	deviceId,
+	now,
+}: {
+	tx: Tx;
+	user: {
+		id: number;
+		publicId: string;
+		email: string;
+	};
+	deviceId: string;
+	now: Date;
+}) {
+	await tx
+		.delete(authTokensTable)
+		.where(
+			and(
+				eq(authTokensTable.tokenType, "session_token"),
+				eq(authTokensTable.userId, user.id),
+				eq(authTokensTable.deviceId, deviceId),
+			),
+		);
+
+	const sessionToken = await generateSessionToken({
+		userId: user.id,
+		email: user.email,
+		deviceId,
+	});
+
+	const expiresAt = addDays(now, 30);
+
+	await tx.insert(authTokensTable).values({
+		token: sessionToken,
+		tokenType: "session_token",
+		deviceId,
+		email: user.email,
+		userId: user.id,
+		createdAt: now,
+		expiresAt: expiresAt,
+	});
+
+	return { sessionToken, expiresAt };
+}
+
+async function insertTempToken({
+	tempToken,
+	expiresAt,
+}: {
+	tempToken: string;
+	expiresAt: Date;
+}) {}
+
+function calcurateMinutesUntilRetry(
+	retryAfterTime: number,
+	currentTime: number,
+) {
+	return Math.ceil((retryAfterTime - currentTime) / 60000);
+}
+
 function hashLoginCode(code: string) {
 	return crypto.createHash("sha256").update(code).digest("hex");
 }
 
 function addMinutes(date: Date, minutes: number) {
 	return new Date(date.getTime() + minutes * 60 * 1000);
+}
+
+async function setCookie({
+	isNewUser,
+	token,
+	expiresAt,
+}: {
+	isNewUser: boolean;
+	token: string;
+	expiresAt: Date;
+}) {
+	const cookieStore = await cookies();
+	const key = isNewUser ? "temp_session_token" : "session_token";
+
+	cookieStore.set(key, token, {
+		httpOnly: true,
+		secure: true,
+		sameSite: "lax",
+		expires: expiresAt,
+	});
 }

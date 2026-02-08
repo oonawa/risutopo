@@ -3,13 +3,19 @@ import { loginAttemptsTable } from "@/db/schema";
 import { and, eq, gt, lt } from "drizzle-orm";
 import type { Executor } from "@/db/client";
 
-export async function checkRateLimit(
-	ipAddress: string,
-	attemptType: "code_verify" | "code_send",
-): Promise<{
-	allowed: boolean;
-	remainingAttempts?: number;
-	retryAfter?: Date;
+export async function checkRateLimit({
+	ipAddress,
+	attemptType,
+}: {
+	ipAddress: string;
+	attemptType: "code_verify" | "code_send";
+}): Promise<{
+	limit: {
+		allowed: boolean;
+		remainingAttempts?: number;
+		retryAfter?: Date;
+	};
+	ipAddress: string;
 }> {
 	const now = new Date();
 	const windowStart = new Date(now.getTime() - 15 * 60 * 1000); // 15分
@@ -37,14 +43,20 @@ export async function checkRateLimit(
 		);
 
 		return {
-			allowed: false,
-			retryAfter,
+			limit: {
+				allowed: false,
+				retryAfter,
+			},
+			ipAddress,
 		};
 	}
 
 	return {
-		allowed: true,
-		remainingAttempts: maxAttempts - attempts.length,
+		limit: {
+			allowed: true,
+			remainingAttempts: maxAttempts - attempts.length,
+		},
+		ipAddress,
 	};
 }
 

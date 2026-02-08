@@ -1,6 +1,11 @@
 import Form from "@/components/MovieInputForm/Form";
 
-export default function PcForm() {
+type Props = {
+	listId: number | null;
+};
+
+export default function PcForm({ listId }: Props) {
+	void listId;
 	return (
 		<div className="w-full md:px-10 flex flex-col justify-center items-center">
 			<div className="w-full flex flex-col gap-4">

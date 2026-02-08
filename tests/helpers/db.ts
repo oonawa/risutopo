@@ -8,14 +8,14 @@ import {
 	listsTable,
 	usersTable,
 } from "@/db/schema";
+import { SUPPORTED_SERVICES } from "@/app/consts";
 
-export const streamingServicesSeed = [
-	{ name: "U-NEXT", slug: "unext" },
-	{ name: "Netflix", slug: "netflix" },
-	{ name: "Hulu", slug: "hulu" },
-	{ name: "Disney+", slug: "disney-plus" },
-	{ name: "Prime Video", slug: "prime-video" },
-];
+export const streamingServicesSeed = Object.values(SUPPORTED_SERVICES).map(
+	({ name, slug }) => ({
+		name,
+		slug,
+	}),
+);
 
 export async function cleanupTables() {
 	await db.delete(listMoviesTable);

@@ -9,7 +9,9 @@ import {
 	listMoviesTable,
 	streamingServicesTable,
 } from "@/db/schema";
+import { SUPPORTED_SERVICES } from "@/app/consts";
 import { addMovie } from "./addMovie";
+import type { SupportedServiceSlug } from "@/app/consts";
 
 async function expectMovieRegistered({
 	title,
@@ -18,7 +20,7 @@ async function expectMovieRegistered({
 	listId,
 }: {
 	title: string;
-	slug: string;
+	slug: SupportedServiceSlug;
 	watchUrl: string;
 	listId: number;
 }) {
@@ -87,7 +89,7 @@ describe("addMovie", () => {
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
-			slug: "netflix",
+			slug: SUPPORTED_SERVICES.NETFLIX.slug,
 			watchUrl:
 				"https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
 			listId: testListId,
@@ -101,7 +103,7 @@ describe("addMovie", () => {
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
-			slug: "unext",
+			slug: SUPPORTED_SERVICES.U_NEXT.slug,
 			watchUrl:
 				"https://video-share.unext.jp/video/title/SID0021132?utm_source=com.apple.UIKit.activity.CopyToPasteboard&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
 			listId: testListId,
@@ -115,7 +117,7 @@ describe("addMovie", () => {
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
-			slug: "hulu",
+			slug: SUPPORTED_SERVICES.HULU.slug,
 			watchUrl: "https://www.hulu.jp/jurassic-park",
 			listId: testListId,
 		});
@@ -128,7 +130,7 @@ describe("addMovie", () => {
 
 		await expectMovieRegistered({
 			title: "ジュラシック・パーク",
-			slug: "prime-video",
+			slug: SUPPORTED_SERVICES.PRIME_VIDEO.slug,
 			watchUrl:
 				"https://watch.amazon.co.jp/detail?gti=amzn1.dv.gti.7ea9f6d9-bdc8-9b2e-97a9-c341306e36ef&territory=JP&ref_=share_ios_movie&r=web",
 			listId: testListId,
@@ -142,7 +144,7 @@ describe("addMovie", () => {
 
 		await expectMovieRegistered({
 			title: "ダイナソー",
-			slug: "disney-plus",
+			slug: SUPPORTED_SERVICES.DISNEY_PLUS.slug,
 			watchUrl:
 				"https://disneyplus.com/ja/browse/entity-fe34a97c-8f83-4c39-a08e-afc288e14d64?sharesource=iOS",
 			listId: testListId,

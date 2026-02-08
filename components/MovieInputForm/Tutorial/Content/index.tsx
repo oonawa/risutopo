@@ -6,14 +6,11 @@ import { Button } from "@/components/ui/button";
 import ShareMark from "./LinkShareSteps/ShareMark";
 import MenuMark from "./LinkShareSteps/MenuMark";
 import Description from "./LinkShareSteps/Description";
+import { SUPPORTED_SERVICES } from "@/app/consts";
 import "./animation.css";
 
 export type ServiceName =
-	| "U-NEXT"
-	| "Hulu"
-	| "Prime Video"
-	| "Netflix"
-	| "Disney+";
+	(typeof SUPPORTED_SERVICES)[keyof typeof SUPPORTED_SERVICES]["name"];
 
 export type MenuType = "more" | "unext-copy" | "os-copy";
 
@@ -29,7 +26,7 @@ type ServiceDataItem = {
 
 const serviceData: ServiceDataItem[] = [
 	{
-		serviceName: "Netflix",
+		serviceName: SUPPORTED_SERVICES.NETFLIX.name,
 		shareLinkExample:
 			"「 ジュラシック・パーク 」 をNetflix で今 す ぐチ ェ ッ ク \n\nhttps://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
 		steps: [
@@ -47,7 +44,7 @@ const serviceData: ServiceDataItem[] = [
 		],
 	},
 	{
-		serviceName: "U-NEXT",
+		serviceName: SUPPORTED_SERVICES.U_NEXT.name,
 		shareLinkExample:
 			"「ジュラシック・パーク」をU-NEXTで視聴 https://video-share.unext.jp/video/title/SID0021132?utm_source=com.apple.UIKit.activity.CopyToPasteboard&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
 		steps: [
@@ -65,7 +62,7 @@ const serviceData: ServiceDataItem[] = [
 		],
 	},
 	{
-		serviceName: "Prime Video",
+		serviceName: SUPPORTED_SERVICES.PRIME_VIDEO.name,
 		shareLinkExample:
 			"やあ、ジュラシック・パーク (吹替版)を観ているよ。Prime Videoを今すぐチェックする https://watch.amazon.co.jp/detail?gti=amzn1.dv.gti.7ea9f6d9-bdc8-9b2e-97a9-c341306e36ef&territory=JP&ref_=share_ios_movie&r=web",
 		steps: [
@@ -78,7 +75,7 @@ const serviceData: ServiceDataItem[] = [
 		],
 	},
 	{
-		serviceName: "Hulu",
+		serviceName: SUPPORTED_SERVICES.HULU.name,
 		shareLinkExample:
 			"Huluで「ジュラシック･パーク」を視聴中! https://www.hulu.jp/jurassic-park",
 		steps: [
@@ -91,7 +88,7 @@ const serviceData: ServiceDataItem[] = [
 		],
 	},
 	{
-		serviceName: "Disney+",
+		serviceName: SUPPORTED_SERVICES.DISNEY_PLUS.name,
 		shareLinkExample:
 			"https://disneyplus.com/ja/browse/entity-fe34a97c-8f83-4c39-a08e-afc288e14d64?sharesource=iOS Disney+の「ダイナソー」がおすすめなので、チェックしてみてください。",
 		steps: [

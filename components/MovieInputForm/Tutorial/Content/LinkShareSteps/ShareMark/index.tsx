@@ -2,6 +2,7 @@ import ShareArrowIcon from "@/components/ui/Icons/ShareArrowIcon";
 import ShareAndroidIcon from "@/components/ui/Icons/ShareAndroidIcon";
 import ShareSendIcon from "@/components/ui/Icons/ShareSendIcon";
 import ShareIosIcon from "@/components/ui/Icons/ShareIosIcon";
+import { SUPPORTED_SERVICES } from "@/app/consts";
 
 import type { ServiceName } from "../..";
 
@@ -11,7 +12,7 @@ type Props = {
 
 function Content({ serviceName }: Props) {
 	switch (serviceName) {
-		case "Netflix":
+		case SUPPORTED_SERVICES.NETFLIX.name:
 			return (
 				<div className="w-12">
 					<div className="aspect-square flex flex-col justify-center">
@@ -23,7 +24,7 @@ function Content({ serviceName }: Props) {
 				</div>
 			);
 
-		case "Hulu":
+		case SUPPORTED_SERVICES.HULU.name:
 			return (
 				<div className="text-background-light-3 bg-background-light-2 rounded-full">
 					<div className="flex items-center px-2 py-1">
@@ -35,7 +36,7 @@ function Content({ serviceName }: Props) {
 				</div>
 			);
 
-		case "U-NEXT":
+		case SUPPORTED_SERVICES.U_NEXT.name:
 			return (
 				<div className="w-12">
 					<div className="aspect-square flex flex-col justify-center">
@@ -47,7 +48,7 @@ function Content({ serviceName }: Props) {
 				</div>
 			);
 
-		case "Prime Video":
+		case SUPPORTED_SERVICES.PRIME_VIDEO.name:
 			return (
 				<div className="w-12">
 					<div className="aspect-square flex flex-col justify-center">
@@ -59,7 +60,7 @@ function Content({ serviceName }: Props) {
 				</div>
 			);
 
-		case "Disney+":
+		case SUPPORTED_SERVICES.DISNEY_PLUS.name:
 			return (
 				<div className="flex items-center px-2 py-1">
 					<div className="flex justify-center items-center">

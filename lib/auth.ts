@@ -45,10 +45,38 @@ export async function verifySessionToken(): Promise<{
 			typeof exp === "number" &&
 			typeof iat === "number"
 		) {
+			const parsedUserId = Number(userId);
+			if (!Number.isFinite(parsedUserId)) {
+				return null;
+			}
+
+			const now = new Date();
+			const [record] = await db
+				.select({
+					userId: authTokensTable.userId,
+					email: authTokensTable.email,
+					deviceId: authTokensTable.deviceId,
+				})
+				.from(authTokensTable)
+				.where(
+					and(
+						eq(authTokensTable.token, sessionToken),
+						eq(authTokensTable.tokenType, "session_token"),
+						eq(authTokensTable.userId, parsedUserId),
+						eq(authTokensTable.email, email),
+						eq(authTokensTable.deviceId, deviceId),
+						gt(authTokensTable.expiresAt, now),
+					),
+				);
+
+			if (!record) {
+				return null;
+			}
+
 			return {
-				userId: Number(userId),
-				email,
-				deviceId,
+				userId: parsedUserId,
+				email: record.email,
+				deviceId: record.deviceId ?? deviceId,
 			};
 		}
 
