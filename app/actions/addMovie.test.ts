@@ -61,6 +61,33 @@ async function expectMovieRegistered({
 	expect(listMovies).toHaveLength(1);
 }
 
+async function findMovieServiceIds({
+	title,
+	slug,
+}: {
+	title: string;
+	slug: SupportedServiceSlug;
+}) {
+	const [movie] = await db
+		.select()
+		.from(moviesTable)
+		.where(eq(moviesTable.title, title));
+
+	expect(movie).toBeDefined();
+
+	const [service] = await db
+		.select()
+		.from(streamingServicesTable)
+		.where(eq(streamingServicesTable.slug, slug));
+
+	expect(service).toBeDefined();
+
+	return {
+		movieId: movie.id,
+		serviceId: service.id,
+	};
+}
+
 describe("addMovie", () => {
 	let testUserId: number;
 	let testListId: number;
@@ -263,5 +290,122 @@ describe("addMovie", () => {
 				"https://disneyplus.com/ja/browse/entity-fe34a97c-8f83-4c39-a08e-afc288e14d64?sharesource=iOS",
 			listId: testListId,
 		});
+	});
+
+	it("同一映画・同一サービスの場合、視聴URLも同一であれば何も更新しない", async () => {
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ジュラシック・パーク",
+				url: "https://www.hulu.jp/jurassic-park",
+			},
+		});
+
+		const { movieId, serviceId } = await findMovieServiceIds({
+			title: "ジュラシック・パーク",
+			slug: SUPPORTED_SERVICES.HULU.slug,
+		});
+
+		const movieServicesBefore = await db
+			.select()
+			.from(movieServicesTable)
+			.where(
+				and(
+					eq(movieServicesTable.movieId, movieId),
+					eq(movieServicesTable.streamingServiceId, serviceId),
+				),
+			);
+		expect(movieServicesBefore).toHaveLength(1);
+
+		const result = await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ジュラシック・パーク",
+				url: "https://www.hulu.jp/jurassic-park",
+			},
+		});
+
+		expect(result.success).toBe(true);
+
+		const movieServicesAfter = await db
+			.select()
+			.from(movieServicesTable)
+			.where(
+				and(
+					eq(movieServicesTable.movieId, movieId),
+					eq(movieServicesTable.streamingServiceId, serviceId),
+				),
+			);
+
+		expect(movieServicesAfter).toHaveLength(1);
+	});
+
+	it("同一タイトル・同一サービスで視聴URLが異なる場合、別作品としてそのまま登録する", async () => {
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ゴジラ",
+				url: "https://video-share.unext.jp/video/title/SID0002594?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
+			},
+		});
+
+		const { serviceId } = await findMovieServiceIds({
+			title: "ゴジラ",
+			slug: SUPPORTED_SERVICES.U_NEXT.slug,
+		});
+
+		const movieServicesBefore = await db
+			.select()
+			.from(movieServicesTable)
+			.where(eq(movieServicesTable.streamingServiceId, serviceId));
+		expect(movieServicesBefore).toHaveLength(1);
+		expect(movieServicesBefore[0].watchUrl).toBe(
+			"https://video-share.unext.jp/video/title/SID0002594?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
+		);
+
+		await addMovie({
+			listId: testListId,
+			browser: {
+				title: "ゴジラ",
+				url: "https://video-share.unext.jp/video/title/SID0011145?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
+			},
+		});
+
+		const movies = await db
+			.select()
+			.from(moviesTable)
+			.where(eq(moviesTable.title, "ゴジラ"));
+
+		expect(movies).toHaveLength(2);
+
+		const movieServicesAfter = await db
+			.select({
+				id: movieServicesTable.id,
+				watchUrl: movieServicesTable.watchUrl,
+			})
+			.from(movieServicesTable)
+			.innerJoin(moviesTable, eq(movieServicesTable.movieId, moviesTable.id))
+			.where(
+				and(
+					eq(moviesTable.title, "ゴジラ"),
+					eq(movieServicesTable.streamingServiceId, serviceId),
+				),
+			);
+
+		expect(movieServicesAfter).toHaveLength(2);
+
+		const watchUrls = movieServicesAfter.map((service) => service.watchUrl);
+		expect(watchUrls).toEqual(
+			expect.arrayContaining([
+				"https://video-share.unext.jp/video/title/SID0002594?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
+				"https://video-share.unext.jp/video/title/SID0011145?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
+			]),
+		);
+
+		const listMoviesAfter = await db
+			.select()
+			.from(listMoviesTable)
+			.where(eq(listMoviesTable.listId, testListId));
+		expect(listMoviesAfter).toHaveLength(2);
 	});
 });
