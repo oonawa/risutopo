@@ -1,72 +1,33 @@
 "use client";
 
-import type z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
 import Form from "@/components/MovieInputForm/Form";
-import { addMovie } from "@/app/actions/addMovie";
 import { movieShareLinkSchema } from "@/app/movieShareLinkSchema";
-
-type MovieShareLinkData = z.infer<typeof movieShareLinkSchema>;
+import { useMovieInputForm } from "@/app/hooks/useMovieInputForm";
+import type { FieldPath } from "react-hook-form";
+import type { infer as ZodInfer } from "zod";
 
 type Props = {
 	listId: number | null;
 };
 
+type MovieShareLinkValues = ZodInfer<typeof movieShareLinkSchema>;
+
+const WATCH_FIELDS: FieldPath<MovieShareLinkValues>[] = ["value"];
+const buildMobilePayload = (values: MovieShareLinkValues) => ({
+	mobile: {
+		shareLink: values.value,
+	},
+});
+
 export default function MobileFormTextarea({ listId }: Props) {
-	const {
-		register,
-		formState: { errors },
-		control,
-		trigger,
-	} = useForm<MovieShareLinkData>({
-		resolver: zodResolver(movieShareLinkSchema),
-		mode: "onChange",
+	const { register, errors, storageErrorMessage } = useMovieInputForm({
+		schema: movieShareLinkSchema,
+		watchFields: WATCH_FIELDS,
+		listId,
+		buildPayload: buildMobilePayload,
 	});
-
-	const handleListRegistration = useCallback(
-		async (shareLink: string) => {
-			if (listId === null) return;
-			const data = await addMovie({
-				listId,
-				mobile: {
-					shareLink,
-				},
-			});
-		},
-		[listId],
-	);
-
-	const shareLink = useWatch({ control, name: "value" });
-	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	useEffect(() => {
-		if (shareLink === undefined) return;
-		let canceled = false;
-
-		const run = async () => {
-			const isValid = await trigger("value");
-			if (!isValid || canceled) return;
-
-			if (debounceRef.current) {
-				clearTimeout(debounceRef.current);
-			}
-
-			debounceRef.current = setTimeout(() => {
-				void handleListRegistration(shareLink);
-			}, 400);
-		};
-
-		void run();
-
-		return () => {
-			canceled = true;
-			if (debounceRef.current) {
-				clearTimeout(debounceRef.current);
-			}
-		};
-	}, [shareLink, trigger, handleListRegistration]);
+	const valueErrorMessage =
+		typeof errors.value?.message === "string" ? errors.value.message : "";
 
 	return (
 		<>
@@ -75,8 +36,11 @@ export default function MobileFormTextarea({ listId }: Props) {
 				placeholder="「 ジュラシック・パーク 」 をNetflix で今 す ぐチ ェ ッ クhttps://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more"
 				{...register("value")}
 			/>
-			{errors.value && (
-				<p className="text-sm text-red-500">{errors.value.message}</p>
+			{valueErrorMessage && (
+				<p className="text-sm text-red-500">{valueErrorMessage}</p>
+			)}
+			{storageErrorMessage && (
+				<p className="text-sm text-red-500">{storageErrorMessage}</p>
 			)}
 		</>
 	);

@@ -1,73 +1,36 @@
 "use client";
 
-import type z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
 import Form from "@/components/MovieInputForm/Form";
 import { movieInfoSchema } from "@/app/movieInfoSchema";
-import { addMovie } from "@/app/actions/addMovie";
+import { useMovieInputForm } from "@/app/hooks/useMovieInputForm";
+import type { FieldPath } from "react-hook-form";
+import type { infer as ZodInfer } from "zod";
 
 type Props = {
 	listId: number | null;
 };
 
+type MovieInfoValues = ZodInfer<typeof movieInfoSchema>;
+
+const WATCH_FIELDS: FieldPath<MovieInfoValues>[] = ["title", "url"];
+const buildBrowserPayload = (values: MovieInfoValues) => ({
+	browser: {
+		title: values.title,
+		url: values.url,
+	},
+});
+
 export default function PcForm({ listId }: Props) {
-	const {
-		register,
-		formState: { errors },
-		control,
-		trigger,
-	} = useForm<z.infer<typeof movieInfoSchema>>({
-		resolver: zodResolver(movieInfoSchema),
-		mode: "onChange",
+	const { register, errors, storageErrorMessage } = useMovieInputForm({
+		schema: movieInfoSchema,
+		watchFields: WATCH_FIELDS,
+		listId,
+		buildPayload: buildBrowserPayload,
 	});
-
-	const handleSubmit = useCallback(
-		async (title: string, url: string) => {
-			if (listId === null) return;
-			const data = await addMovie({
-				listId,
-				browser: {
-					title,
-					url,
-				},
-			});
-			console.log(data)
-		},
-		[listId],
-	);
-
-	const title = useWatch({ control, name: "title" });
-	const url = useWatch({ control, name: "url" });
-	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	useEffect(() => {
-		if (title === undefined || url === undefined) return;
-		let canceled = false;
-
-		const run = async () => {
-			const isValid = await trigger(["title", "url"]);
-			if (!isValid || canceled) return;
-
-			if (debounceRef.current) {
-				clearTimeout(debounceRef.current);
-			}
-
-			debounceRef.current = setTimeout(() => {
-				void handleSubmit(title, url);
-			}, 400);
-		};
-
-		void run();
-
-		return () => {
-			canceled = true;
-			if (debounceRef.current) {
-				clearTimeout(debounceRef.current);
-			}
-		};
-	}, [title, url, trigger, handleSubmit]);
+	const titleErrorMessage =
+		typeof errors.title?.message === "string" ? errors.title.message : "";
+	const urlErrorMessage =
+		typeof errors.url?.message === "string" ? errors.url.message : "";
 
 	return (
 		<div className="w-full md:px-10 flex flex-col justify-center items-center">
@@ -81,8 +44,8 @@ export default function PcForm({ listId }: Props) {
 						id="title"
 						{...register("title")}
 					/>
-					{errors.title && (
-						<p className="text-sm text-red-500">{errors.title.message}</p>
+					{titleErrorMessage && (
+						<p className="text-sm text-red-500">{titleErrorMessage}</p>
 					)}
 					<Form
 						className="min-h-[3lh] break-all"
@@ -90,8 +53,11 @@ export default function PcForm({ listId }: Props) {
 						id="watch-url"
 						{...register("url")}
 					/>
-					{errors.url && (
-						<p className="text-sm text-red-500">{errors.url.message}</p>
+					{urlErrorMessage && (
+						<p className="text-sm text-red-500">{urlErrorMessage}</p>
+					)}
+					{storageErrorMessage && (
+						<p className="text-sm text-red-500">{storageErrorMessage}</p>
 					)}
 				</div>
 			</div>

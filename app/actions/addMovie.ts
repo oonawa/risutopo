@@ -23,7 +23,7 @@ type MovieInfo = {
 };
 
 type Args = {
-	listId: number;
+	listId: number | null;
 } & (
 	| {
 			mobile: { shareLink: string };
@@ -49,6 +49,14 @@ export async function addMovie({
 	}
 
 	const movieInfo = movieInfoResult.data;
+
+	if (!listId) {
+		return {
+			success: true,
+			data: movieInfo,
+		};
+	}
+
 	const streamingServiceId = await findStreamingServiceId(
 		movieInfo.serviceSlug,
 	);
