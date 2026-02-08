@@ -1,9 +1,14 @@
 import { headers } from "next/headers";
+import { verifySessionToken } from "@/lib/auth";
+import { getUserList } from "@/app/actions/getUserListId";
 import MovieTitleForm from "@/components/MovieInputForm";
 import PcForm from "@/components/MovieInputForm/PcForm";
 import MobileForm from "@/components/MovieInputForm/MobileForm";
 
 export default async function Home() {
+	const isVerified = await verifySessionToken();
+	const listId = isVerified ? await getUserList(isVerified.userId) : null;
+
 	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") || "";
 
@@ -16,8 +21,8 @@ export default async function Home() {
 			<MovieTitleForm
 				initialIsMobile={isMobileUA}
 				userAgent={userAgent}
-				PcForm={<PcForm />}
-				MobileForm={<MobileForm />}
+				PcForm={<PcForm listId={listId} />}
+				MobileForm={<MobileForm listId={listId} />}
 			/>
 		</div>
 	);

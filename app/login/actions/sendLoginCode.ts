@@ -7,22 +7,25 @@ import { Resend } from "resend";
 import { checkRateLimit, recordAttempt } from "@/lib/rateLimit";
 import type { Result } from "@/app/types/Result";
 import { db } from "@/db/client";
+import type { Tx } from "@/db/client";
 import { authTokensTable, usersTable } from "@/db/schema";
 import { emailSchema } from "../loginSchemas";
 import LoginMailTemplate from "../components/LoginMailTemplate";
 
-export async function sendLoginCode(email: string): Promise<Result> {
+export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 	const headersList = await headers();
-	const ipAddress =
-		headersList.get("x-forwarded-for")?.split(",")[0] ||
-		headersList.get("x-real-ip") ||
-		"unknown";
 
-	const rateLimit = await checkRateLimit(ipAddress, "code_send");
+	const { limit, ipAddress } = await checkRateLimit({
+		ipAddress:
+			headersList.get("x-forwarded-for")?.split(",")[0] ||
+			headersList.get("x-real-ip") ||
+			"unknown",
+		attemptType: "code_send",
+	});
 
-	if (!rateLimit.allowed && rateLimit.retryAfter) {
+	if (!limit.allowed && limit.retryAfter) {
 		const minutesUntilRetry = Math.ceil(
-			(rateLimit.retryAfter.getTime() - Date.now()) / 60000,
+			(limit.retryAfter.getTime() - now.getTime()) / 60000,
 		);
 
 		return {
@@ -50,49 +53,29 @@ export async function sendLoginCode(email: string): Promise<Result> {
 		};
 	}
 
-	const time = createTimeContext();
 	const loginCode = generateLoginCode();
-	const hashedCode = hashLoginCode(loginCode);
-	const url = resolveBaseUrl();
 
 	try {
 		await db.transaction(async (tx) => {
-			await tx
-				.delete(authTokensTable)
-				.where(
-					and(
-						eq(authTokensTable.email, email),
-						eq(authTokensTable.tokenType, "login_code"),
-					),
-				);
-
-			const [user] = await tx
-				.select()
-				.from(usersTable)
-				.where(eq(usersTable.email, email));
-
-			await tx.insert(authTokensTable).values({
-				token: hashedCode,
-				tokenType: "login_code",
+			await deleteLoginCode({ tx, email });
+			await insertLoginCode({
+				tx,
 				email,
-				userId: user?.id ?? null,
-				expiresAt: time.expiresAt,
-				createdAt: time.now,
+				token: hashLoginCode(loginCode),
+				expiresAt: createExpiresAt(now),
+				createdAt: now,
 			});
 		});
 
-		try {
-			await sendLoginMail(email, loginCode, url);
-		} catch (err) {
-			console.error(err);
-			await db
-				.delete(authTokensTable)
-				.where(
-					and(
-						eq(authTokensTable.email, email),
-						eq(authTokensTable.tokenType, "login_code"),
-					),
-				);
+		const response = await sendLoginMail({
+			email,
+			loginCode,
+			url: resolveBaseUrl(),
+		});
+
+		if (response.error) {
+			await deleteLoginCode({ email });
+
 			await recordAttempt({
 				executor: db,
 				ipAddress,
@@ -100,6 +83,8 @@ export async function sendLoginCode(email: string): Promise<Result> {
 				attemptType: "code_send",
 				success: false,
 			});
+
+			console.error(response.error);
 
 			return {
 				success: false,
@@ -139,16 +124,8 @@ function hashLoginCode(code: string) {
 	return crypto.createHash("sha256").update(code).digest("hex");
 }
 
-type TimeContext = {
-	now: Date;
-	expiresAt: Date;
-};
-function createTimeContext(): TimeContext {
-	const now = new Date();
-	return {
-		now,
-		expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
-	};
+function createExpiresAt(now: Date) {
+	return new Date(now.getTime() + 10 * 60 * 1000);
 }
 
 function resolveBaseUrl() {
@@ -157,10 +134,58 @@ function resolveBaseUrl() {
 		: "http://localhost:4321";
 }
 
-async function sendLoginMail(email: string, loginCode: string, url: string) {
+async function deleteLoginCode({ tx, email }: { tx?: Tx; email: string }) {
+	const executor = tx || db;
+	await executor
+		.delete(authTokensTable)
+		.where(
+			and(
+				eq(authTokensTable.email, email),
+				eq(authTokensTable.tokenType, "login_code"),
+			),
+		);
+}
+
+async function insertLoginCode({
+	tx,
+	email,
+	token,
+	expiresAt,
+	createdAt,
+}: {
+	tx: Tx;
+	email: string;
+	token: string;
+	expiresAt: Date;
+	createdAt: Date;
+}) {
+	const [user] = await tx
+		.select()
+		.from(usersTable)
+		.where(eq(usersTable.email, email));
+
+	await tx.insert(authTokensTable).values({
+		token,
+		tokenType: "login_code",
+		email,
+		userId: user?.id ?? null,
+		expiresAt,
+		createdAt,
+	});
+}
+
+async function sendLoginMail({
+	email,
+	loginCode,
+	url,
+}: {
+	email: string;
+	loginCode: string;
+	url: string;
+}) {
 	const resend = new Resend(process.env.RESEND_API_KEY);
 
-	await resend.emails.send({
+	return await resend.emails.send({
 		from:
 			process.env.NODE_ENV === "development"
 				? "onboarding@resend.dev"

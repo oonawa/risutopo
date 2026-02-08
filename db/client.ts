@@ -1,5 +1,8 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env" });
 
 const tursoDatabaseUrl = process.env.TURSO_DATABASE_URL;
 
@@ -24,4 +27,7 @@ const client =
 export const db = drizzle(client);
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type Executor = Pick<Tx, "select" | "insert" | "update" | "delete" | "query">;
+export type Executor = Pick<
+	Tx,
+	"select" | "insert" | "update" | "delete" | "query"
+>;

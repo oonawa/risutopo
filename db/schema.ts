@@ -1,4 +1,5 @@
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
 
 export const usersTable = sqliteTable("users_table", {
 	id: int().primaryKey({ autoIncrement: true }),
@@ -8,8 +9,8 @@ export const usersTable = sqliteTable("users_table", {
 
 export const streamingServicesTable = sqliteTable("streaming_services_table", {
 	id: int().primaryKey({ autoIncrement: true }),
-	name: text().notNull(),
-	slug: text().notNull().unique(),
+	name: text().$type<SupportedServiceName>().notNull(),
+	slug: text().$type<SupportedServiceSlug>().notNull().unique(),
 });
 
 export const moviesTable = sqliteTable("movies_table", {
@@ -48,7 +49,9 @@ export const listMoviesTable = sqliteTable("list_movies_table", {
 
 export const authTokensTable = sqliteTable("auth_tokens_table", {
 	token: text("token").notNull().unique(),
-	tokenType: text("token_type").notNull(),
+	tokenType: text("token_type")
+		.$type<"session_token" | "temp_session_token" | "login_code">()
+		.notNull(),
 	email: text("email").notNull(),
 	userId: int("user_id").references(() => usersTable.id, {
 		onDelete: "cascade",
@@ -62,7 +65,9 @@ export const loginAttemptsTable = sqliteTable("login_attempts_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	ipAddress: text("ip_address").notNull(),
 	email: text("email"),
-	attemptType: text("attempt_type").notNull(), // 'code_verify' | 'code_send'
+	attemptType: text("attempt_type")
+		.$type<"code_verify" | "code_send">()
+		.notNull(),
 	attemptedAt: int("attempted_at", { mode: "timestamp" }).notNull(),
 	success: int("success", { mode: "boolean" }).notNull().default(false),
 });

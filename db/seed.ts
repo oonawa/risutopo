@@ -1,13 +1,13 @@
 import { db } from "./client";
 import { streamingServicesTable } from "./schema";
+import { SUPPORTED_SERVICES } from "@/app/consts";
 
-const streamingServicesSeed = [
-	{ name: "U-NEXT", slug: "unext" },
-	{ name: "Netflix", slug: "netflix" },
-	{ name: "Hulu", slug: "hulu" },
-	{ name: "Disney+", slug: "disney-plus" },
-	{ name: "Prime Video", slug: "prime-video" },
-];
+const streamingServicesSeed = Object.values(SUPPORTED_SERVICES).map(
+	({ name, slug }) => ({
+		name,
+		slug,
+	}),
+);
 
 export const seedStreamingServices = async () => {
 	await db.transaction(async (tx) => {

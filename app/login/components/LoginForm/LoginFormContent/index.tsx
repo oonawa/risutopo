@@ -14,9 +14,13 @@ export default function LoginFormContent() {
 	const [status, setStatus] = useState<Status>("idle");
 	const [errorMessage, setErrorMessage] = useState<string>("");
 
+	const now = new Date();
+
 	const handleEmailSubmit = async (data: { value: string }) => {
 		setStatus("loading");
-		const result = await sendLoginCode(data.value);
+    
+		const result = await sendLoginCode(data.value, now);
+    
 		setTimeout(() => {
 			if (result.success) {
 				return setStatus("sent");
@@ -29,12 +33,12 @@ export default function LoginFormContent() {
 
 	const handleLoginCodeSubmit = async (data: { value: string }) => {
 		setStatus("loading");
-		const result = await verifyLoginCode(data.value);
+		const result = await verifyLoginCode(data.value, now);
 
 		if (result.success) {
-			const { email, needsRegistration } = result.data;
+			const { email, isNewUser } = result.data;
 			sessionStorage.setItem("registrationEmail", email);
-			return needsRegistration ? redirect("/register") : redirect("/");
+			return isNewUser ? redirect("/register") : redirect("/");
 		}
 
 		setStatus("error");
