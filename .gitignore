@@ -43,3 +43,6 @@ next-env.d.ts
 # local db
 local.db
 local.test.db
+
+*storybook.log
+storybook-static

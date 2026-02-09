@@ -25,8 +25,11 @@ export const movieInfoSchema = z.object({
 		.min(1, "視聴URLを入力してください。")
 		.pipe(z.url({ message: "URLの形式で入力してください。" }))
 		.refine((val) => {
+			return new URL(val).protocol === "https:";
+		}, "URLの形式で入力してください。")
+		.refine((val) => {
 			const hostname = parseHostname(val);
 			if (!hostname) return false;
 			return isSupportedHost(hostname);
-		}, "対応していないサービスのリンクです。"),
+		}, "このサイトは対応外です。"),
 });
