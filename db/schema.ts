@@ -1,4 +1,4 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { int, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
 
 export const usersTable = sqliteTable("users_table", {
@@ -15,19 +15,28 @@ export const streamingServicesTable = sqliteTable("streaming_services_table", {
 
 export const moviesTable = sqliteTable("movies_table", {
 	id: int().primaryKey({ autoIncrement: true }),
-	title: text().notNull().unique(),
+	title: text().notNull(),
 });
 
-export const movieServicesTable = sqliteTable("movie_services_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	movieId: int()
-		.notNull()
-		.references(() => moviesTable.id),
-	streamingServiceId: int()
-		.notNull()
-		.references(() => streamingServicesTable.id),
-	watchUrl: text().notNull(),
-});
+export const movieServicesTable = sqliteTable(
+	"movie_services_table",
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		movieId: int()
+			.notNull()
+			.references(() => moviesTable.id),
+		streamingServiceId: int()
+			.notNull()
+			.references(() => streamingServicesTable.id),
+		watchUrl: text().notNull(),
+	},
+	(table) => [
+		uniqueIndex("movie_services_movie_id_streaming_service_id_unique").on(
+			table.movieId,
+			table.streamingServiceId,
+		),
+	],
+);
 
 export const listsTable = sqliteTable("lists_table", {
 	id: int().primaryKey({ autoIncrement: true }),

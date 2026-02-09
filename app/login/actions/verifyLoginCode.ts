@@ -58,90 +58,99 @@ export async function verifyLoginCode(
 	const deviceId = generateDeviceId(headersList.get("user-agent") || "Unknown");
 
 	try {
-		const txResult = await db.transaction(async (tx) => {
-			const token = await searchLoginCode({ tx, inputtedCode: loginCode, now });
+		const txResult = await db.transaction(
+			async (
+				tx,
+			): Promise<
+				Result<{
+					token: string;
+					email: string;
+					isNewUser: boolean;
+					expiresAt: Date;
+				}>
+			> => {
+				const founded = await searchLoginCode({
+					tx,
+					inputtedCode: loginCode,
+					now,
+				});
 
-			if (!token) {
+				if (!founded) {
+					await recordAttempt({
+						executor: tx,
+						ipAddress,
+						email: null,
+						attemptType: "code_verify",
+						success: false,
+					});
+
+					return {
+						success: false,
+						error: { message: "ログインコードが不正です" },
+					};
+				}
+
 				await recordAttempt({
 					executor: tx,
 					ipAddress,
-					email: null,
+					email: founded.email,
 					attemptType: "code_verify",
-					success: false,
+					success: true,
 				});
 
-				return {
-					success: false,
-					error: { message: "ログインコードが不正です" },
-				};
-			}
+				await tx
+					.delete(authTokensTable)
+					.where(eq(authTokensTable.token, founded.token));
 
-			await recordAttempt({
-				executor: tx,
-				ipAddress,
-				email: token.email,
-				attemptType: "code_verify",
-				success: true,
-			});
+				const [user] = await tx
+					.select()
+					.from(usersTable)
+					.where(eq(usersTable.email, founded.email));
 
-			await tx
-				.delete(authTokensTable)
-				.where(eq(authTokensTable.token, token.token));
+				if (user) {
+					const { sessionToken: newToken, expiresAt } =
+						await updateSessionToken({
+							tx,
+							user,
+							deviceId,
+							now,
+						});
 
-			const [user] = await tx
-				.select()
-				.from(usersTable)
-				.where(eq(usersTable.email, token.email));
+					return {
+						success: true,
+						data: {
+							token: newToken,
+							email: user.email,
+							isNewUser: false,
+							expiresAt,
+						},
+					};
+				}
 
-			if (user) {
-				const { sessionToken: newToken, expiresAt } = await updateSessionToken({
+				const tempToken = generateTempSessionToken();
+
+				await insertTempToken({
 					tx,
-					user,
+					tempToken: generateTempSessionToken(),
+					expiresAt: addMinutes(now, 15),
+					email: founded.email,
 					deviceId,
-					now,
+					createdAt: now,
 				});
 
 				return {
 					success: true,
 					data: {
-						token: newToken,
-						email: user.email,
-						isNewUser: false,
+						token: tempToken,
+						email: founded.email,
+						isNewUser: true,
 						expiresAt,
 					},
 				};
-			}
+			},
+		);
 
-			await insertTempToken({
-                tempToken: generateTempSessionToken(),
-                expiresAt: addMinutes(now, 15)
-            });
-
-			const tempToken = generateTempSessionToken();
-			const expiresAt = addMinutes(now, 15);
-
-			await tx.insert(authTokensTable).values({
-				token: tempToken,
-				tokenType: "temp_session_token",
-				deviceId,
-				email: token.email,
-				userId: null,
-				createdAt: now,
-				expiresAt,
-			});
-
-			return {
-				success: true,
-				data: {
-					token: tempToken,
-					email: token.email,
-					isNewUser: true,
-					expiresAt,
-				},
-			};
-		});
-
-		if (txResult.error) {
+		if (!txResult.success) {
 			return {
 				success: false,
 				error: txResult.error,
@@ -158,7 +167,7 @@ export async function verifyLoginCode(
 		return {
 			data: {
 				email,
-				isNewUser: isNewUser,
+				isNewUser,
 			},
 			success: true,
 		};
@@ -184,7 +193,7 @@ async function searchLoginCode({
 	inputtedCode: string;
 	now: Date;
 }) {
-	const [token] = await tx
+	const [loginCode] = await tx
 		.select()
 		.from(authTokensTable)
 		.where(
@@ -194,7 +203,7 @@ async function searchLoginCode({
 				gt(authTokensTable.expiresAt, now),
 			),
 		);
-	return token;
+	return loginCode;
 }
 
 async function updateSessionToken({
@@ -244,12 +253,30 @@ async function updateSessionToken({
 }
 
 async function insertTempToken({
+	tx,
 	tempToken,
 	expiresAt,
+	email,
+	deviceId,
+	createdAt,
 }: {
+	tx: Tx;
 	tempToken: string;
 	expiresAt: Date;
-}) {}
+	email: string;
+	deviceId: string;
+	createdAt: Date;
+}) {
+	await tx.insert(authTokensTable).values({
+		token: tempToken,
+		tokenType: "temp_session_token",
+		deviceId,
+		email,
+		userId: null,
+		createdAt,
+		expiresAt,
+	});
+}
 
 function calcurateMinutesUntilRetry(
 	retryAfterTime: number,

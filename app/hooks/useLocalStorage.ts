@@ -1,11 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useAtom, useSetAtom } from "jotai";
-import {
-	appendMovieWithServiceAtom,
-	streamingServicesTableAtom,
-} from "@/app/store";
+import { useSetAtom } from "jotai";
+import { appendMovieServiceAtom } from "@/app/store";
+import { SUPPORTED_SERVICES } from "@/app/consts";
 import type { SupportedServiceSlug } from "@/app/consts";
 
 type AppendStoragePayload = {
@@ -15,13 +13,12 @@ type AppendStoragePayload = {
 };
 
 export function useLocalStorage() {
-	const [streamingServices] = useAtom(streamingServicesTableAtom);
-	const appendMovieWithService = useSetAtom(appendMovieWithServiceAtom);
+	const appendMovieService = useSetAtom(appendMovieServiceAtom);
 	const [storageErrorMessage, setStorageErrorMessage] = useState<string>("");
 
 	const appendMovieToStorage = useCallback(
 		({ title, url, serviceSlug }: AppendStoragePayload) => {
-			const service = streamingServices.find(
+			const service = Object.values(SUPPORTED_SERVICES).find(
 				(service) => service.slug === serviceSlug,
 			);
 			if (!service) {
@@ -31,16 +28,16 @@ export function useLocalStorage() {
 				return false;
 			}
 
-			appendMovieWithService({
+			appendMovieService({
 				title,
-				watchUrl: url,
-				streamingServiceId: service.id,
+				url,
+				serviceName: service.name,
 			});
 
 			setStorageErrorMessage("");
 			return true;
 		},
-		[appendMovieWithService, streamingServices],
+		[appendMovieService],
 	);
 
 	return {

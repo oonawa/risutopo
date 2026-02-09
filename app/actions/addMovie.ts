@@ -2,7 +2,7 @@
 
 import { URL } from "node:url";
 import { db } from "@/db/client";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
 	moviesTable,
 	movieServicesTable,
@@ -72,11 +72,9 @@ export async function addMovie({
 
 	try {
 		await db.transaction(async (tx) => {
-			const movieId = await findOrCreateMovie(tx, movieInfo.title);
-
 			const movieServiceId = await createMovieService(
 				tx,
-				movieId,
+				movieInfo.title,
 				streamingServiceId,
 				movieInfo.url,
 			);
@@ -300,27 +298,45 @@ async function findStreamingServiceId(
 	return service?.id ?? null;
 }
 
-async function findOrCreateMovie(tx: Tx, title: string): Promise<number> {
-	const [existing] = await tx
-		.select()
-		.from(moviesTable)
-		.where(eq(moviesTable.title, title));
-	if (existing) return existing.id;
-
-	const [created] = await tx.insert(moviesTable).values({ title }).returning();
+async function createMovie(tx: Tx, title: string): Promise<number> {
+	const [created] = await tx
+		.insert(moviesTable)
+		.values({ title })
+		.returning({ id: moviesTable.id });
 	return created.id;
 }
 
 async function createMovieService(
 	tx: Tx,
-	movieId: number,
+	title: string,
 	streamingServiceId: number,
 	watchUrl: string,
 ): Promise<number> {
+	const [existing] = await tx
+		.select({
+			id: movieServicesTable.id,
+			watchUrl: movieServicesTable.watchUrl,
+		})
+		.from(movieServicesTable)
+		.innerJoin(moviesTable, eq(movieServicesTable.movieId, moviesTable.id))
+		.where(
+			and(
+				eq(moviesTable.title, title),
+				eq(movieServicesTable.streamingServiceId, streamingServiceId),
+				eq(movieServicesTable.watchUrl, watchUrl),
+			),
+		);
+
+	if (existing) {
+		return existing.id;
+	}
+
+	const movieId = await createMovie(tx, title);
 	const [created] = await tx
 		.insert(movieServicesTable)
 		.values({ movieId, streamingServiceId, watchUrl })
-		.returning();
+		.returning({ id: movieServicesTable.id });
+
 	return created.id;
 }
 
