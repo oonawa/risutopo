@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import LoginInputForm from "./LoginInputForm";
-import Loading from "./Loading";
+import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { sendLoginCode } from "@/app/login/actions/sendLoginCode";
 import { verifyLoginCode } from "@/app/login/actions/verifyLoginCode";

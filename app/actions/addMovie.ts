@@ -11,35 +11,26 @@ import {
 } from "@/db/schema";
 import type { Result } from "@/app/types/Result";
 import type { Tx } from "@/db/client";
+import type { MovieFormError } from "../types/MovieInputForm/MovieFormError";
+import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
 import { SUPPORTED_SERVICES } from "@/app/consts";
-import type { SupportedServiceSlug } from "@/app/consts";
+import type { MovieInputValues } from "../types/MovieInputForm/MovieInputValues";
+import type { MovieInfo } from "../types/MovieInputForm/MovieInfo";
 import { movieShareLinkSchema } from "../movieShareLinkSchema";
 import { movieInfoSchema } from "../movieInfoSchema";
 
-type MovieInfo = {
-	title: string;
-	url: string;
-	serviceSlug: SupportedServiceSlug;
-};
+const STREAMING_SERVICE_ERROR_MESSAGE =
+	"ストリーミングサービスを読み取れませんでした。もう一度やり直してください。";
 
 type Args = {
 	listId: number | null;
-} & (
-	| {
-			mobile: { shareLink: string };
-			browser?: never;
-	  }
-	| {
-			browser: { title: string; url: string };
-			mobile?: never;
-	  }
-);
+} & MovieInputValues;
 
 export async function addMovie({
 	listId,
 	mobile,
 	browser,
-}: Args): Promise<Result<MovieInfo>> {
+}: Args): Promise<Result<MovieInfo, MovieFormError>> {
 	const movieInfoResult = mobile
 		? buildMovieInfoFromMobile(mobile.shareLink)
 		: buildMovieInfoFromBrowser(browser);
@@ -64,8 +55,7 @@ export async function addMovie({
 		return {
 			success: false,
 			error: {
-				message:
-					"ストリーミングサービスを読み取れませんでした。もう一度やり直してください。",
+				message: STREAMING_SERVICE_ERROR_MESSAGE,
 			},
 		};
 	}
@@ -80,11 +70,6 @@ export async function addMovie({
 			);
 			await createListMovie(tx, listId, movieServiceId);
 		});
-
-		return {
-			success: true,
-			data: movieInfo,
-		};
 	} catch (err) {
 		console.error(err);
 
@@ -93,6 +78,11 @@ export async function addMovie({
 			error: { message: "すみませんが、もう一度やり直してください。" },
 		};
 	}
+
+	return {
+		success: true,
+		data: movieInfo,
+	};
 }
 
 function validateMovieShareLink(shareLink: string) {
@@ -103,12 +93,14 @@ function validateMovieInfo(title: string, url: string) {
 	return movieInfoSchema.safeParse({ title, url });
 }
 
-function buildMovieInfoFromMobile(shareLink: string): Result<MovieInfo> {
+function buildMovieInfoFromMobile(
+	shareLink: string,
+): Result<MovieInfo, MovieFormError> {
 	const result = validateMovieShareLink(shareLink);
 	if (!result.success) {
 		return {
 			success: false,
-			error: { message: "もう一度やり直してください。" },
+			error: result.error,
 		};
 	}
 
@@ -122,27 +114,12 @@ function buildMovieInfoFromMobile(shareLink: string): Result<MovieInfo> {
 		};
 	}
 
-	const hostname = parseHostname(url);
-	if (!hostname) {
-		return {
-			success: false,
-			error: {
-				message: "URLを読み取れませんでした。もう一度やり直してください。",
-			},
-		};
+	const matcherResult = resolveMatcherFromUrl(url);
+	if (!matcherResult.success) {
+		return matcherResult;
 	}
 
-	const matcher = findMatcher(hostname);
-	if (!matcher) {
-		return {
-			success: false,
-			error: {
-				message: "URLを読み取れませんでした。もう一度やり直してください。",
-			},
-		};
-	}
-
-	const movieInfo = buildMovieInfo(url, matcher, shareLink);
+	const movieInfo = buildMovieInfo(url, matcherResult.data, shareLink);
 	if (!movieInfo) {
 		return {
 			success: false,
@@ -157,7 +134,7 @@ function buildMovieInfoFromMobile(shareLink: string): Result<MovieInfo> {
 
 function buildMovieInfoFromBrowser(
 	browser: { title: string; url: string } | undefined,
-): Result<MovieInfo> {
+): Result<MovieInfo, MovieFormError> {
 	if (!browser) {
 		return {
 			success: false,
@@ -169,28 +146,13 @@ function buildMovieInfoFromBrowser(
 	if (!result.success) {
 		return {
 			success: false,
-			error: { message: "もう一度やり直してください。" },
+			error: result.error,
 		};
 	}
 
-	const hostname = parseHostname(browser.url);
-	if (!hostname) {
-		return {
-			success: false,
-			error: {
-				message: "URLを読み取れませんでした。もう一度やり直してください。",
-			},
-		};
-	}
-
-	const matcher = findMatcher(hostname);
-	if (!matcher) {
-		return {
-			success: false,
-			error: {
-				message: "URLを読み取れませんでした。もう一度やり直してください。",
-			},
-		};
+	const matcherResult = resolveMatcherFromUrl(browser.url);
+	if (!matcherResult.success) {
+		return matcherResult;
 	}
 
 	return {
@@ -198,13 +160,15 @@ function buildMovieInfoFromBrowser(
 		data: {
 			title: normalizeTitle(browser.title),
 			url: browser.url,
-			serviceSlug: matcher.slug,
+			serviceSlug: matcherResult.data.slug,
+			serviceName: matcherResult.data.name,
 		},
 	};
 }
 
 type ServiceMatcher = {
 	slug: SupportedServiceSlug;
+	name: SupportedServiceName;
 	matchUrl(hostname: string): boolean;
 	extractTitle(text: string): string | null;
 };
@@ -212,24 +176,28 @@ function serviceMatchers(): ServiceMatcher[] {
 	return [
 		{
 			slug: SUPPORTED_SERVICES.NETFLIX.slug,
+			name: SUPPORTED_SERVICES.NETFLIX.name,
 			matchUrl: (hostname) =>
 				hostname.includes(SUPPORTED_SERVICES.NETFLIX.hostname),
 			extractTitle: (text) => text.match(/「\s*(.+?)\s*」/)?.[1] ?? null,
 		},
 		{
 			slug: SUPPORTED_SERVICES.U_NEXT.slug,
+			name: SUPPORTED_SERVICES.U_NEXT.name,
 			matchUrl: (hostname) =>
 				hostname.includes(SUPPORTED_SERVICES.U_NEXT.hostname),
 			extractTitle: (text) => text.match(/「(.+?)」/)?.[1] ?? null,
 		},
 		{
 			slug: SUPPORTED_SERVICES.HULU.slug,
+			name: SUPPORTED_SERVICES.HULU.name,
 			matchUrl: (hostname) =>
 				hostname.includes(SUPPORTED_SERVICES.HULU.hostname),
 			extractTitle: (text) => text.match(/「(.+?)」/)?.[1] ?? null,
 		},
 		{
 			slug: SUPPORTED_SERVICES.PRIME_VIDEO.slug,
+			name: SUPPORTED_SERVICES.PRIME_VIDEO.name,
 			matchUrl: (hostname) =>
 				hostname.includes(SUPPORTED_SERVICES.PRIME_VIDEO.hostname),
 			extractTitle: (text) =>
@@ -239,6 +207,7 @@ function serviceMatchers(): ServiceMatcher[] {
 		},
 		{
 			slug: SUPPORTED_SERVICES.DISNEY_PLUS.slug,
+			name: SUPPORTED_SERVICES.DISNEY_PLUS.name,
 			matchUrl: (hostname) =>
 				hostname.includes(SUPPORTED_SERVICES.DISNEY_PLUS.hostname),
 			extractTitle: (text) => text.match(/「(.+?)」/)?.[1] ?? null,
@@ -256,6 +225,33 @@ function parseHostname(url: string): string | null {
 	} catch {
 		return null;
 	}
+}
+
+function resolveMatcherFromUrl(url: string): Result<ServiceMatcher> {
+	const hostname = parseHostname(url);
+	if (!hostname) {
+		return {
+			success: false,
+			error: {
+				message: "URLを読み取れませんでした。もう一度やり直してください。",
+			},
+		};
+	}
+
+	const matcher = findMatcher(hostname);
+	if (!matcher) {
+		return {
+			success: false,
+			error: {
+				message: STREAMING_SERVICE_ERROR_MESSAGE,
+			},
+		};
+	}
+
+	return {
+		success: true,
+		data: matcher,
+	};
 }
 
 function findMatcher(hostname: string): ServiceMatcher | null {
@@ -285,7 +281,12 @@ function buildMovieInfo(
 	const rawTitle = matcher.extractTitle(text);
 	if (!rawTitle) return null;
 	const title = normalizeTitle(rawTitle);
-	return { title, url, serviceSlug: matcher.slug };
+	return {
+		title,
+		url,
+		serviceSlug: matcher.slug,
+		serviceName: matcher.name,
+	};
 }
 
 async function findStreamingServiceId(

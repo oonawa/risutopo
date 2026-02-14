@@ -33,5 +33,5 @@ export const movieShareLinkSchema = z.object({
 			const hostname = parseHostname(url);
 			if (!hostname) return false;
 			return isSupportedHost(hostname);
-		}, "対応していないサービスのリンクです。"),
+		}, "このサイトは対応外です。"),
 });
