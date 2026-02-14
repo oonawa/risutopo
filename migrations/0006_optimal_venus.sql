@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `movie_services_movie_id_streaming_service_id_unique` ON `movie_services_table` (`movieId`,`streamingServiceId`);

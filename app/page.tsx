@@ -1,9 +1,12 @@
 import { headers } from "next/headers";
-import MovieTitleForm from "@/components/MovieInputForm";
-import PcForm from "@/components/MovieInputForm/PcForm";
-import MobileForm from "@/components/MovieInputForm/MobileForm";
+import { verifySessionToken } from "@/lib/auth";
+import { getUserMovieList } from "@/app/actions/getUserMovieListId";
+import MovieInputForm from "./components/MovieInputForm";
 
 export default async function Home() {
+	const isVerified = await verifySessionToken();
+	const listId = isVerified ? await getUserMovieList(isVerified.userId) : null;
+
 	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") || "";
 
@@ -13,11 +16,10 @@ export default async function Home() {
 
 	return (
 		<div className="h-dvh w-dvw flex items-center justify-center">
-			<MovieTitleForm
+			<MovieInputForm
 				initialIsMobile={isMobileUA}
 				userAgent={userAgent}
-				PcForm={<PcForm />}
-				MobileForm={<MobileForm />}
+				listId={listId}
 			/>
 		</div>
 	);
