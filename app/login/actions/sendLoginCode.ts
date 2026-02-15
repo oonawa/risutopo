@@ -189,7 +189,7 @@ async function sendLoginMail({
 		from:
 			process.env.NODE_ENV === "development"
 				? "onboarding@resend.dev"
-				: "りすとぽっと <risutopo.vercel.app>",
+				: "りすとぽっと <hi@risutopo.com>",
 		to: email,
 		subject: "【りすとぽっと】ログインコードをお送りします",
 		react: LoginMailTemplate({ loginCode, url }),
