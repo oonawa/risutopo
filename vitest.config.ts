@@ -9,5 +9,6 @@ export default defineConfig({
 		environment: "jsdom",
 		env: dotenv.config({ path: ".env.test" }).parsed,
 		setupFiles: ["./tests/helpers/setup.ts"],
+		maxWorkers: 1,
 	},
 });

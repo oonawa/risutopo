@@ -2,7 +2,7 @@
 
 import type { Result } from "@/app/types/Result";
 import { cookies, headers } from "next/headers";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { eq, and, gt } from "drizzle-orm";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
@@ -129,10 +129,12 @@ export async function verifyLoginCode(
 
 				const tempToken = generateTempSessionToken();
 
+				const expiresAt = addMinutes(now, 15);
+
 				await insertTempToken({
 					tx,
-					tempToken: generateTempSessionToken(),
-					expiresAt: addMinutes(now, 15),
+					tempToken,
+					expiresAt,
 					email: founded.email,
 					deviceId,
 					createdAt: now,

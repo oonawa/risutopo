@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { eq, and } from "drizzle-orm";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { Resend } from "resend";
 import { checkRateLimit, recordAttempt } from "@/lib/rateLimit";
 import type { Result } from "@/app/types/Result";
