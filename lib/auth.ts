@@ -1,30 +1,26 @@
-import { cookies } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
 import crypto from "node:crypto";
 import { db } from "@/db/client";
 import { authTokensTable } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
+import { cookies } from "next/headers";
 
-function getSecretKey(): Uint8Array {
-	const secret = process.env.JWT_SECRET;
-	if (!secret) {
-		throw new Error("JWT_SECRET is not defined");
-	}
-	return new TextEncoder().encode(secret);
-}
-
-export async function verifySessionToken(): Promise<{
+export async function verifySessionToken({
+	sessionToken,
+	now,
+}: {
+	sessionToken?: string;
+	now: Date;
+}): Promise<{
 	userId: number;
 	email: string;
 	deviceId: string;
 } | null> {
-	try {
-		const cookieStore = await cookies();
-		const sessionToken = cookieStore.get("session_token")?.value;
-		if (!sessionToken) {
-			return null;
-		}
+	if (!sessionToken) {
+		return null;
+	}
 
+	try {
 		const secretKey = getSecretKey();
 		const { payload } = await jwtVerify(sessionToken, secretKey, {
 			algorithms: ["HS256"],
@@ -49,7 +45,6 @@ export async function verifySessionToken(): Promise<{
 				return null;
 			}
 
-			const now = new Date();
 			const [record] = await db
 				.select({
 					userId: authTokensTable.userId,
@@ -86,18 +81,20 @@ export async function verifySessionToken(): Promise<{
 	}
 }
 
-export async function verifyTempSessionToken(): Promise<{
+export async function verifyTempSessionToken({
+	tempToken,
+	now,
+}: {
+	tempToken?: string;
+	now: Date;
+}): Promise<{
 	email: string;
 } | null> {
+	if (!tempToken) {
+		return null;
+	}
+
 	try {
-		const cookieStore = await cookies();
-		const tempToken = cookieStore.get("temp_session_token")?.value;
-
-		if (!tempToken) {
-			return null;
-		}
-
-		const now = new Date();
 		const [record] = await db
 			.select({
 				email: authTokensTable.email,
@@ -122,9 +119,24 @@ export async function verifyTempSessionToken(): Promise<{
 	}
 }
 
-export async function isAuthenticated(): Promise<boolean> {
-	const payload = await verifySessionToken();
-	return payload !== null;
+export async function isAuthenticated() {
+	const cookieStore = await cookies();
+	const sessionToken = cookieStore.get("session_token")?.value;
+
+	const payload = await verifySessionToken({
+		sessionToken,
+		now: new Date(),
+	});
+
+	return payload;
+}
+
+function getSecretKey(): Uint8Array {
+	const secret = process.env.JWT_SECRET;
+	if (!secret) {
+		throw new Error("JWT_SECRET is not defined");
+	}
+	return new TextEncoder().encode(secret);
 }
 
 export async function generateSessionToken({
