@@ -31,9 +31,28 @@ export async function addMovie({
 	mobile,
 	browser,
 }: Args): Promise<Result<MovieInfo, MovieFormError>> {
+	if (mobile) {
+		const result = movieShareLinkSchema.safeParse({ value: mobile.shareLink });
+		if (!result.success) {
+			return {
+				success: false,
+				error: result.error,
+			};
+		}
+	} else if (browser) {
+		const { title, url } = browser;
+		const result = movieInfoSchema.safeParse({ title, url });
+		if (!result.success) {
+			return {
+				success: false,
+				error: result.error,
+			};
+		}
+	}
+
 	const movieInfoResult = mobile
 		? buildMovieInfoFromMobile(mobile.shareLink)
-		: buildMovieInfoFromBrowser(browser);
+		: buildMovieInfoFromBrowser({ title: browser.title, url: browser.url });
 
 	if (!movieInfoResult.success) {
 		return movieInfoResult;
@@ -51,6 +70,7 @@ export async function addMovie({
 	const streamingServiceId = await findStreamingServiceId(
 		movieInfo.serviceSlug,
 	);
+
 	if (!streamingServiceId) {
 		return {
 			success: false,
@@ -85,25 +105,9 @@ export async function addMovie({
 	};
 }
 
-function validateMovieShareLink(shareLink: string) {
-	return movieShareLinkSchema.safeParse({ value: shareLink });
-}
-
-function validateMovieInfo(title: string, url: string) {
-	return movieInfoSchema.safeParse({ title, url });
-}
-
 function buildMovieInfoFromMobile(
 	shareLink: string,
 ): Result<MovieInfo, MovieFormError> {
-	const result = validateMovieShareLink(shareLink);
-	if (!result.success) {
-		return {
-			success: false,
-			error: result.error,
-		};
-	}
-
 	const url = extractUrl(shareLink);
 	if (!url) {
 		return {
@@ -132,25 +136,14 @@ function buildMovieInfoFromMobile(
 	return { success: true, data: movieInfo };
 }
 
-function buildMovieInfoFromBrowser(
-	browser: { title: string; url: string } | undefined,
-): Result<MovieInfo, MovieFormError> {
-	if (!browser) {
-		return {
-			success: false,
-			error: { message: "すみませんが、もう一度やり直してください。" },
-		};
-	}
-
-	const result = validateMovieInfo(browser.title, browser.url);
-	if (!result.success) {
-		return {
-			success: false,
-			error: result.error,
-		};
-	}
-
-	const matcherResult = resolveMatcherFromUrl(browser.url);
+function buildMovieInfoFromBrowser({
+	title,
+	url,
+}: {
+	title: string;
+	url: string;
+}): Result<MovieInfo, MovieFormError> {
+	const matcherResult = resolveMatcherFromUrl(url);
 	if (!matcherResult.success) {
 		return matcherResult;
 	}
@@ -158,8 +151,8 @@ function buildMovieInfoFromBrowser(
 	return {
 		success: true,
 		data: {
-			title: normalizeTitle(browser.title),
-			url: browser.url,
+			title: normalizeTitle(title),
+			url: url,
 			serviceSlug: matcherResult.data.slug,
 			serviceName: matcherResult.data.name,
 		},

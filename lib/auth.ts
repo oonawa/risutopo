@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { db } from "@/db/client";
 import { authTokensTable } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
@@ -21,7 +21,6 @@ export async function verifySessionToken(): Promise<{
 	try {
 		const cookieStore = await cookies();
 		const sessionToken = cookieStore.get("session_token")?.value;
-
 		if (!sessionToken) {
 			return null;
 		}
