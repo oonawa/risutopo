@@ -15,9 +15,10 @@ type UserIdFormData = z.infer<typeof userIdSchema>;
 
 type Props = {
 	email: string;
+	token: string;
 };
 
-export default function RegstarForm({ email }: Props) {
+export default function RegistarForm({ email, token }: Props) {
 	const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 	const [isDuplicate, setIsDuplicate] = useState(false);
 	const [serverErrorMessage, setServerErrorMessage] = useState<string>("");
@@ -74,7 +75,14 @@ export default function RegstarForm({ email }: Props) {
 	}, []);
 
 	const onSubmit = async (data: UserIdFormData) => {
-		const result = await registerUser({ userId: data.userId, email });
+
+
+		const result = await registerUser({
+			userId: data.userId,
+			email,
+			tempToken: token,
+			now: new Date(),
+		});
 		if (result.success) {
 			return redirect("/");
 		}
