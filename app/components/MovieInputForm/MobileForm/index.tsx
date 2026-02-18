@@ -38,7 +38,7 @@ export default function MobileForm({ onSubmit, storageErrorMessage }: Props) {
 	return (
 		<div className="w-full md:px-10 flex flex-col justify-center items-center">
 			<div className="w-full flex flex-col gap-4">
-				<div className="text-foreground-dark-2 flex justify-center pt-2 pb-4 font-medium">
+				<div className="flex justify-center pt-2 pb-4 font-medium">
 					作品の共有リンクで登録
 				</div>
 				<FormTextarea

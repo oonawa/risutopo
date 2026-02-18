@@ -148,8 +148,8 @@ export default function TutorialContent() {
 						onClick={() => handleServiceSelect(service.serviceName)}
 						className={`px-4 py-2 rounded-md text-xs md:text-sm font-bold transition-colors ${
 							selectedServiceName === service.serviceName
-								? "bg-background-light-2 text-foreground-dark-1"
-								: "bg-background-light-1 text-foreground-dark-3 hover:bg-background-light-2"
+								? "bg-background-light-3 text-foreground-dark-1"
+								: "bg-background-light-1 text-foreground-dark-3"
 						}`}
 					>
 						{service.serviceName}
