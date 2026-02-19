@@ -17,7 +17,7 @@ export default function Tutorial({ title, children }: Props) {
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
-				<div className="w-full pt-4 text-background-light-2">
+				<div className="w-full pt-4 text-foreground-dark-2">
 					<div className="cursor-pointer w-fit flex justify-start items-center gap-1">
 						<Question className="size-5" />
 						<span className="text-xs">何をすればいい？</span>
