@@ -1,8 +1,5 @@
-"use client";
-
-import { useState } from "react";
 import type z from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { movieInfoSchema } from "@/app/movieInfoSchema";
 import FormTextarea from "../FormTextarea";
@@ -11,23 +8,34 @@ import FormSubmitButton from "../FormSubmitButton";
 type MovieInfoValues = z.infer<typeof movieInfoSchema>;
 
 type Props = {
+	disabled: boolean;
 	onSubmit: (input: {
 		values: MovieInfoValues;
 		isValid: boolean;
-	}) => void;
+	}) => Promise<void>;
 	storageErrorMessage: string | null;
 };
 
-export default function PcForm({ onSubmit, storageErrorMessage }: Props) {
-	const [formDisabled, setFormDisabled] = useState(false);
-
+export default function PcForm({
+	disabled,
+	onSubmit,
+	storageErrorMessage,
+}: Props) {
 	const {
 		register,
 		getValues,
+		setValue,
+		control,
 		formState: { errors, isValid },
 	} = useForm<MovieInfoValues>({
 		resolver: zodResolver(movieInfoSchema),
 		mode: "onChange",
+	});
+
+	const [title, url] = useWatch({
+		control,
+		name: ["title", "url"],
+		defaultValue: { title: "", url: "" },
 	});
 
 	return (
@@ -40,7 +48,7 @@ export default function PcForm({ onSubmit, storageErrorMessage }: Props) {
 					<FormTextarea
 						placeholder="ジュラシック・パーク"
 						id="title"
-						disabled={formDisabled}
+						disabled={disabled}
 						{...register("title")}
 					/>
 					{errors.title && <p>{errors.title.message}</p>}
@@ -48,7 +56,7 @@ export default function PcForm({ onSubmit, storageErrorMessage }: Props) {
 						className="min-h-[3lh] break-all"
 						placeholder="https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=cp"
 						id="watch-url"
-						disabled={formDisabled}
+						disabled={disabled}
 						{...register("url")}
 					/>
 					{errors.url && <p>{errors.url.message}</p>}
@@ -57,11 +65,12 @@ export default function PcForm({ onSubmit, storageErrorMessage }: Props) {
 			</div>
 
 			<FormSubmitButton
-				onClick={() => {
-					setFormDisabled(true)
-					onSubmit({ values: getValues(), isValid });
+				onClick={async () => {
+					await onSubmit({ values: getValues(), isValid });
+					setValue("title", "");
+					setValue("url", "");
 				}}
-				disabled={!isValid || formDisabled}
+				disabled={!title || !url || !isValid || disabled}
 			/>
 		</div>
 	);

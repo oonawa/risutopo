@@ -1,6 +1,5 @@
 import type z from "zod";
-import { useCallback, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Tutorial from "../Tutorial";
 import TutorialContent from "../Tutorial/Content";
@@ -11,29 +10,32 @@ import FormSubmitButton from "../FormSubmitButton";
 type MovieShareLinkValue = z.infer<typeof movieShareLinkSchema>;
 
 type Props = {
-	onSubmit: (input: {
-		shareLink: string;
-		isValid: boolean;
-	}) => Promise<void>;
+	disabled: boolean;
+	onSubmit: (input: { shareLink: string; isValid: boolean }) => Promise<void>;
 	storageErrorMessage: string | null;
 };
 
-export default function MobileForm({ onSubmit, storageErrorMessage }: Props) {
-	const [formDisabled, setFormDisabled] = useState(false);
-
+export default function MobileForm({
+	disabled,
+	onSubmit,
+	storageErrorMessage,
+}: Props) {
 	const {
 		register,
 		getValues,
+		setValue,
+		control,
 		formState: { errors, isValid },
 	} = useForm<MovieShareLinkValue>({
 		resolver: zodResolver(movieShareLinkSchema),
 		mode: "onChange",
 	});
 
-	const handler = useCallback(() => {
-		setFormDisabled(true);
-		onSubmit({ shareLink: getValues("value"), isValid });
-	}, [getValues, isValid, onSubmit]);
+	const [value] = useWatch({
+		control,
+		name: ["value"],
+		defaultValue: { value: "" },
+	});
 
 	return (
 		<div className="w-full md:px-10 flex flex-col justify-center items-center">
@@ -44,7 +46,7 @@ export default function MobileForm({ onSubmit, storageErrorMessage }: Props) {
 				<FormTextarea
 					className="min-h-[calc(4lh+(calc(var(--spacing)*4)))] placeholder-shown:text-ellipsis placeholder-shown:overflow-hidden wrap-break-word"
 					placeholder="「 ジュラシック・パーク 」 をNetflix で今 す ぐチ ェ ッ クhttps://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more"
-					disabled={formDisabled}
+					disabled={disabled}
 					{...register("value")}
 				/>
 				{errors.value && <p>{errors.value.message}</p>}
@@ -57,8 +59,11 @@ export default function MobileForm({ onSubmit, storageErrorMessage }: Props) {
 
 			<FormSubmitButton
 				className="w-full sm:w-fit"
-				onClick={handler}
-				disabled={!isValid || formDisabled}
+				onClick={async () => {
+					await onSubmit({ shareLink: getValues("value"), isValid });
+					setValue("value", "");
+				}}
+				disabled={!value || !isValid || disabled}
 			/>
 		</div>
 	);
