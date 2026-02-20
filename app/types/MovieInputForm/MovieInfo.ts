@@ -5,4 +5,12 @@ export type MovieInfo = {
 	url: string;
 	serviceSlug: SupportedServiceSlug;
 	serviceName: SupportedServiceName;
+	details?: {
+		officialTitle: string;
+		backgroundImage: string;
+		posterImage: string;
+		director: string[];
+		runnningMinutes: number;
+		releaseYear: number;
+	};
 };

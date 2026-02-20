@@ -30,3 +30,6 @@ export type SupportedServiceName =
 	(typeof SUPPORTED_SERVICES)[keyof typeof SUPPORTED_SERVICES]["name"];
 export type SupportedServiceSlug =
 	(typeof SUPPORTED_SERVICES)[keyof typeof SUPPORTED_SERVICES]["slug"];
+
+// TMDB APIの戻り値は `/` から始まる
+export const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";

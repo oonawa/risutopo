@@ -1,22 +1,19 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { AnimatePresence } from "motion/react";
+import { useCallback, useState, useTransition } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import { useActiveTab } from "@/app/hooks/useActiveTab";
 import { useMovieForm } from "@/app/hooks/useMovieForm";
 import type { MovieInputValues } from "@/app/types/MovieInputForm/MovieInputValues";
-import { useFormStatus } from "@/app/hooks/useFormStatus";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
-import Loading from "@/components/Loading";
 import Tab from "./Tab";
 import PcForm from "./PcForm";
 import MobileForm from "./MobileForm";
-import TransitionContainer from "./TransitionContainer";
-import Success from "./Result/Success";
-import Failed from "./Result/Failed";
-import type { MovieFormError } from "@/app/types/MovieInputForm/MovieFormError";
+import RegisteredMovie from "./Result/RegisteredMovie";
+import { Button } from "@/components/ui/button";
+import CrossIcon from "@/components/ui/Icons/CrossIcon";
 
 type Props = {
 	initialIsMobile: boolean;
@@ -43,9 +40,7 @@ export default function MovieInputForm({
 	userAgent,
 	listId,
 }: Props) {
-	const [registeredMovie, setRegisteredMovie] = useState<MovieInfo>();
-	const [failedInput, setFailedInput] = useState<MovieInputValues>();
-	const [errorMessage, setErrorMessage] = useState<MovieFormError>();
+	const [isPending, startTransition] = useTransition();
 
 	const { activeTab, setActiveTab } = useActiveTab({
 		initialIsMobile,
@@ -59,10 +54,12 @@ export default function MovieInputForm({
 		debounceMs,
 	});
 
-	const { status, initStatus, transitionFormStatus } = useFormStatus(500);
+	const [registeredMovie, setRegisteredMovie] = useState<MovieInfo | null>(
+		null,
+	);
 
 	const handleSubmit = useCallback(
-		async <TInput,>(
+		<TInput,>(
 			isValid: boolean,
 			input: TInput,
 			buildValues: HandleBuildValues<TInput>,
@@ -71,30 +68,24 @@ export default function MovieInputForm({
 				return;
 			}
 
-			const values = buildValues(input);
-			const result = await handleValueChange({
-				values,
-			});
+			startTransition(async () => {
+				const values = buildValues(input);
+				const result = await handleValueChange({
+					values,
+				});
 
-			if (result === null) {
-				return;
-			}
+				if (result === null || !result.success) {
+					return;
+				}
 
-			if (result.success) {
 				setRegisteredMovie(result.data);
-			} else {
-				setErrorMessage(result.error);
-				setFailedInput(values);
-			}
-			transitionFormStatus(result.success);
+			});
 		},
-		[handleValueChange, transitionFormStatus],
+		[handleValueChange],
 	);
 
 	const handleMobileSubmit = useCallback(
 		async ({ shareLink, isValid }: MobileSubmitInput) => {
-			transitionFormStatus();
-
 			return await handleSubmit(
 				isValid,
 				{ shareLink },
@@ -103,83 +94,80 @@ export default function MovieInputForm({
 				}),
 			);
 		},
-		[handleSubmit, transitionFormStatus],
+		[handleSubmit],
 	);
 
 	const handlePcChange = useCallback(
 		async ({ values, isValid }: PcChangeInput) => {
-			transitionFormStatus();
-
 			return await handleSubmit(isValid, values, (browserValues) => ({
 				browser: browserValues,
 			}));
 		},
-		[handleSubmit, transitionFormStatus],
+		[handleSubmit],
 	);
 
-	return (
-		<div className="flex flex-col items-center justify-center md:p-4 w-[90dvw] md:w-[60dvw] max-w-150 h-full max-h-[70dvh]">
-			<div className="w-full h-full flex items-center">
-				<AnimatePresence mode="wait">
-					{status === "idle" ? (
-						<TransitionContainer className="w-full pt-10" key="idle">
-							{activeTab === "pc" ? (
-								<PcForm
-									onSubmit={handlePcChange}
-									storageErrorMessage={storageErrorMessage}
-								/>
-							) : (
-								<MobileForm
-									onSubmit={handleMobileSubmit}
-									storageErrorMessage={storageErrorMessage}
-								/>
-							)}
+	const handleCloseResult = useCallback(() => {
+		setRegisteredMovie(null);
+	}, []);
 
-							<div className="flex justify-center pt-20">
-								<div className="max-w-[50dvw] grid grid-cols-2 gap-2 border border-background-light-1 rounded-full p-1 bg-background">
-									<Tab
-										onClick={() => setActiveTab("pc")}
-										isActive={activeTab === "pc"}
-									>
-										<WebBrowserIcon className="size-5" />
-									</Tab>
-									<Tab
-										onClick={() => setActiveTab("mobile")}
-										isActive={activeTab === "mobile"}
-									>
-										<MobileDeviceIcon className="size-5" />
-									</Tab>
-								</div>
-							</div>
-						</TransitionContainer>
-					) : status === "sending" ? (
-						<TransitionContainer
-							className="w-full flex justify-center"
-							key="sending"
-						>
-							<Loading />
-						</TransitionContainer>
-					) : status === "success" && registeredMovie ? (
-						<TransitionContainer className="w-full" key="success">
-							<Success movie={registeredMovie} onClick={initStatus} />
-						</TransitionContainer>
-					) : status === "failed" && failedInput ? (
-						<TransitionContainer className="w-full" key="failed">
-							{errorMessage && (
-								<Failed
-									onClick={initStatus}
-									error={errorMessage}
-									inputValues={failedInput}
-								/>
-							)}
-						</TransitionContainer>
+	return (
+		<>
+			<div className="flex flex-col items-center justify-center md:p-4 w-[90dvw] md:w-[60dvw] max-w-150 h-full max-h-[70dvh]">
+				<div className="w-full h-full flex items-center">
+					{activeTab === "pc" ? (
+						<PcForm
+							disabled={isPending}
+							onSubmit={handlePcChange}
+							storageErrorMessage={storageErrorMessage}
+						/>
 					) : (
-						<TransitionContainer key="failed-fallback">
-							失敗しました。もう一度お試しください。
-						</TransitionContainer>
+						<MobileForm
+							disabled={isPending}
+							onSubmit={handleMobileSubmit}
+							storageErrorMessage={storageErrorMessage}
+						/>
 					)}
-				</AnimatePresence>
+				</div>
+				<div className="max-w-[50dvw] grid grid-cols-2 gap-2 border border-background-light-1 rounded-full p-1 bg-background">
+					<Tab onClick={() => setActiveTab("pc")} isActive={activeTab === "pc"}>
+						<WebBrowserIcon className="size-5" />
+					</Tab>
+					<Tab
+						onClick={() => setActiveTab("mobile")}
+						isActive={activeTab === "mobile"}
+					>
+						<MobileDeviceIcon className="size-5" />
+					</Tab>
+				</div>
 			</div>
-		</div>
+
+			<AnimatePresence>
+				{isPending || registeredMovie ? (
+					<motion.div
+						key="registered-movie"
+						initial={{ y: "100%", height: 0 }}
+						animate={{ y: 0, height: "90dvh" }}
+						exit={{ y: "100%", height: 0 }}
+						transition={{ duration: 0.2, ease: "easeOut" }}
+						className="fixed inset-x-0 bottom-0 z-50 sm:w-[50dvw] mx-auto"
+					>
+						<div className="flex flex-col h-full">
+							<div className="absolute w-full -top-12 flex justify-end pb-4 pr-4">
+								<Button
+									variant={"outline"}
+									className="aspect-square rounded-full has-[>svg]:p-2"
+									onClick={handleCloseResult}
+								>
+									<CrossIcon />
+								</Button>
+							</div>
+							<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto">
+								{registeredMovie && <RegisteredMovie movie={registeredMovie} />}
+							</div>
+						</div>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
+		</>
 	);
 }
