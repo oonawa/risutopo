@@ -1,11 +1,10 @@
 export type MovieDetail = {
 	id: number;
-	poster_path: `/${string}`;
-	adult: boolean;
+	poster_path: string;
 	overview: string;
 	release_date: string;
 	title: string;
-	backdrop_path: `/${string}`;
+	backdrop_path: string;
 	runtime: number;
 };
 

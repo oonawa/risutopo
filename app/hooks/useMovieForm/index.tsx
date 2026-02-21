@@ -1,47 +1,33 @@
 import { useCallback } from "react";
 import { useLocalStorage } from "./useLocalStorage";
-import { useDebounce } from "./useDebounce";
-import { addMovie } from "@/app/actions/addMovie";
-import type { MovieInputValues } from "@/app/types/MovieInputForm/MovieInputValues";
+import { storeMovie } from "@/app/actions/storeMovie";
+import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 
 type Props = {
 	listId: number | null;
-	debounceMs: number;
 };
 
-type HandleValueChangeInput = {
-	values: MovieInputValues;
-};
-
-export function useMovieForm({ listId, debounceMs }: Props) {
+export function useMovieForm({ listId }: Props) {
 	const { storageErrorMessage, appendMovieToStorage } = useLocalStorage();
 
-	const handleSubmit = useCallback(
-		async (values: MovieInputValues) => {
-			const result = await addMovie({
-				listId,
-				...values,
-			});
+	const registerMovie = useCallback(
+		async (movie: MovieInfo) => {
+			appendMovieToStorage(movie);
 
-			if (result.success) {
-				appendMovieToStorage(result.data);
+			if (!listId) {
+				return {
+					success: true,
+					data: movie,
+				};
 			}
-			return result;
+
+			return await storeMovie({
+				listId,
+				movie,
+			});
 		},
 		[listId, appendMovieToStorage],
 	);
 
-	const debouncedHandleSubmit = useDebounce({
-		handleSubmit,
-		delayMs: debounceMs,
-	});
-
-	const handleValueChange = useCallback(
-		({ values }: HandleValueChangeInput) => {
-			return debouncedHandleSubmit(values);
-		},
-		[debouncedHandleSubmit],
-	);
-
-	return { storageErrorMessage, handleValueChange };
+	return { storageErrorMessage, registerMovie };
 }

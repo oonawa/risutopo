@@ -10,13 +10,8 @@ export function useLocalStorage() {
 	const [storageErrorMessage, setStorageErrorMessage] = useState<string>("");
 
 	const appendMovieToStorage = useCallback(
-		({ title, url, serviceName, serviceSlug }: MovieInfo) => {
-			appendMovieService({
-				title,
-				url,
-				serviceName,
-				serviceSlug,
-			});
+		(movie: MovieInfo) => {
+			appendMovieService(movie);
 
 			setStorageErrorMessage("");
 		},

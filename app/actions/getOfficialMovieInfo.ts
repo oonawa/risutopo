@@ -1,11 +1,58 @@
 "use server";
 
+import { and, eq, gte } from "drizzle-orm";
+import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
+import { db } from "@/db/client";
+import { moviesTable } from "@/db/schema";
 import type { Result } from "../types/Result";
 import type { MovieDetail } from "../types/MovieInputForm/MovieApi/MovieApiResponse";
 
+type OfficialMovieInfo = MovieDetail & {
+	movieId: number;
+};
+
 export async function getOfficialMovieInfo(
 	externalApiMovieId: number,
-): Promise<Result<MovieDetail>> {
+	now: Date,
+): Promise<Result<OfficialMovieInfo>> {
+	const externalDatabaseMovieId = externalApiMovieId.toString();
+	const cacheThreshold = new Date(now);
+	cacheThreshold.setMonth(cacheThreshold.getMonth() - 6);
+
+	const [cachedMovie] = await db
+		.select({
+			movieId: moviesTable.id,
+			title: moviesTable.title,
+			backgroundImage: moviesTable.backgroundImage,
+			posterImage: moviesTable.posterImage,
+			runnningMinutes: moviesTable.runnningMinutes,
+			releaseDate: moviesTable.releaseDate,
+			overview: moviesTable.overview,
+		})
+		.from(moviesTable)
+		.where(
+			and(
+				eq(moviesTable.externalDatabaseMovieId, externalDatabaseMovieId),
+				gte(moviesTable.cachedAt, cacheThreshold),
+			),
+		);
+
+	if (cachedMovie) {
+		return {
+			success: true,
+			data: {
+				movieId: cachedMovie.movieId,
+				id: externalApiMovieId,
+				title: cachedMovie.title,
+				backdrop_path: cachedMovie.backgroundImage,
+				poster_path: cachedMovie.posterImage,
+				runtime: cachedMovie.runnningMinutes,
+				release_date: cachedMovie.releaseDate,
+				overview: cachedMovie.overview,
+			},
+		};
+	}
+
 	if (!process.env.TMDB_API_KEY) {
 		console.error("TMDB_API_KEYがセットされていません");
 
@@ -39,9 +86,45 @@ export async function getOfficialMovieInfo(
 	}
 
 	const data: MovieDetail = await response.json();
+	const releaseYear = new Date(data.release_date).getFullYear();
+
+	await db
+		.insert(moviesTable)
+		.values({
+			externalDatabaseMovieId,
+			title: data.title,
+			backgroundImage: TMDB_IMAGE_BASE_URL + data.backdrop_path,
+			posterImage: TMDB_IMAGE_BASE_URL + data.poster_path,
+			runnningMinutes: data.runtime,
+			releaseDate: data.release_date,
+			releaseYear,
+			cachedAt: now,
+			overview: data.overview,
+		})
+		.onConflictDoUpdate({
+			target: moviesTable.externalDatabaseMovieId,
+			set: {
+				title: data.title,
+				backgroundImage: TMDB_IMAGE_BASE_URL + data.backdrop_path,
+				posterImage: TMDB_IMAGE_BASE_URL + data.poster_path,
+				runnningMinutes: data.runtime,
+				releaseDate: data.release_date,
+				releaseYear,
+				cachedAt: now,
+				overview: data.overview,
+			},
+		});
+
+	const [insertedOrUpdatedMovie] = await db
+		.select({ movieId: moviesTable.id })
+		.from(moviesTable)
+		.where(eq(moviesTable.externalDatabaseMovieId, externalDatabaseMovieId));
 
 	return {
 		success: true,
-		data,
+		data: {
+			movieId: insertedOrUpdatedMovie.movieId,
+			...data,
+		},
 	};
 }

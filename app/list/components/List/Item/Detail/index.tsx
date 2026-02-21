@@ -1,43 +1,55 @@
-import type { SupportedServiceName } from "@/app/consts";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-	DialogDescription,
-} from "@/components/ui/dialog";
-import ListItemCard from "../Card";
+"use client";
 
-export default function ListItemDetail({
-	title,
-	serviceName,
-	watchUrl,
-}: {
-	title: string;
-	serviceName: SupportedServiceName;
-	watchUrl: string;
-}) {
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
+import { useMovieAtom } from "@/app/list/state/useMovieAtom";
+import { Button } from "@/components/ui/button";
+import CrossIcon from "@/components/ui/Icons/CrossIcon";
+import MovieCard from "@/app/components/MovieCard";
+
+type Props = {
+	listId: number;
+};
+
+export default function ListItemDetail({ listId }: Props) {
+	const router = useRouter();
+	const { movie, setMovie } = useMovieAtom();
+
 	return (
-		<Dialog>
-			<DialogTrigger asChild>
-				<ListItemCard title={title} serviceName={serviceName} />
-			</DialogTrigger>
-			<DialogContent className="p-0 max-w-[calc(100%-1rem)] sm:max-w-[40%]">
-				<DialogHeader className="w-full gap-0 text-left">
-					<div className="w-full bg-background-dark-1 rounded-tl-lg rounded-tr-lg aspect-3/1"></div>
-
-					<div className="px-4">
-						<span className="p-2 block">{serviceName}</span>
-						<DialogTitle className="text-left">
-							<a href={watchUrl} target="_blank" rel="noopener noreferrer">
-								{title}
-							</a>
-						</DialogTitle>
+		<AnimatePresence>
+			{movie && (
+				<motion.div
+					key="registered-movie"
+					initial={{ y: "100%", height: 0 }}
+					animate={{ y: 0, height: "90dvh" }}
+					exit={{ y: "100%", height: 0 }}
+					transition={{ duration: 0.2, ease: "easeOut" }}
+					className="fixed inset-x-0 bottom-0 z-50 w-dvw md:max-w-145 mx-auto"
+				>
+					<div className="flex flex-col h-full">
+						<div className="absolute w-full -top-12 flex justify-end pb-4 pr-4">
+							<Button
+								variant={"outline"}
+								className="aspect-square rounded-full has-[>svg]:p-2"
+								onClick={() => {
+									setMovie(null);
+								}}
+							>
+								<CrossIcon />
+							</Button>
+						</div>
+						<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto">
+							<MovieCard
+								listId={listId}
+								movie={movie}
+								onStoreSuccess={() => {
+									router.refresh();
+								}}
+							/>
+						</div>
 					</div>
-				</DialogHeader>
-				<DialogDescription></DialogDescription>
-			</DialogContent>
-		</Dialog>
+				</motion.div>
+			)}
+		</AnimatePresence>
 	);
 }
