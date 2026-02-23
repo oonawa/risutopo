@@ -2,21 +2,22 @@ import crypto from "crypto";
 import type { MovieSearchApiResponse } from "@/app/types/MovieInputForm/MovieApi/MovieApiResponse";
 import { Button } from "@/components/ui/button";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
+import ArrowCircleLeftIcon from "@/components/ui/Icons/ArrowCircleLeftIcon";
 
 type Props = {
 	searchResult: MovieSearchApiResponse;
 	title: string;
-	onClick: (page: number) => void;
+	onSearch: (page: number) => void;
 	onSelect: (externalApiMovieId: number) => void;
 	onCancel: () => void;
 	isSearchPending: boolean;
 	isGetMoviePending: boolean;
 };
 
-export default function MovieSearchResult({
+export default function MovieCardSearchResult({
 	searchResult,
 	title,
-	onClick,
+	onSearch,
 	onSelect,
 	onCancel,
 	isSearchPending,
@@ -31,6 +32,12 @@ export default function MovieSearchResult({
 				<span className="text-foreground-dark-3/60 text-xs font-bold">
 					The Movie Database（TMDB）を使用しています
 				</span>
+			</div>
+			<div className="w-full flex justify-start pb-4 text-foreground-dark-3">
+				<Button onClick={onCancel} className="px-0 text-xs">
+					<ArrowCircleLeftIcon />
+					もどる
+				</Button>
 			</div>
 			<ul className="flex flex-col gap-4 relative">
 				{searchResult.results.map((result) => (
@@ -97,22 +104,20 @@ export default function MovieSearchResult({
 							isGetMoviePending
 						}
 						onClick={() => {
-							onClick(searchResult.page + 1);
+							onSearch(searchResult.page + 1);
 						}}
 					>
 						もっと見る
 					</Button>
 				</div>
 			) : (
-				<div className="px-4 pt-10 flex flex-col items-center gap-4 text-foreground-dark-3">
+				<div className="pt-10 flex flex-col items-center gap-4 text-foreground-dark-3">
 					<span className="text-sm font-bold">
 						見つからなくても、問題なくお使いいただけます。
 					</span>
 					<div className="w-full flex justify-start">
 						<Button onClick={onCancel} className="px-0 text-xs">
-							<span className="rounded-full w-6 flex items-center justify-center aspect-square border border-background-light-2">
-								←
-							</span>
+							<ArrowCircleLeftIcon />
 							もどる
 						</Button>
 					</div>

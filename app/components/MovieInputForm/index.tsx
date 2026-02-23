@@ -1,19 +1,17 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import { useActiveTab } from "@/app/hooks/useActiveTab";
-import { useMovieForm } from "@/app/hooks/useMovieForm";
-import type { MovieInputValues } from "@/app/types/MovieInputForm/MovieInputValues";
+import { Button } from "@/components/ui/button";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
+import CrossIcon from "@/components/ui/Icons/CrossIcon";
 import Tab from "./Tab";
 import PcForm from "./PcForm";
 import MobileForm from "./MobileForm";
-import RegisteredMovie from "./Result/RegisteredMovie";
-import { Button } from "@/components/ui/button";
-import CrossIcon from "@/components/ui/Icons/CrossIcon";
+import MovieCard from "../MovieCard";
 
 type Props = {
 	initialIsMobile: boolean;
@@ -21,93 +19,24 @@ type Props = {
 	listId: number | null;
 };
 
-type SharedHandlerInput = {
-	isValid: boolean;
-};
-
-type MobileSubmitInput = {
-	shareLink: string;
-} & SharedHandlerInput;
-
-type PcChangeInput = {
-	values: { title: string; url: string };
-} & SharedHandlerInput;
-
-type HandleBuildValues<TInput> = (input: TInput) => MovieInputValues;
-
 export default function MovieInputForm({
 	initialIsMobile,
 	userAgent,
 	listId,
 }: Props) {
-	const [isPending, startTransition] = useTransition();
-
 	const { activeTab, setActiveTab } = useActiveTab({
 		initialIsMobile,
 		userAgent,
 	});
 
-	const debounceMs = 300;
+	const [extractedMovie, setExtractedMovie] = useState<MovieInfo | null>(null);
 
-	const { storageErrorMessage, handleValueChange } = useMovieForm({
-		listId,
-		debounceMs,
-	});
-
-	const [registeredMovie, setRegisteredMovie] = useState<MovieInfo | null>(
-		null,
-	);
-
-	const handleSubmit = useCallback(
-		<TInput,>(
-			isValid: boolean,
-			input: TInput,
-			buildValues: HandleBuildValues<TInput>,
-		) => {
-			if (!isValid) {
-				return;
-			}
-
-			startTransition(async () => {
-				const values = buildValues(input);
-				const result = await handleValueChange({
-					values,
-				});
-
-				if (result === null || !result.success) {
-					return;
-				}
-
-				setRegisteredMovie(result.data);
-			});
-		},
-		[handleValueChange],
-	);
-
-	const handleMobileSubmit = useCallback(
-		async ({ shareLink, isValid }: MobileSubmitInput) => {
-			return await handleSubmit(
-				isValid,
-				{ shareLink },
-				({ shareLink: link }) => ({
-					mobile: { shareLink: link },
-				}),
-			);
-		},
-		[handleSubmit],
-	);
-
-	const handlePcChange = useCallback(
-		async ({ values, isValid }: PcChangeInput) => {
-			return await handleSubmit(isValid, values, (browserValues) => ({
-				browser: browserValues,
-			}));
-		},
-		[handleSubmit],
-	);
+	const handleExtract = (extracted: MovieInfo | null) => {
+		setExtractedMovie(extracted);
+	};
 
 	const handleCloseResult = useCallback(() => {
-		setRegisteredMovie(null);
+		setExtractedMovie(null);
 	}, []);
 
 	return (
@@ -116,15 +45,13 @@ export default function MovieInputForm({
 				<div className="w-full h-full flex items-center">
 					{activeTab === "pc" ? (
 						<PcForm
-							disabled={isPending}
-							onSubmit={handlePcChange}
-							storageErrorMessage={storageErrorMessage}
+							disabled={extractedMovie !== null}
+							handleExtract={handleExtract}
 						/>
 					) : (
 						<MobileForm
-							disabled={isPending}
-							onSubmit={handleMobileSubmit}
-							storageErrorMessage={storageErrorMessage}
+							disabled={extractedMovie !== null}
+							handleExtract={handleExtract}
 						/>
 					)}
 				</div>
@@ -142,14 +69,14 @@ export default function MovieInputForm({
 			</div>
 
 			<AnimatePresence>
-				{isPending || registeredMovie ? (
+				{extractedMovie && (
 					<motion.div
 						key="registered-movie"
 						initial={{ y: "100%", height: 0 }}
 						animate={{ y: 0, height: "90dvh" }}
 						exit={{ y: "100%", height: 0 }}
 						transition={{ duration: 0.2, ease: "easeOut" }}
-						className="fixed inset-x-0 bottom-0 z-50 sm:w-[50dvw] mx-auto"
+						className="fixed inset-x-0 bottom-0 z-50 w-dvw md:max-w-145 mx-auto"
 					>
 						<div className="flex flex-col h-full">
 							<div className="absolute w-full -top-12 flex justify-end pb-4 pr-4">
@@ -162,11 +89,13 @@ export default function MovieInputForm({
 								</Button>
 							</div>
 							<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto">
-								{registeredMovie && <RegisteredMovie movie={registeredMovie} />}
+								{extractedMovie && (
+									<MovieCard listId={listId} movie={extractedMovie} />
+								)}
 							</div>
 						</div>
 					</motion.div>
-				) : null}
+				)}
 			</AnimatePresence>
 		</>
 	);

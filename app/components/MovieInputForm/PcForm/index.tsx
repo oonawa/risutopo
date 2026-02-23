@@ -1,42 +1,31 @@
 import type z from "zod";
-import { useForm, useWatch } from "react-hook-form";
+import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { movieInfoSchema } from "@/app/movieInfoSchema";
+import { useExtractMovieInfo } from "@/app/hooks/useExtractMovieInfo";
+import { Button } from "@/components/ui/button";
 import FormTextarea from "../FormTextarea";
-import FormSubmitButton from "../FormSubmitButton";
 
 type MovieInfoValues = z.infer<typeof movieInfoSchema>;
 
 type Props = {
 	disabled: boolean;
-	onSubmit: (input: {
-		values: MovieInfoValues;
-		isValid: boolean;
-	}) => Promise<void>;
-	storageErrorMessage: string | null;
+	handleExtract: (extracted: MovieInfo | null) => void;
 };
 
-export default function PcForm({
-	disabled,
-	onSubmit,
-	storageErrorMessage,
-}: Props) {
+export default function PcForm({ disabled, handleExtract }: Props) {
 	const {
 		register,
 		getValues,
 		setValue,
-		control,
 		formState: { errors, isValid },
 	} = useForm<MovieInfoValues>({
 		resolver: zodResolver(movieInfoSchema),
 		mode: "onChange",
 	});
 
-	const [title, url] = useWatch({
-		control,
-		name: ["title", "url"],
-		defaultValue: { title: "", url: "" },
-	});
+	const { extractMovieInfoFromBrowser } = useExtractMovieInfo();
 
 	return (
 		<div className="w-full md:px-10 flex flex-col justify-center items-center">
@@ -60,18 +49,31 @@ export default function PcForm({
 						{...register("url")}
 					/>
 					{errors.url && <p>{errors.url.message}</p>}
-					{storageErrorMessage && <p>{storageErrorMessage}</p>}
 				</div>
 			</div>
 
-			<FormSubmitButton
-				onClick={async () => {
-					await onSubmit({ values: getValues(), isValid });
-					setValue("title", "");
-					setValue("url", "");
-				}}
-				disabled={!title || !url || !isValid || disabled}
-			/>
+			<div className="w-full flex justify-end pt-4">
+				<Button
+					className="border-background-light-3 hover:border-background-light-4 hover:bg-background-light-1"
+					variant={"outline"}
+					onClick={() => {
+						if (!isValid) {
+							handleExtract(null);
+							return;
+						}
+
+						const extracted = extractMovieInfoFromBrowser(getValues());
+						handleExtract(extracted);
+
+						setTimeout(() => {
+							setValue("title", "");
+							setValue("url", "");
+						}, 5000);
+					}}
+				>
+					登録
+				</Button>
+			</div>
 		</div>
 	);
 }

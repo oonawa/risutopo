@@ -1,0 +1,1 @@
+ALTER TABLE `movies_table` ADD `overview` text;

@@ -1,26 +1,40 @@
 import { useActionState, startTransition } from "react";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import type { MovieSearchApiResponse } from "@/app/types/MovieInputForm/MovieApi/MovieApiResponse";
-import MovieInfoContent from "./MovieInfoContent";
 import { searchOfficialMovieInfo } from "@/app/actions/searchOfficialMovieInfo";
 import { getOfficialMovieDirectorsInfo } from "@/app/actions/getOfficialMovieDirectorsInfo";
 import { getOfficialMovieInfo } from "@/app/actions/getOfficialMovieInfo";
-import MovieSearchResult from "./MovieSearchResult";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
 
 type Props = {
 	movie: MovieInfo;
 };
 
-export default function RegisteredMovie({ movie }: Props) {
+export const useExternalMovieDatabase = ({ movie }: Props) => {
+	const normalizeTitle = (title: string) => {
+		return title
+			.replace(/･/g, "・")
+			.replace(/\(/g, "（")
+			.replace(/\)/g, "）")
+			.replace(/\s+/g, " ")
+			.replace(/（吹替版）/g, "")
+			.replace(/（字幕版）/g, "")
+			.trim();
+	};
+
+	const normalizedTitle = normalizeTitle(movie.title);
+
 	const [searchResult, searchResultAction, isSearchPending] = useActionState(
 		async (prev: MovieSearchApiResponse | null, page: number | null) => {
 			if (!page) {
 				return null;
 			}
 
-			const result = await searchOfficialMovieInfo(movie.title, String(page));
-			// const result = await searchOfficialMovieInfo("スター", String(page));
+			const result = await searchOfficialMovieInfo(
+				normalizedTitle,
+				String(page),
+			);
+
 			if (!result.success) {
 				return prev;
 			}
@@ -37,45 +51,59 @@ export default function RegisteredMovie({ movie }: Props) {
 		null,
 	);
 
-	const [selectedMovie, getOfficialMovieAction, isGetMoviePending] =
-		useActionState(
-			async (prev: MovieInfo | null, externalApiMovieId: number | null) => {
+	const [currentMovieInfo, getOfficialMovieAction, isGetMoviePending] =
+		useActionState<MovieInfo | null, number | null>(
+			async (_prev: MovieInfo | null, externalApiMovieId: number | null) => {
 				if (!externalApiMovieId) {
 					return null;
 				}
 
+				const now = new Date();
+
 				const [officialMovieInfo, directorsInfo] = await Promise.all([
-					getOfficialMovieInfo(externalApiMovieId),
-					getOfficialMovieDirectorsInfo(externalApiMovieId),
+					getOfficialMovieInfo(externalApiMovieId, now),
+					getOfficialMovieDirectorsInfo(externalApiMovieId, now),
 				]);
 
 				if (!officialMovieInfo.success || !directorsInfo.success) {
 					return null;
 				}
 
-				const { title, release_date, runtime, poster_path, backdrop_path } =
-					officialMovieInfo.data;
+				const {
+					movieId,
+					title,
+					release_date,
+					runtime,
+					poster_path,
+					backdrop_path,
+					overview
+				} = officialMovieInfo.data;
+
 				const directors = directorsInfo.data;
 
 				return {
+					listItemId: movie.listItemId,
 					title: movie.title,
 					url: movie.url,
 					serviceSlug: movie.serviceSlug,
 					serviceName: movie.serviceName,
 					details: {
+						movieId,
 						officialTitle: title,
 						backgroundImage: TMDB_IMAGE_BASE_URL + backdrop_path,
 						posterImage: TMDB_IMAGE_BASE_URL + poster_path,
 						runnningMinutes: runtime,
 						releaseYear: new Date(release_date).getFullYear(),
 						director: directors,
+						externalDatabaseMovieId: externalApiMovieId,
+						overview
 					},
 				};
 			},
 			null,
 		);
 
-	const handleClick = (page = 1) => {
+	const handleSearch = (page = 1) => {
 		startTransition(() => {
 			searchResultAction(page);
 		});
@@ -87,8 +115,6 @@ export default function RegisteredMovie({ movie }: Props) {
 		});
 	};
 
-	const handleEnter = () => {};
-
 	const handleSelectCnacel = () => {
 		startTransition(() => {
 			getOfficialMovieAction(null);
@@ -97,43 +123,19 @@ export default function RegisteredMovie({ movie }: Props) {
 
 	const handleSearchCancel = () => {
 		startTransition(() => {
-			searchResultAction(null)
-		})
-	}
+			searchResultAction(null);
+		});
+	};
 
-	return (
-		<div className="w-full h-full flex justify-center">
-			<div className="w-full pt-8 px-4">
-				{searchResult && !selectedMovie && (
-					<MovieSearchResult
-						onClick={handleClick}
-						onSelect={handleSelect}
-						onCancel={handleSearchCancel}
-						title={movie.title}
-						searchResult={searchResult}
-						isSearchPending={isSearchPending}
-						isGetMoviePending={isGetMoviePending}
-					/>
-				)}
-
-				{!searchResult && movie && (
-					<MovieInfoContent
-						isSearchPending={isSearchPending}
-						onClick={handleClick}
-						movie={movie}
-					/>
-				)}
-
-				{searchResult && selectedMovie && (
-					<MovieInfoContent
-						isSearchPending={isSearchPending}
-						onClick={handleClick}
-						onEnter={handleEnter}
-						onCancel={handleSelectCnacel}
-						movie={selectedMovie}
-					/>
-				)}
-			</div>
-		</div>
-	);
-}
+	return {
+		currentMovieInfo,
+		normalizedTitle,
+		handleSearch,
+		handleSelect,
+		handleSelectCnacel,
+		handleSearchCancel,
+		searchResult,
+		isSearchPending,
+		isGetMoviePending,
+	};
+};
