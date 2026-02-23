@@ -6,6 +6,7 @@ export type MovieInfo = {
 	url: string;
 	serviceSlug: SupportedServiceSlug;
 	serviceName: SupportedServiceName;
+	isWatched?: boolean;
 	details?: {
 		movieId: number;
 		officialTitle: string;

@@ -18,6 +18,7 @@ type ListItemRow = {
 	url: string;
 	serviceSlug: MovieInfo["serviceSlug"];
 	serviceName: MovieInfo["serviceName"];
+	watchStatus: 0 | 1;
 	movieId: number | null;
 	officialTitle: string | null;
 	backgroundImage: string | null;
@@ -46,6 +47,7 @@ export async function getUserMovieList(userId: number): Promise<UserMovieList> {
 			url: listItemsTable.watchUrl,
 			serviceSlug: streamingServicesTable.slug,
 			serviceName: streamingServicesTable.name,
+			watchStatus: listItemsTable.watchStatus,
 			movieId: listItemsTable.movieId,
 			officialTitle: moviesTable.title,
 			backgroundImage: moviesTable.backgroundImage,
@@ -106,6 +108,7 @@ export async function getUserMovieList(userId: number): Promise<UserMovieList> {
 				url: row.url,
 				serviceSlug: row.serviceSlug,
 				serviceName: row.serviceName,
+				isWatched: row.watchStatus === 1,
 			};
 		}
 
@@ -124,6 +127,7 @@ export async function getUserMovieList(userId: number): Promise<UserMovieList> {
 				url: row.url,
 				serviceSlug: row.serviceSlug,
 				serviceName: row.serviceName,
+				isWatched: row.watchStatus === 1,
 			};
 		}
 
@@ -138,6 +142,7 @@ export async function getUserMovieList(userId: number): Promise<UserMovieList> {
 			url: row.url,
 			serviceSlug: row.serviceSlug,
 			serviceName: row.serviceName,
+			isWatched: row.watchStatus === 1,
 			details: {
 				movieId: row.movieId,
 				officialTitle: row.officialTitle,

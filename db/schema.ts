@@ -74,7 +74,9 @@ export const listItemsTable = sqliteTable("list_items_table", {
 		.references(() => streamingServicesTable.id),
 	movieId: int().references(() => moviesTable.id),
 	watchUrl: text().notNull(),
+	watchStatus: int().notNull().$type<0 | 1>().default(0),
 	titleOnService: text().notNull(),
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 });
 
 export const listMoviesTable = sqliteTable("list_movies_table", {

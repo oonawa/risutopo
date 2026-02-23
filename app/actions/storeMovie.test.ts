@@ -18,12 +18,19 @@ async function assertStoreMovieResult({
 	listId,
 	movie,
 	expectedTitle,
+	isWatched = false,
 }: {
 	listId: number;
 	movie: MovieInfo;
 	expectedTitle: string;
+	isWatched?: boolean;
 }) {
-	const result = await storeMovie({ listId, movie });
+	const result = await storeMovie({
+		listId,
+		movie,
+		isWatched,
+		now: new Date(),
+	});
 
 	expect(result.success).toBe(true);
 	if (!result.success) {
@@ -35,6 +42,7 @@ async function assertStoreMovieResult({
 	expect(result.data.url).toBe(movie.url);
 	expect(result.data.serviceSlug).toBe(movie.serviceSlug);
 	expect(result.data.serviceName).toBe(movie.serviceName);
+	expect(result.data.isWatched).toBe(isWatched);
 	expect(result.data.details).toEqual(movie.details);
 	return result.data;
 }
