@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useMovieAtom } from "@/app/list/state/useMovieAtom";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import { useExternalMovieDatabase } from "@/app/hooks/useExternalMovieDatabase";
 import { useSubmitMovie } from "@/app/hooks/useSubmitMovie";
@@ -11,10 +12,18 @@ import MovieCardDetail from "./Detail";
 type Props = {
 	movie: MovieInfo;
 	listId: number | null;
-	onStoreSuccess?: () => void;
+	onSuccess?: () => void;
 };
 
-export default function MovieCard({ movie, listId, onStoreSuccess }: Props) {
+type CtaMode = "watch" | "register";
+type ResultState = "idle" | "success" | "error";
+
+export default function MovieCard({ movie, listId, onSuccess }: Props) {
+	const { setMovie } = useMovieAtom();
+
+	const hasHandledSubmitSuccessRef = useRef(false);
+	const hasHandledRemoveSuccessRef = useRef(false);
+
 	const {
 		currentMovieInfo,
 		searchResult,
@@ -23,24 +32,74 @@ export default function MovieCard({ movie, listId, onStoreSuccess }: Props) {
 		handleSearchCancel,
 		handleSelectCnacel,
 		normalizedTitle,
-		isSearchPending,
-		isGetMoviePending,
+		isSearchExternalMovieDatabasePending,
+		isFetchExternalMovieDatabasePending,
 	} = useExternalMovieDatabase({ movie });
 
-	const { result, isSubmitPending, submit } = useSubmitMovie();
-
-	useEffect(() => {
-		if (result?.success) {
-			onStoreSuccess?.();
-		}
-	}, [result, onStoreSuccess]);
+	const { submitResult, isSubmitPending, submit, removeResult, isRemovePending, remove } =
+		useSubmitMovie();
 
 	const submitErrorMessage =
-		result && !result.success ? result.error.message : undefined;
+		submitResult && !submitResult.success
+			? submitResult.error.message
+			: undefined;
+
+	const resultState: ResultState =
+		submitResult?.success === true
+			? "success"
+			: submitResult?.success === false
+				? "error"
+				: "idle";
+	const isSubmitSuccess = submitResult?.success === true;
+	const isRemoveSuccess = removeResult?.success === true;
+
+	useEffect(() => {
+		if (isSubmitSuccess && !hasHandledSubmitSuccessRef.current) {
+			hasHandledSubmitSuccessRef.current = true;
+			onSuccess?.();
+		}
+
+		if (!isSubmitSuccess) {
+			hasHandledSubmitSuccessRef.current = false;
+		}
+	}, [isSubmitSuccess, onSuccess]);
+
+	useEffect(() => {
+		if (isRemoveSuccess && !hasHandledRemoveSuccessRef.current) {
+			hasHandledRemoveSuccessRef.current = true;
+			onSuccess?.();
+			setMovie(null);
+		}
+
+		if (!isRemoveSuccess) {
+			hasHandledRemoveSuccessRef.current = false;
+		}
+	}, [isRemoveSuccess, onSuccess, setMovie]);
 
 	const handleSubmit = () => {
 		submit({ movie: currentMovieInfo ?? movie, listId });
 	};
+
+	const handleRemove = () => {
+		const listItemId = currentMovieInfo?.listItemId ?? movie.listItemId;
+		if (listItemId) {
+			remove({
+				listId,
+				listItemId,
+			});
+		}
+	};
+
+	const selectedMovieId = currentMovieInfo?.details?.externalDatabaseMovieId;
+	const defaultMovieId = movie.details?.externalDatabaseMovieId;
+	const isSameMovie =
+		selectedMovieId !== undefined &&
+		defaultMovieId !== undefined &&
+		selectedMovieId === defaultMovieId;
+
+	const defaultDetailCtaMode: CtaMode =
+		movie.listItemId || movie.details ? "watch" : "register";
+	const selectedDetailCtaMode: CtaMode = "register";
 
 	return (
 		<div className="w-full flex justify-center">
@@ -60,8 +119,8 @@ export default function MovieCard({ movie, listId, onStoreSuccess }: Props) {
 								onCancel={handleSearchCancel}
 								title={normalizedTitle}
 								searchResult={searchResult}
-								isSearchPending={isSearchPending}
-								isGetMoviePending={isGetMoviePending}
+								isSearchPending={isSearchExternalMovieDatabasePending}
+								isGetMoviePending={isFetchExternalMovieDatabasePending}
 							/>
 						</motion.div>
 					)}
@@ -75,14 +134,19 @@ export default function MovieCard({ movie, listId, onStoreSuccess }: Props) {
 							transition={{ duration: 0.2, ease: "easeOut" }}
 						>
 							<MovieCardDetail
-								isSearchPending={isSearchPending}
+								ctaMode={defaultDetailCtaMode}
+								isSearchPending={isSearchExternalMovieDatabasePending}
 								isSubmitPending={isSubmitPending}
+								isRemovePending={isRemovePending}
 								onSearch={handleSearch}
 								onSubmit={handleSubmit}
+								onRemove={handleRemove}
+								onCancel={handleSelectCnacel}
 								movie={movie}
-								submitResult={result?.success}
+								resultState={resultState}
 								submitErrorMessage={submitErrorMessage}
 								isLoggedIn={listId !== null}
+								isSameMovie={isSameMovie}
 							/>
 						</motion.div>
 					)}
@@ -96,15 +160,19 @@ export default function MovieCard({ movie, listId, onStoreSuccess }: Props) {
 							transition={{ duration: 0.2, ease: "easeOut" }}
 						>
 							<MovieCardDetail
-								isSearchPending={isSearchPending}
+								ctaMode={selectedDetailCtaMode}
+								isSearchPending={isSearchExternalMovieDatabasePending}
 								isSubmitPending={isSubmitPending}
+								isRemovePending={isRemovePending}
 								onSearch={handleSearch}
 								onSubmit={handleSubmit}
+								onRemove={handleRemove}
 								onCancel={handleSelectCnacel}
 								movie={currentMovieInfo}
-								submitResult={result?.success}
+								resultState={resultState}
 								submitErrorMessage={submitErrorMessage}
 								isLoggedIn={listId !== null}
+								isSameMovie={isSameMovie}
 							/>
 						</motion.div>
 					)}

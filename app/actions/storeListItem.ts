@@ -19,7 +19,7 @@ type Args = {
 	now: Date;
 };
 
-export async function storeMovie({
+export async function storeListItem({
 	listId,
 	movie,
 	isWatched,
@@ -56,6 +56,7 @@ export async function storeMovie({
 	try {
 		const titleOnService = movie.title;
 		const listItemPublicId = movie.listItemId ?? crypto.randomUUID();
+		const createdAt = movie.listItemId ? movie.createdAt : now;
 
 		const storedMovie: MovieInfo = {
 			listItemId: listItemPublicId,
@@ -64,6 +65,7 @@ export async function storeMovie({
 			serviceSlug: streamingService.slug,
 			serviceName: streamingService.name,
 			isWatched,
+			createdAt,
 			...(movie.details
 				? {
 						details: {

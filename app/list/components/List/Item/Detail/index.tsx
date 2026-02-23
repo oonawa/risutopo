@@ -42,7 +42,7 @@ export default function ListItemDetail({ listId }: Props) {
 							<MovieCard
 								listId={listId}
 								movie={movie}
-								onStoreSuccess={() => {
+								onSuccess={() => {
 									router.refresh();
 								}}
 							/>

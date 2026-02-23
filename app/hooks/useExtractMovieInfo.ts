@@ -99,6 +99,7 @@ export function useExtractMovieInfo() {
 			url,
 			serviceSlug: matcher.slug,
 			serviceName: matcher.name,
+			createdAt: new Date(),
 		};
 	};
 
@@ -127,7 +128,7 @@ export function useExtractMovieInfo() {
 	}: {
 		title: string;
 		url: string;
-	}) => {
+	}): MovieInfo | null => {
 		const matcherResult = resolveMatcherFromUrl(url);
 		if (!matcherResult) {
 			return matcherResult;
@@ -138,6 +139,7 @@ export function useExtractMovieInfo() {
 			url,
 			serviceSlug: matcherResult.slug,
 			serviceName: matcherResult.name,
+			createdAt: new Date(),
 		};
 	};
 

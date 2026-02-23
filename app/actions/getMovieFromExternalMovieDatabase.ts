@@ -11,7 +11,7 @@ type OfficialMovieInfo = MovieDetail & {
 	movieId: number;
 };
 
-export async function getOfficialMovieInfo(
+export async function getMovieFromExternalMovieDatabase(
 	externalApiMovieId: number,
 	now: Date,
 ): Promise<Result<OfficialMovieInfo>> {

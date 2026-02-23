@@ -18,7 +18,7 @@ type Credits = {
 	crew: Crew[];
 };
 
-export async function getOfficialMovieDirectorsInfo(
+export async function getDirectorsFromExternalMovieDatabase(
 	externalApiMovieId: number,
 	now: Date,
 ): Promise<Result<string[]>> {

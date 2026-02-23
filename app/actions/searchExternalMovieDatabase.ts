@@ -3,7 +3,7 @@
 import type { Result } from "../types/Result";
 import type { MovieSearchApiResponse } from "../types/MovieInputForm/MovieApi/MovieApiResponse";
 
-export async function searchOfficialMovieInfo(
+export async function searchExternalMovieDatabase(
 	title: string,
 	page = "1",
 ): Promise<Result<MovieSearchApiResponse>> {

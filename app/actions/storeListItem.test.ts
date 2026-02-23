@@ -12,7 +12,7 @@ import {
 } from "@/db/schema";
 import type { MovieInfo } from "../types/MovieInputForm/MovieInfo";
 import { TMDB_IMAGE_BASE_URL } from "../consts";
-import { storeMovie } from "./storeMovie";
+import { storeListItem } from "./storeListItem";
 
 async function assertStoreMovieResult({
 	listId,
@@ -25,7 +25,7 @@ async function assertStoreMovieResult({
 	expectedTitle: string;
 	isWatched?: boolean;
 }) {
-	const result = await storeMovie({
+	const result = await storeListItem({
 		listId,
 		movie,
 		isWatched,
@@ -229,6 +229,7 @@ describe("storeMovie", () => {
 			url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
 			serviceSlug: "netflix",
 			serviceName: "Netflix",
+			createdAt: new Date(),
 		};
 
 		const storeResult = await assertStoreMovieResult({
@@ -303,6 +304,7 @@ describe("storeMovie", () => {
 			url: "https://watch.amazon.co.jp/detail?gti=amzn1.dv.gti.7ea9f6d9-bdc8-9b2e-97a9-c341306e36ef&territory=JP&ref_=share_ios_movie&r=web",
 			serviceSlug: "prime-video",
 			serviceName: "Prime Video",
+			createdAt: new Date(),
 			details: {
 				movieId: seededMovie.id,
 				...tmdbMovieDetails,

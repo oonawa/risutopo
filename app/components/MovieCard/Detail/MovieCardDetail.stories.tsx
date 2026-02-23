@@ -7,6 +7,7 @@ const movieWithoutDetails: MovieInfo = {
 	url: "https://video-share.unext.jp/video/title/SID0023081?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
 	serviceSlug: "unext",
 	serviceName: "U-NEXT",
+	createdAt: new Date(),
 };
 
 const movieWithDetails: MovieInfo = {
@@ -14,11 +15,14 @@ const movieWithDetails: MovieInfo = {
 	url: "https://video-share.unext.jp/video/title/SID0023081?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
 	serviceSlug: "unext",
 	serviceName: "U-NEXT",
+	createdAt: new Date(),
 	details: {
 		movieId: 1,
 		officialTitle: "トータル・リコール",
-		backgroundImage: "https://image.tmdb.org/t/p/original/uBHeAB2Ug9ELBzkMyls8CUjzn4i.jpg",
-		posterImage: "https://image.tmdb.org/t/p/original/urke73YPAKt3VIdTvj50Dzl9Lnf.jpg",
+		backgroundImage:
+			"https://image.tmdb.org/t/p/original/uBHeAB2Ug9ELBzkMyls8CUjzn4i.jpg",
+		posterImage:
+			"https://image.tmdb.org/t/p/original/urke73YPAKt3VIdTvj50Dzl9Lnf.jpg",
 		director: ["レン・ワイズマン"],
 		runnningMinutes: 118,
 		releaseYear: 2012,
@@ -32,12 +36,14 @@ const meta = {
 	title: "app/components/MovieCard/Detail/MovieCardDetail",
 	component: MovieCardDetail,
 	args: {
+		ctaMode: "register",
+		resultState: "idle",
 		onSearch: () => {},
 		onSubmit: () => {},
 		onCancel: () => {},
 		isSearchPending: false,
 		isSubmitPending: false,
-		submitResult: undefined,
+		isRemovePending: false,
 		isLoggedIn: true,
 	},
 	parameters: {
@@ -51,21 +57,31 @@ type Story = StoryObj<typeof meta>;
 export const WithoutDetails: Story = {
 	args: {
 		movie: movieWithoutDetails,
-		submitResult: undefined,
+		resultState: "idle",
 	},
 };
 
 export const WithDetailsIdle: Story = {
 	args: {
 		movie: movieWithDetails,
-		submitResult: undefined,
+		ctaMode: "watch",
+		resultState: "idle",
+	},
+};
+
+export const RegisterModeSameMovie: Story = {
+	args: {
+		movie: movieWithDetails,
+		ctaMode: "register",
+		resultState: "idle",
+		isSameMovie: true,
 	},
 };
 
 export const SubmitSuccessLoggedIn: Story = {
 	args: {
 		movie: movieWithDetails,
-		submitResult: true,
+		resultState: "success",
 		isLoggedIn: true,
 	},
 };
@@ -73,7 +89,7 @@ export const SubmitSuccessLoggedIn: Story = {
 export const SubmitSuccessGuest: Story = {
 	args: {
 		movie: movieWithDetails,
-		submitResult: true,
+		resultState: "success",
 		isLoggedIn: false,
 	},
 };
@@ -81,6 +97,6 @@ export const SubmitSuccessGuest: Story = {
 export const SubmitFailed: Story = {
 	args: {
 		movie: movieWithDetails,
-		submitResult: false,
+		resultState: "error",
 	},
 };
