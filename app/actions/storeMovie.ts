@@ -15,11 +15,15 @@ import type { MovieInfo } from "../types/MovieInputForm/MovieInfo";
 type Args = {
 	listId: number;
 	movie: MovieInfo;
+	isWatched: boolean;
+	now: Date;
 };
 
 export async function storeMovie({
 	listId,
 	movie,
+	isWatched,
+	now,
 }: Args): Promise<Result<MovieInfo, MovieFormError>> {
 	const [list] = await db
 		.select({ id: listsTable.id })
@@ -59,6 +63,7 @@ export async function storeMovie({
 			url: movie.url,
 			serviceSlug: streamingService.slug,
 			serviceName: streamingService.name,
+			isWatched,
 			...(movie.details
 				? {
 						details: {
@@ -75,6 +80,7 @@ export async function storeMovie({
 					streamingServiceId: streamingService.id,
 					movieId: movie.details?.movieId ?? null,
 					watchUrl: movie.url,
+					watchStatus: isWatched ? 1 : 0,
 					titleOnService,
 				})
 				.where(
@@ -90,7 +96,9 @@ export async function storeMovie({
 				streamingServiceId: streamingService.id,
 				movieId: movie.details?.movieId ?? null,
 				watchUrl: movie.url,
+				watchStatus: isWatched ? 1 : 0,
 				titleOnService,
+				createdAt: now,
 			});
 		}
 

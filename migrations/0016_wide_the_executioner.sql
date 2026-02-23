@@ -1,0 +1,21 @@
+PRAGMA foreign_keys=OFF;--> statement-breakpoint
+CREATE TABLE `__new_list_items_table` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`publicId` text NOT NULL,
+	`listId` integer NOT NULL,
+	`streamingServiceId` integer NOT NULL,
+	`movieId` integer,
+	`watchUrl` text NOT NULL,
+	`watchStatus` integer DEFAULT 0 NOT NULL,
+	`titleOnService` text NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`listId`) REFERENCES `lists_table`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`streamingServiceId`) REFERENCES `streaming_services_table`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`movieId`) REFERENCES `movies_table`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+INSERT INTO `__new_list_items_table`("id", "publicId", "listId", "streamingServiceId", "movieId", "watchUrl", "watchStatus", "titleOnService", "created_at") SELECT "id", "publicId", "listId", "streamingServiceId", "movieId", "watchUrl", "watchStatus", "titleOnService", "created_at" FROM `list_items_table`;--> statement-breakpoint
+DROP TABLE `list_items_table`;--> statement-breakpoint
+ALTER TABLE `__new_list_items_table` RENAME TO `list_items_table`;--> statement-breakpoint
+PRAGMA foreign_keys=ON;--> statement-breakpoint
+CREATE UNIQUE INDEX `list_items_table_publicId_unique` ON `list_items_table` (`publicId`);

@@ -2,7 +2,7 @@ import { useState, useTransition } from "react";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import type { Result } from "@/app/types/Result";
 import { storeMovie } from "@/app/actions/storeMovie";
-import { useLocalStorage } from "@/app/hooks/useMovieForm/useLocalStorage";
+import { useLocalStorage } from "@/app/hooks/useLocalStorage";
 
 type SubmitActionResult = Result<MovieInfo | { recommendedLogin: true }>;
 
@@ -32,7 +32,13 @@ export const useSubmitMovie = () => {
 				return;
 			}
 
-			const storeMovieResult = await storeMovie({ listId, movie: movie });
+			const storeMovieResult = await storeMovie({
+				listId,
+				movie,
+				now: new Date(),
+				isWatched: movie.isWatched ?? false,
+			});
+
 			if (!storeMovieResult.success) {
 				setResult({
 					success: false,
