@@ -30,6 +30,7 @@ export const appendMovieServiceAtom = atom(
 			{
 				title: payload.title,
 				url: payload.url,
+				createdAt: payload.createdAt,
 				serviceName: payload.serviceName,
 				serviceSlug: payload.serviceSlug,
 			},

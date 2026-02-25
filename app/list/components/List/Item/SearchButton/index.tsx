@@ -6,7 +6,6 @@ import { useMovieAtom } from "@/app/list/state/useMovieAtom";
 import { Button } from "@/components/ui/button";
 
 type SearchButtonProps = ComponentProps<"button"> & {
-	props?: ComponentProps<"button">;
 	movie: MovieInfo;
 };
 
@@ -20,11 +19,12 @@ export default function SearchButton({
 
 	return (
 		<Button
-			{...props}
 			className={className}
+			type="button"
 			onClick={() => {
 				setMovie(movie);
 			}}
+			{...props}
 		>
 			{children ?? "ポスター画像をさがす"}
 		</Button>

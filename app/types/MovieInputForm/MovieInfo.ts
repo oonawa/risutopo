@@ -7,6 +7,7 @@ export type MovieInfo = {
 	serviceSlug: SupportedServiceSlug;
 	serviceName: SupportedServiceName;
 	isWatched?: boolean;
+	createdAt: Date;
 	details?: {
 		movieId: number;
 		officialTitle: string;

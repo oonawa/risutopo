@@ -1,9 +1,9 @@
 import { useActionState, startTransition } from "react";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import type { MovieSearchApiResponse } from "@/app/types/MovieInputForm/MovieApi/MovieApiResponse";
-import { searchOfficialMovieInfo } from "@/app/actions/searchOfficialMovieInfo";
-import { getOfficialMovieDirectorsInfo } from "@/app/actions/getOfficialMovieDirectorsInfo";
-import { getOfficialMovieInfo } from "@/app/actions/getOfficialMovieInfo";
+import { searchExternalMovieDatabase } from "@/app/actions/searchExternalMovieDatabase";
+import { getDirectorsFromExternalMovieDatabase } from "@/app/actions/getDirectorsFromExternalMovieDatabase";
+import { getMovieFromExternalMovieDatabase } from "@/app/actions/getMovieFromExternalMovieDatabase";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
 
 type Props = {
@@ -24,13 +24,13 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 
 	const normalizedTitle = normalizeTitle(movie.title);
 
-	const [searchResult, searchResultAction, isSearchPending] = useActionState(
+	const [searchResult, searchExternalMovieDatabaseAction, isSearchExternalMovieDatabasePending] = useActionState(
 		async (prev: MovieSearchApiResponse | null, page: number | null) => {
 			if (!page) {
 				return null;
 			}
 
-			const result = await searchOfficialMovieInfo(
+			const result = await searchExternalMovieDatabase(
 				normalizedTitle,
 				String(page),
 			);
@@ -51,7 +51,7 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 		null,
 	);
 
-	const [currentMovieInfo, getOfficialMovieAction, isGetMoviePending] =
+	const [currentMovieInfo, fetchExternalMovieDatabaseAction, isFetchExternalMovieDatabasePending] =
 		useActionState<MovieInfo | null, number | null>(
 			async (_prev: MovieInfo | null, externalApiMovieId: number | null) => {
 				if (!externalApiMovieId) {
@@ -61,8 +61,8 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 				const now = new Date();
 
 				const [officialMovieInfo, directorsInfo] = await Promise.all([
-					getOfficialMovieInfo(externalApiMovieId, now),
-					getOfficialMovieDirectorsInfo(externalApiMovieId, now),
+					getMovieFromExternalMovieDatabase(externalApiMovieId, now),
+					getDirectorsFromExternalMovieDatabase(externalApiMovieId, now),
 				]);
 
 				if (!officialMovieInfo.success || !directorsInfo.success) {
@@ -87,6 +87,7 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 					url: movie.url,
 					serviceSlug: movie.serviceSlug,
 					serviceName: movie.serviceName,
+					createdAt: movie.createdAt,
 					details: {
 						movieId,
 						officialTitle: title,
@@ -105,25 +106,25 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 
 	const handleSearch = (page = 1) => {
 		startTransition(() => {
-			searchResultAction(page);
+			searchExternalMovieDatabaseAction(page);
 		});
 	};
 
 	const handleSelect = (externalApiMovieId: number) => {
 		startTransition(() => {
-			getOfficialMovieAction(externalApiMovieId);
+			fetchExternalMovieDatabaseAction(externalApiMovieId);
 		});
 	};
 
 	const handleSelectCnacel = () => {
 		startTransition(() => {
-			getOfficialMovieAction(null);
+			fetchExternalMovieDatabaseAction(null);
 		});
 	};
 
 	const handleSearchCancel = () => {
 		startTransition(() => {
-			searchResultAction(null);
+			searchExternalMovieDatabaseAction(null);
 		});
 	};
 
@@ -135,7 +136,7 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 		handleSelectCnacel,
 		handleSearchCancel,
 		searchResult,
-		isSearchPending,
-		isGetMoviePending,
+		isSearchExternalMovieDatabasePending,
+		isFetchExternalMovieDatabasePending,
 	};
 };
