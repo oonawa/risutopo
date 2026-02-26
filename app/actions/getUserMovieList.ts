@@ -5,12 +5,12 @@ import { db } from "@/db/client";
 import {
 	directorsTable,
 	listItemsTable,
-	listsTable,
 	movieDirectorsTable,
 	moviesTable,
 	streamingServicesTable,
 } from "@/db/schema";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { Result } from "../types/Result";
 
 type ListItemRow = {
 	listItemId: string;
@@ -30,17 +30,9 @@ type ListItemRow = {
 	externalDatabaseMovieId: string | null;
 };
 
-type UserMovieList = {
-	listId: number;
-	movies: MovieInfo[];
-};
-
-export async function getUserMovieList(userId: number): Promise<UserMovieList> {
-	const [list] = await db
-		.select({ id: listsTable.id })
-		.from(listsTable)
-		.where(eq(listsTable.userId, userId));
-
+export async function getUserMovieList(
+	listId: number,
+): Promise<Result<MovieInfo[]>> {
 	const rows: ListItemRow[] = await db
 		.select({
 			listItemId: listItemsTable.publicId,
@@ -65,7 +57,7 @@ export async function getUserMovieList(userId: number): Promise<UserMovieList> {
 			eq(listItemsTable.streamingServiceId, streamingServicesTable.id),
 		)
 		.leftJoin(moviesTable, eq(listItemsTable.movieId, moviesTable.id))
-		.where(eq(listItemsTable.listId, list.id))
+		.where(eq(listItemsTable.listId, listId))
 		.orderBy(desc(listItemsTable.id));
 
 	const movieIds = rows
@@ -163,7 +155,7 @@ export async function getUserMovieList(userId: number): Promise<UserMovieList> {
 	});
 
 	return {
-		listId: list.id,
-		movies,
+		success: true,
+		data: movies,
 	};
 }

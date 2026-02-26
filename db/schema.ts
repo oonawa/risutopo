@@ -1,4 +1,4 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { int, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
 
 export const usersTable = sqliteTable("users_table", {
@@ -20,7 +20,7 @@ export const moviesTable = sqliteTable("movies_table", {
 	overview: text().notNull(),
 	backgroundImage: text().notNull(),
 	posterImage: text().notNull(),
-	runnningMinutes: int().notNull(),
+	runningMinutes: int().notNull(),
 	releaseDate: text().notNull(),
 	releaseYear: int().notNull(),
 	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
@@ -63,21 +63,30 @@ export const listsTable = sqliteTable("lists_table", {
 		.references(() => usersTable.id),
 });
 
-export const listItemsTable = sqliteTable("list_items_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	publicId: text().notNull().unique(),
-	listId: int()
-		.notNull()
-		.references(() => listsTable.id),
-	streamingServiceId: int()
-		.notNull()
-		.references(() => streamingServicesTable.id),
-	movieId: int().references(() => moviesTable.id),
-	watchUrl: text().notNull(),
-	watchStatus: int().notNull().$type<0 | 1>().default(0),
-	titleOnService: text().notNull(),
-	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
-});
+export const listItemsTable = sqliteTable(
+	"list_items_table",
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		publicId: text().notNull().unique(),
+		listId: int()
+			.notNull()
+			.references(() => listsTable.id),
+		streamingServiceId: int()
+			.notNull()
+			.references(() => streamingServicesTable.id),
+		movieId: int().references(() => moviesTable.id),
+		watchUrl: text().notNull(),
+		watchStatus: int().notNull().$type<0 | 1>().default(0),
+		titleOnService: text().notNull(),
+		createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+	},
+	(table) => [
+		uniqueIndex("list_items_table_listId_watchUrl_unique").on(
+			table.listId,
+			table.watchUrl,
+		),
+	],
+);
 
 export const listMoviesTable = sqliteTable("list_movies_table", {
 	id: int().primaryKey({ autoIncrement: true }),

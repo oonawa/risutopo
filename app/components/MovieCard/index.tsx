@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMovieAtom } from "@/app/list/state/useMovieAtom";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
@@ -8,6 +8,8 @@ import { useExternalMovieDatabase } from "@/app/hooks/useExternalMovieDatabase";
 import { useSubmitMovie } from "@/app/hooks/useSubmitMovie";
 import MovieCardSearchResult from "./SearchResult";
 import MovieCardDetail from "./Detail";
+import { useStore } from "jotai";
+import { risutopottoAtom } from "@/app/store";
 
 type Props = {
 	movie: MovieInfo;
@@ -21,8 +23,14 @@ type ResultState = "idle" | "success" | "error";
 export default function MovieCard({ movie, listId, onSuccess }: Props) {
 	const { setMovie } = useMovieAtom();
 
-	const hasHandledSubmitSuccessRef = useRef(false);
-	const hasHandledRemoveSuccessRef = useRef(false);
+	const store = useStore();
+
+	const [isSameMovieDetails, setIsSameMovieDetails] = useState(false);
+
+	const handledSuccessRef = useRef({
+		submitSuccess: false,
+		removeSuccess: false,
+	});
 
 	const {
 		currentMovieInfo,
@@ -36,8 +44,14 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 		isFetchExternalMovieDatabasePending,
 	} = useExternalMovieDatabase({ movie });
 
-	const { submitResult, isSubmitPending, submit, removeResult, isRemovePending, remove } =
-		useSubmitMovie();
+	const {
+		submitResult,
+		isSubmitPending,
+		submit,
+		removeResult,
+		isRemovePending,
+		remove,
+	} = useSubmitMovie();
 
 	const submitErrorMessage =
 		submitResult && !submitResult.success
@@ -54,27 +68,40 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 	const isRemoveSuccess = removeResult?.success === true;
 
 	useEffect(() => {
-		if (isSubmitSuccess && !hasHandledSubmitSuccessRef.current) {
-			hasHandledSubmitSuccessRef.current = true;
+		if (isSubmitSuccess && !handledSuccessRef.current.submitSuccess) {
+			handledSuccessRef.current.submitSuccess = true;
 			onSuccess?.();
 		}
 
 		if (!isSubmitSuccess) {
-			hasHandledSubmitSuccessRef.current = false;
+			handledSuccessRef.current.submitSuccess = false;
 		}
-	}, [isSubmitSuccess, onSuccess]);
 
-	useEffect(() => {
-		if (isRemoveSuccess && !hasHandledRemoveSuccessRef.current) {
-			hasHandledRemoveSuccessRef.current = true;
+		if (isRemoveSuccess && !handledSuccessRef.current.removeSuccess) {
+			handledSuccessRef.current.removeSuccess = true;
 			onSuccess?.();
 			setMovie(null);
 		}
 
 		if (!isRemoveSuccess) {
-			hasHandledRemoveSuccessRef.current = false;
+			handledSuccessRef.current.removeSuccess = false;
 		}
-	}, [isRemoveSuccess, onSuccess, setMovie]);
+	}, [isSubmitSuccess, isRemoveSuccess, onSuccess, setMovie]);
+
+	const handleSearchSelect = (externalMovieId: number) => {
+		const list = store.get(risutopottoAtom).movie_service;
+		const hasSameDetails = list.find(
+			(item) => item.details?.externalDatabaseMovieId === externalMovieId,
+		);
+
+		if (hasSameDetails) {
+			setIsSameMovieDetails(true);
+		} else {
+			setIsSameMovieDetails(false)
+		}
+
+		handleSelect(externalMovieId);
+	};
 
 	const handleSubmit = () => {
 		submit({ movie: currentMovieInfo ?? movie, listId });
@@ -115,7 +142,7 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 						>
 							<MovieCardSearchResult
 								onSearch={handleSearch}
-								onSelect={handleSelect}
+								onSelect={handleSearchSelect}
 								onCancel={handleSearchCancel}
 								title={normalizedTitle}
 								searchResult={searchResult}
@@ -173,6 +200,7 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 								submitErrorMessage={submitErrorMessage}
 								isLoggedIn={listId !== null}
 								isSameMovie={isSameMovie}
+								isSameMovieDetails={isSameMovieDetails}
 							/>
 						</motion.div>
 					)}

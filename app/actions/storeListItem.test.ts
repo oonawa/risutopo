@@ -142,7 +142,7 @@ async function assertMovieRecordFromTmdbDetails(movie: MovieInfo) {
 				eq(moviesTable.title, movie.details.officialTitle),
 				eq(moviesTable.backgroundImage, movie.details.backgroundImage),
 				eq(moviesTable.posterImage, movie.details.posterImage),
-				eq(moviesTable.runnningMinutes, movie.details.runnningMinutes),
+				eq(moviesTable.runningMinutes, movie.details.runningMinutes),
 				eq(moviesTable.releaseYear, movie.details.releaseYear),
 			),
 		);
@@ -262,7 +262,7 @@ describe("storeMovie", () => {
 			backgroundImage: `${TMDB_IMAGE_BASE_URL}/njFixYzIxX8jsn6KMSEtAzi4avi.jpg`,
 			posterImage: `${TMDB_IMAGE_BASE_URL}/qIm2nHXLpBBdMxi8dvfrnDkBUDh.jpg`,
 			officialTitle: "ジュラシック・パーク",
-			runnningMinutes: 127,
+			runningMinutes: 127,
 			releaseYear: 1993,
 			director: ["スティーヴン・スピルバーグ"],
 			externalDatabaseMovieId: 329,
@@ -278,7 +278,7 @@ describe("storeMovie", () => {
 				title: tmdbMovieDetails.officialTitle,
 				backgroundImage: tmdbMovieDetails.backgroundImage,
 				posterImage: tmdbMovieDetails.posterImage,
-				runnningMinutes: tmdbMovieDetails.runnningMinutes,
+				runningMinutes: tmdbMovieDetails.runningMinutes,
 				releaseDate: "1993-06-11",
 				releaseYear: tmdbMovieDetails.releaseYear,
 				cachedAt: new Date(),
@@ -339,5 +339,48 @@ describe("storeMovie", () => {
 			expectedMovieId: movieRecord.id,
 			expectedTitleOnService: movie.title,
 		});
+	});
+
+	it("同一タイトル・同一URLの作品は登録できない", async () => {
+		const movie: MovieInfo = {
+			title: "ジュラシック・パーク",
+			url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
+			serviceSlug: "netflix",
+			serviceName: "Netflix",
+			createdAt: new Date(),
+		};
+
+		const firstResult = await storeListItem({
+			listId: testListId,
+			movie,
+			isWatched: false,
+			now: new Date(),
+		});
+
+		expect(firstResult.success).toBe(true);
+
+		const secondResult = await storeListItem({
+			listId: testListId,
+			movie,
+			isWatched: false,
+			now: new Date(),
+		});
+
+		expect(secondResult.success).toBe(false);
+
+		const streamingServiceId = await getStreamingServiceIdBySlug(movie.serviceSlug);
+		const storedListItems = await db
+			.select({ id: listItemsTable.id })
+			.from(listItemsTable)
+			.where(
+				and(
+					eq(listItemsTable.listId, testListId),
+					eq(listItemsTable.streamingServiceId, streamingServiceId),
+					eq(listItemsTable.titleOnService, movie.title),
+					eq(listItemsTable.watchUrl, movie.url),
+				),
+			);
+
+		expect(storedListItems).toHaveLength(1);
 	});
 });

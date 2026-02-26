@@ -24,10 +24,18 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 
 	const normalizedTitle = normalizeTitle(movie.title);
 
-	const [searchResult, searchExternalMovieDatabaseAction, isSearchExternalMovieDatabasePending] = useActionState(
+	const [
+		searchResult,
+		searchExternalMovieDatabaseAction,
+		isSearchExternalMovieDatabasePending,
+	] = useActionState(
 		async (prev: MovieSearchApiResponse | null, page: number | null) => {
 			if (!page) {
 				return null;
+			}
+
+			if (prev && page === 1) {
+				return prev;
 			}
 
 			const result = await searchExternalMovieDatabase(
@@ -51,58 +59,61 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 		null,
 	);
 
-	const [currentMovieInfo, fetchExternalMovieDatabaseAction, isFetchExternalMovieDatabasePending] =
-		useActionState<MovieInfo | null, number | null>(
-			async (_prev: MovieInfo | null, externalApiMovieId: number | null) => {
-				if (!externalApiMovieId) {
-					return null;
-				}
+	const [
+		currentMovieInfo,
+		fetchExternalMovieDatabaseAction,
+		isFetchExternalMovieDatabasePending,
+	] = useActionState<MovieInfo | null, number | null>(
+		async (_prev: MovieInfo | null, externalApiMovieId: number | null) => {
+			if (!externalApiMovieId) {
+				return null;
+			}
 
-				const now = new Date();
+			const now = new Date();
 
-				const [officialMovieInfo, directorsInfo] = await Promise.all([
-					getMovieFromExternalMovieDatabase(externalApiMovieId, now),
-					getDirectorsFromExternalMovieDatabase(externalApiMovieId, now),
-				]);
+			const [officialMovieInfo, directorsInfo] = await Promise.all([
+				getMovieFromExternalMovieDatabase(externalApiMovieId, now),
+				getDirectorsFromExternalMovieDatabase(externalApiMovieId, now),
+			]);
 
-				if (!officialMovieInfo.success || !directorsInfo.success) {
-					return null;
-				}
+			if (!officialMovieInfo.success || !directorsInfo.success) {
+				return null;
+			}
 
-				const {
+			const {
+				movieId,
+				title,
+				release_date,
+				runtime,
+				poster_path,
+				backdrop_path,
+				overview,
+			} = officialMovieInfo.data;
+
+			const directors = directorsInfo.data;
+
+			return {
+				listItemId: movie.listItemId,
+				title: movie.title,
+				url: movie.url,
+				serviceSlug: movie.serviceSlug,
+				serviceName: movie.serviceName,
+				createdAt: movie.createdAt,
+				details: {
 					movieId,
-					title,
-					release_date,
-					runtime,
-					poster_path,
-					backdrop_path,
-					overview
-				} = officialMovieInfo.data;
-
-				const directors = directorsInfo.data;
-
-				return {
-					listItemId: movie.listItemId,
-					title: movie.title,
-					url: movie.url,
-					serviceSlug: movie.serviceSlug,
-					serviceName: movie.serviceName,
-					createdAt: movie.createdAt,
-					details: {
-						movieId,
-						officialTitle: title,
-						backgroundImage: TMDB_IMAGE_BASE_URL + backdrop_path,
-						posterImage: TMDB_IMAGE_BASE_URL + poster_path,
-						runnningMinutes: runtime,
-						releaseYear: new Date(release_date).getFullYear(),
-						director: directors,
-						externalDatabaseMovieId: externalApiMovieId,
-						overview
-					},
-				};
-			},
-			null,
-		);
+					officialTitle: title,
+					backgroundImage: TMDB_IMAGE_BASE_URL + backdrop_path,
+					posterImage: TMDB_IMAGE_BASE_URL + poster_path,
+					runningMinutes: runtime,
+					releaseYear: new Date(release_date).getFullYear(),
+					director: directors,
+					externalDatabaseMovieId: externalApiMovieId,
+					overview,
+				},
+			};
+		},
+		null,
+	);
 
 	const handleSearch = (page = 1) => {
 		startTransition(() => {

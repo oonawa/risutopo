@@ -14,7 +14,7 @@ export type MovieInfo = {
 		backgroundImage: string;
 		posterImage: string;
 		director: string[];
-		runnningMinutes: number;
+		runningMinutes: number;
 		releaseYear: number;
 		externalDatabaseMovieId: number;
 		overview: string;

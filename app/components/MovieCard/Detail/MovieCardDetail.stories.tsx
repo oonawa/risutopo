@@ -24,7 +24,7 @@ const movieWithDetails: MovieInfo = {
 		posterImage:
 			"https://image.tmdb.org/t/p/original/urke73YPAKt3VIdTvj50Dzl9Lnf.jpg",
 		director: ["レン・ワイズマン"],
-		runnningMinutes: 118,
+		runningMinutes: 118,
 		releaseYear: 2012,
 		externalDatabaseMovieId: 64635,
 		overview:

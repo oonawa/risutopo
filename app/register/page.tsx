@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import FormContainer from "@/components/FormContainer";
-import RegistarForm from "./components/RegisterForm";
+import RegisterForm from "./components/RegisterForm";
 import { verifyTempSessionToken } from "@/lib/auth";
 
-export default async function RegstarPage() {
+export default async function RegisterPage() {
 	const cookieStore = await cookies();
 	const tempToken = cookieStore.get("temp_session_token")?.value;
 
@@ -19,7 +19,7 @@ export default async function RegstarPage() {
 
 	return (
 		<FormContainer>
-			<RegistarForm token={tempToken} email={tempSession.email} />
+			<RegisterForm token={tempToken} email={tempSession.email} />
 		</FormContainer>
 	);
 }

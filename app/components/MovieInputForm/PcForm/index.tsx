@@ -68,7 +68,7 @@ export default function PcForm({ disabled, handleExtract }: Props) {
 						setTimeout(() => {
 							setValue("title", "");
 							setValue("url", "");
-						}, 5000);
+						}, 1000);
 					}}
 				>
 					登録

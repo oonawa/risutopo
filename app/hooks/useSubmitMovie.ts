@@ -3,13 +3,10 @@ import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import type { Result } from "@/app/types/Result";
 import { storeListItem } from "@/app/actions/storeListItem";
 import { removeListItem } from "../actions/removeListItem";
-import { useLocalStorage } from "@/app/hooks/useLocalStorage";
 
 type SubmitActionResult = Result<MovieInfo | { recommendedLogin: true }>;
 
 export const useSubmitMovie = () => {
-	const { appendMovieToStorage } = useLocalStorage();
-
 	const [submitResult, setSubmitResult] = useState<SubmitActionResult | null>(
 		null,
 	);
@@ -25,8 +22,6 @@ export const useSubmitMovie = () => {
 		listId: number | null;
 	}) => {
 		startSubmitTransition(async () => {
-			appendMovieToStorage(movie);
-
 			if (!listId) {
 				setSubmitResult({
 					success: true,

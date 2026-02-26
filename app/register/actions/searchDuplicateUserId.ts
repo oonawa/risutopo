@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { usersTable } from "@/db/schema";
 import { userIdSchema } from "../userIdSchema";
 
-export async function searchDeplicateUserId(userId: string) {
+export async function searchDuplicateUserId(userId: string) {
 	const { error, data } = userIdSchema.safeParse({ userId });
 	if (error) {
 		return 0;
