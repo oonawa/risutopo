@@ -120,6 +120,20 @@
       "when": 1771848616578,
       "tag": "0016_wide_the_executioner",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1772127371222,
+      "tag": "0017_hard_karnak",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1772157098378,
+      "tag": "0018_tricky_rage",
+      "breakpoints": true
     }
   ]
 }

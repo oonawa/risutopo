@@ -1,0 +1,1 @@
+ALTER TABLE `movies_table` RENAME COLUMN "runnningMinutes" TO "runningMinutes";

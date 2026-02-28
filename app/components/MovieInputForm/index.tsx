@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useStore } from "jotai";
 import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import { useActiveTab } from "@/app/hooks/useActiveTab";
+import { useLocalStorage } from "@/app/hooks/useLocalStorage";
+import { risutopottoAtom } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
@@ -12,6 +15,8 @@ import Tab from "./Tab";
 import PcForm from "./PcForm";
 import MobileForm from "./MobileForm";
 import MovieCard from "../MovieCard";
+import ExistingListItemDetail from "./ExistingItem/Detail";
+import SelectButtons from "./SelectButtons";
 
 type Props = {
 	initialIsMobile: boolean;
@@ -29,14 +34,79 @@ export default function MovieInputForm({
 		userAgent,
 	});
 
+	const { hydrateLocalStorageFromDb } = useLocalStorage();
+	const store = useStore();
+
 	const [extractedMovie, setExtractedMovie] = useState<MovieInfo | null>(null);
 
+	const [duplicateListItems, setDuplicateListItems] = useState<
+		MovieInfo[] | null
+	>(null);
+	const [sameMovie, setSameMovie] = useState<MovieInfo | null>(null);
+
+	const [searchExistingMoviePending, searchExistingMovieTransition] =
+		useTransition();
+
 	const handleExtract = (extracted: MovieInfo | null) => {
-		setExtractedMovie(extracted);
+		searchExistingMovieTransition(async () => {
+			if (!extracted) {
+				setExtractedMovie(null);
+				setDuplicateListItems(null);
+				setSameMovie(null);
+				return;
+			}
+
+			setExtractedMovie(extracted);
+
+			const movieService = await (async () => {
+				const cachedMovieService = store.get(risutopottoAtom).movie_service;
+				if (!listId || cachedMovieService.length > 0) {
+					return cachedMovieService;
+				}
+
+				await hydrateLocalStorageFromDb({ listId });
+				return store.get(risutopottoAtom).movie_service;
+			})();
+
+			const extractedExternalMovieId =
+				extracted.details?.externalDatabaseMovieId;
+
+			const duplicatedMovies = movieService.filter((cachedMovie) => {
+				if (
+					extracted.listItemId !== undefined &&
+					cachedMovie.listItemId === extracted.listItemId
+				) {
+					return false;
+				}
+
+				const hasSameWatchUrl = cachedMovie.url === extracted.url;
+				const hasSameTitle = cachedMovie.title === extracted.title;
+				const hasSameExternalMovieId =
+					extractedExternalMovieId !== undefined &&
+					cachedMovie.details?.externalDatabaseMovieId ===
+						extractedExternalMovieId;
+
+				return hasSameWatchUrl || hasSameTitle || hasSameExternalMovieId;
+			});
+
+			setDuplicateListItems(
+				duplicatedMovies.length > 0 ? duplicatedMovies : null,
+			);
+			setSameMovie(
+				duplicatedMovies.find(
+					(cachedMovie) => cachedMovie.url === extracted.url,
+				) ?? null,
+			);
+		});
 	};
 
 	const handleCloseResult = useCallback(() => {
 		setExtractedMovie(null);
+	}, []);
+
+	const handleRegisterContinue = useCallback(() => {
+		setDuplicateListItems(null);
+		setSameMovie(null);
 	}, []);
 
 	return (
@@ -71,7 +141,7 @@ export default function MovieInputForm({
 			<AnimatePresence>
 				{extractedMovie && (
 					<motion.div
-						key="registered-movie"
+						key="extracted-movie"
 						initial={{ y: "100%", height: 0 }}
 						animate={{ y: 0, height: "90dvh" }}
 						exit={{ y: "100%", height: 0 }}
@@ -89,9 +159,76 @@ export default function MovieInputForm({
 								</Button>
 							</div>
 							<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto">
-								{extractedMovie && (
-									<MovieCard listId={listId} movie={extractedMovie} />
-								)}
+								<AnimatePresence mode="wait">
+									{searchExistingMoviePending && (
+										<motion.div
+											key="search-existing-movie"
+											className="px-4 pt-6"
+										>
+											...読み込み中
+										</motion.div>
+									)}
+
+									{duplicateListItems && (
+										<>
+											<motion.div
+												key="existing-item"
+												initial={{ opacity: 0, y: 4 }}
+												animate={{ opacity: 1, y: 0 }}
+												exit={{ opacity: 0, y: -4 }}
+												transition={{ duration: 0.2, ease: "easeOut" }}
+											>
+												<div className="pt-6 px-4">
+													{sameMovie ? (
+														<div className="py-2 text-center text-xl font-bold">
+															すでにリスト登録されています。
+															<ExistingListItemDetail movie={sameMovie} />
+														</div>
+													) : (
+														<div className="py-2 flex flex-col items-center">
+															<h2 className="text-xl font-bold pb-2 text-center">
+																すでに以下の作品が登録済みです。
+															</h2>
+															<div className="w-full max-w-120 pt-4">
+																<ul className="w-full pb-64">
+																	{duplicateListItems.map((item) => (
+																		<li
+																			key={
+																				item.listItemId ??
+																				`${item.url}-${item.title}`
+																			}
+																			className="pb-4"
+																		>
+																			<ExistingListItemDetail movie={item} />
+																		</li>
+																	))}
+																</ul>
+															</div>
+														</div>
+													)}
+												</div>
+											</motion.div>
+											{!sameMovie && (
+												<SelectButtons
+													onCancel={handleCloseResult}
+													onContinue={handleRegisterContinue}
+												/>
+											)}
+										</>
+									)}
+
+									{!duplicateListItems && (
+										<motion.div
+											key="extracted-movie"
+											initial={{ opacity: 0, y: 4 }}
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: -4 }}
+											transition={{ duration: 0.2, ease: "easeOut" }}
+										>
+											<MovieCard listId={listId} movie={extractedMovie} />
+										</motion.div>
+									)}
+								</AnimatePresence>
 							</div>
 						</div>
 					</motion.div>

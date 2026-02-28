@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { userIdSchema } from "@/app/register/userIdSchema";
-import { searchDeplicateUserId } from "@/app/register/actions/serchDuplicateUserId";
+import { searchDuplicateUserId } from "@/app/register/actions/searchDuplicateUserId";
 import { registerUser } from "../../actions/registerUser";
 
 type UserIdFormData = z.infer<typeof userIdSchema>;
@@ -18,7 +18,7 @@ type Props = {
 	token: string;
 };
 
-export default function RegistarForm({ email, token }: Props) {
+export default function RegisterForm({ email, token }: Props) {
 	const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 	const [isDuplicate, setIsDuplicate] = useState(false);
 	const [serverErrorMessage, setServerErrorMessage] = useState<string>("");
@@ -45,7 +45,7 @@ export default function RegistarForm({ email, token }: Props) {
 
 		setIsCheckingDuplicate(true);
 
-		const count = await searchDeplicateUserId(inputValue);
+		const count = await searchDuplicateUserId(inputValue);
 		setIsDuplicate(count > 0);
 
 		setIsCheckingDuplicate(false);

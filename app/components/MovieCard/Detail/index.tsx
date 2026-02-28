@@ -2,6 +2,7 @@ import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import { AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import ArrowCircleRightIcon from "@/components/ui/Icons/ArrowCircleRightIcon";
+import ArrowCircleLeftIcon from "@/components/ui/Icons/ArrowCircleLeftIcon";
 import MovieCardDetailMenu from "./Menu";
 import MovieCardDetailOverview from "./Overview";
 import Transition from "./Transition";
@@ -20,6 +21,7 @@ type Props = {
 	submitErrorMessage?: string;
 	isLoggedIn: boolean;
 	isSameMovie?: boolean;
+	isSameMovieDetails?: boolean;
 };
 
 export default function MovieCardDetail({
@@ -36,6 +38,7 @@ export default function MovieCardDetail({
 	submitErrorMessage,
 	isLoggedIn,
 	isSameMovie = false,
+	isSameMovieDetails = false,
 }: Props) {
 	const isWatchMode =
 		ctaMode === "watch" || (ctaMode === "register" && isSameMovie);
@@ -86,7 +89,7 @@ export default function MovieCardDetail({
 														<span className="block text-xs text-foreground-dark-3">
 															上映時間
 														</span>
-														{movie.details.runnningMinutes}分
+														{movie.details.runningMinutes}分
 													</p>
 												</div>
 											</div>
@@ -155,24 +158,45 @@ export default function MovieCardDetail({
 					)}
 					{resultState === "idle" && isRegisterMode && (
 						<Transition key="register-idle">
+							{isSameMovieDetails && movie.details && (
+								<div className="py-4 text-center font-bold">
+									{movie.details.releaseYear}年の『{movie.title}』は
+									<br />
+									すでにリスト登録されています。
+								</div>
+							)}
+							<div className="pb-4 text-foreground-dark-1">
+								<Button
+									onClick={() => {
+										onCancel();
+										onSearch();
+									}}
+									className="flex items-center"
+								>
+									<ArrowCircleLeftIcon />
+									もどる
+								</Button>
+							</div>
 							<div className="flex gap-2">
 								<Button
-									disabled={isSubmitPending}
+									disabled={isSubmitPending || isSameMovieDetails}
 									onClick={onSubmit}
 									variant={"outline"}
 									className="flex-1 py-5 border-background-light-2 hover:border-background-light-3 hover:bg-background-light-1"
 								>
 									これで登録する
 								</Button>
-								<MovieCardDetailMenu
-									searchDisabled={isSearchPending}
-									removeDisabled={isRemovePending}
-									onSearch={() => {
-										onCancel();
-										onSearch();
-									}}
-									onRemove={onRemove}
-								/>
+								{movie.listItemId && (
+									<MovieCardDetailMenu
+										searchDisabled={isSearchPending}
+										removeDisabled={isRemovePending}
+										onSearch={() => {
+											onCancel();
+											onSearch();
+										}}
+										onRemove={onRemove}
+									/>
+								)}
 							</div>
 						</Transition>
 					)}

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `list_items_table_listId_watchUrl_unique` ON `list_items_table` (`listId`,`watchUrl`);

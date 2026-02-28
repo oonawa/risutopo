@@ -57,7 +57,7 @@ export default function MobileForm({ disabled, handleExtract }: Props) {
 
 							setTimeout(() => {
 								setValue("value", "")
-							}, 5000)
+							}, 1000)
 						})();
 					}}
 				/>

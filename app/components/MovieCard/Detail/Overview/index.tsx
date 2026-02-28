@@ -14,7 +14,7 @@ export default function MovieCardDetailOverview({ overview }: Props) {
 				あらすじ
 			</h3>
 
-			<div className="pt-2">
+			<div className="pt-2 pb-[10dvh]">
 				{!isOverviewExpanded && (
 					<p
 						key="summary"
