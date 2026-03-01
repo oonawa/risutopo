@@ -7,9 +7,9 @@ import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { userIdSchema } from "@/app/register/userIdSchema";
-import { searchDuplicateUserId } from "@/app/register/actions/searchDuplicateUserId";
-import { registerUser } from "../../actions/registerUser";
+import { userIdSchema } from "@/features/user/schemas/userIdSchema";
+import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
+import { registerUser } from "@/features/user/actions/registerUser";
 
 type UserIdFormData = z.infer<typeof userIdSchema>;
 

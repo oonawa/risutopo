@@ -4,12 +4,12 @@ import { headers } from "next/headers";
 import { eq, and } from "drizzle-orm";
 import crypto from "node:crypto";
 import { Resend } from "resend";
-import { checkRateLimit, recordAttempt } from "@/lib/rateLimit";
+import { checkRateLimit, recordAttempt } from "../services/rateLimit";
 import type { Result } from "@/app/types/Result";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
 import { authTokensTable, usersTable } from "@/db/schema";
-import { emailSchema } from "../loginSchemas";
+import { emailSchema } from "../schemas/loginSchemas";
 import LoginMailTemplate from "../components/LoginMailTemplate";
 
 export async function sendLoginCode(email: string, now: Date): Promise<Result> {

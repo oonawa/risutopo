@@ -3,9 +3,12 @@
 import type z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+	emailSchema,
+	loginCodeSchema,
+} from "@/features/auth/schemas/loginSchemas";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { emailSchema, loginCodeSchema } from "@/app/login/loginSchemas";
 
 type EmailFormData = z.infer<typeof emailSchema>;
 type LoginCodeFormData = z.infer<typeof loginCodeSchema>;
@@ -18,7 +21,7 @@ type Props = {
 	serverErrorMessage?: string;
 };
 
-export default function LoginInputForm({
+export default function InputForm({
 	label,
 	htmlFor,
 	placeholder,

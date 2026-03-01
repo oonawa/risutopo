@@ -3,7 +3,7 @@
 import { db } from "@/db/client";
 import { eq } from "drizzle-orm";
 import { usersTable } from "@/db/schema";
-import { userIdSchema } from "../userIdSchema";
+import { userIdSchema } from "../schemas/userIdSchema";
 
 export async function searchDuplicateUserId(userId: string) {
 	const { error, data } = userIdSchema.safeParse({ userId });
