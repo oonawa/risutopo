@@ -7,11 +7,14 @@ import { eq, and, gt } from "drizzle-orm";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
 import { authTokensTable, usersTable } from "@/db/schema";
-import { loginCodeSchema } from "../loginSchemas";
-import { generateSessionToken, generateTempSessionToken } from "@/lib/auth";
-import { addDays } from "@/lib/auth";
-import { checkRateLimit, recordAttempt } from "@/lib/rateLimit";
-import { generateDeviceId } from "@/lib/devices";
+import { loginCodeSchema } from "../schemas/loginSchemas";
+import {
+	generateSessionToken,
+	generateTempSessionToken,
+	addDays,
+} from "../services/session";
+import { checkRateLimit, recordAttempt } from "../services/rateLimit";
+import { generateDeviceId } from "../services/devices";
 
 export async function verifyLoginCode(
 	loginCode: string,

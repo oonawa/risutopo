@@ -45,7 +45,7 @@ vi.mock("next/headers", () => ({
 	headers: mockHeaders,
 }));
 
-vi.mock("@/lib/auth", () => ({
+vi.mock("@/features/auth/services/session", () => ({
 	generateSessionToken: vi.fn(async () => "mock-session-token"),
 	generateTempSessionToken: mockGenerateTempSessionToken,
 	addDays: vi.fn((date: Date, days: number) => {

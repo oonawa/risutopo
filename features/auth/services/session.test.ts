@@ -6,7 +6,7 @@ import {
 	generateTempSessionToken,
 	verifySessionToken,
 	verifyTempSessionToken,
-} from "./auth";
+} from "./session";
 import { eq } from "drizzle-orm";
 
 describe("auth token verification", () => {

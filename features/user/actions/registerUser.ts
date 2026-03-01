@@ -5,10 +5,13 @@ import type { Result } from "@/app/types/Result";
 import { db } from "@/db/client";
 import { and, eq } from "drizzle-orm";
 import { usersTable, listsTable, authTokensTable } from "@/db/schema";
-import { userIdSchema } from "../userIdSchema";
-import { generateSessionToken, addDays } from "@/lib/auth";
-import { generateDeviceId } from "@/lib/devices";
-import { verifyTempSessionToken } from "@/lib/auth";
+import { userIdSchema } from "../schemas/userIdSchema";
+import {
+	verifyTempSessionToken,
+	generateSessionToken,
+	addDays,
+} from "@/features/auth/services/session";
+import { generateDeviceId } from "@/features/auth/services/devices";
 
 export async function registerUser({
 	email,

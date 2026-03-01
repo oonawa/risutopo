@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated } from "@/features/auth/services/session";
 import UserMovieList from "./components/List";
 
 export default async function MovieList() {

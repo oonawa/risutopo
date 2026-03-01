@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/auth";
-import LoginForm from "./components/LoginForm";
+import { isAuthenticated } from "@/features/auth/services/session";
+import Login from "./components/Login";
 
 export default async function LoginPage() {
 	const authenticated = await isAuthenticated();
@@ -9,5 +9,5 @@ export default async function LoginPage() {
 		redirect("/");
 	}
 
-	return <LoginForm />;
+	return <Login />;
 }
