@@ -15,3 +15,6 @@ migrate:
 
 test:
 	npm run test
+
+story:
+	npm run storybook

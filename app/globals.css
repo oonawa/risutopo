@@ -25,6 +25,10 @@
 	--color-red-light-1: var(--red-light-1);
 	--color-red-light-2: var(--red-light-2);
 
+	--color-green: var(--green);
+	--color-green-light-1: var(--green-light-1);
+	--color-green-light-2: var(--green-light-2);
+
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
@@ -50,7 +54,7 @@ body {
 	--background-light-3: #7c8c88;
 	--background-light-4: #8ea19d;
 
-	--background-dark-1: #23232a;
+	--background-dark-1: #383c3d;
 	--background-dark-2: #323538;
 	--background-dark-3: #2a2c31;
 	--background-dark-4: #23232a;
@@ -64,6 +68,10 @@ body {
 	--red: #b1304e;
 	--red-light-1: #c34462;
 	--red-light-2: #df6883;
+
+	--green: #60ae60;
+	--green-light-1: #8ec88e;
+	--green-light-2: #b7e4b7;
 }
 
 @layer base {

@@ -13,15 +13,19 @@ import { verifyTempSessionToken } from "@/lib/auth";
 export async function registerUser({
 	email,
 	userId,
+	tempToken,
+	now,
 }: {
 	email: string;
 	userId: string;
+	tempToken: string;
+	now: Date;
 }): Promise<
 	Result<{
 		userId: string;
 	}>
 > {
-	const tempSession = await verifyTempSessionToken();
+	const tempSession = await verifyTempSessionToken({ tempToken, now });
 
 	if (!tempSession) {
 		return {
@@ -50,10 +54,8 @@ export async function registerUser({
 	const userAgent = headersList.get("user-agent") || "Unknown";
 	const deviceId = generateDeviceId(userAgent);
 
-	const now = new Date();
-
 	try {
-		const newUserId = await db.transaction(async (tx) => {
+		const transactionResult = await db.transaction(async (tx) => {
 			const [newUser] = await tx
 				.insert(usersTable)
 				.values({
@@ -96,13 +98,25 @@ export async function registerUser({
 				createdAt: now,
 			});
 
-			return newUser.publicId;
+			return {
+				publicId: newUser.publicId,
+				sessionToken,
+				expiresAt,
+			};
+		});
+
+		const cookieStore = await cookies();
+		cookieStore.set("session_token", transactionResult.sessionToken, {
+			httpOnly: true,
+			secure: true,
+			sameSite: "lax",
+			expires: transactionResult.expiresAt,
 		});
 
 		return {
 			success: true,
 			data: {
-				userId: newUserId,
+				userId: transactionResult.publicId,
 			},
 		};
 	} catch (err) {

@@ -15,28 +15,45 @@ export const streamingServicesTable = sqliteTable("streaming_services_table", {
 
 export const moviesTable = sqliteTable("movies_table", {
 	id: int().primaryKey({ autoIncrement: true }),
+	externalDatabaseMovieId: text().notNull().unique(),
 	title: text().notNull(),
+	overview: text().notNull(),
+	backgroundImage: text().notNull(),
+	posterImage: text().notNull(),
+	runningMinutes: int().notNull(),
+	releaseDate: text().notNull(),
+	releaseYear: int().notNull(),
+	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
 });
 
-export const movieServicesTable = sqliteTable(
-	"movie_services_table",
-	{
-		id: int().primaryKey({ autoIncrement: true }),
-		movieId: int()
-			.notNull()
-			.references(() => moviesTable.id),
-		streamingServiceId: int()
-			.notNull()
-			.references(() => streamingServicesTable.id),
-		watchUrl: text().notNull(),
-	},
-	(table) => [
-		uniqueIndex("movie_services_movie_id_streaming_service_id_unique").on(
-			table.movieId,
-			table.streamingServiceId,
-		),
-	],
-);
+export const directorsTable = sqliteTable("directors_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	name: text().notNull(),
+	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
+});
+
+export const movieDirectorsTable = sqliteTable("movie_directors_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	movieId: int()
+		.notNull()
+		.references(() => moviesTable.id),
+	directorId: int()
+		.notNull()
+		.references(() => directorsTable.id),
+});
+
+export const movieServicesTable = sqliteTable("movie_services_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	userId: int()
+		.notNull()
+		.references(() => usersTable.id),
+	movieId: int().references(() => moviesTable.id),
+	streamingServiceId: int()
+		.notNull()
+		.references(() => streamingServicesTable.id),
+	watchUrl: text().notNull(),
+	titleOnService: text().notNull(),
+});
 
 export const listsTable = sqliteTable("lists_table", {
 	id: int().primaryKey({ autoIncrement: true }),
@@ -45,6 +62,31 @@ export const listsTable = sqliteTable("lists_table", {
 		.unique()
 		.references(() => usersTable.id),
 });
+
+export const listItemsTable = sqliteTable(
+	"list_items_table",
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		publicId: text().notNull().unique(),
+		listId: int()
+			.notNull()
+			.references(() => listsTable.id),
+		streamingServiceId: int()
+			.notNull()
+			.references(() => streamingServicesTable.id),
+		movieId: int().references(() => moviesTable.id),
+		watchUrl: text().notNull(),
+		watchStatus: int().notNull().$type<0 | 1>().default(0),
+		titleOnService: text().notNull(),
+		createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+	},
+	(table) => [
+		uniqueIndex("list_items_table_listId_watchUrl_unique").on(
+			table.listId,
+			table.watchUrl,
+		),
+	],
+);
 
 export const listMoviesTable = sqliteTable("list_movies_table", {
 	id: int().primaryKey({ autoIncrement: true }),

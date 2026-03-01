@@ -8,16 +8,17 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { userIdSchema } from "@/app/register/userIdSchema";
-import { searchDeplicateUserId } from "@/app/register/actions/serchDuplicateUserId";
+import { searchDuplicateUserId } from "@/app/register/actions/searchDuplicateUserId";
 import { registerUser } from "../../actions/registerUser";
 
 type UserIdFormData = z.infer<typeof userIdSchema>;
 
 type Props = {
 	email: string;
+	token: string;
 };
 
-export default function RegstarForm({ email }: Props) {
+export default function RegisterForm({ email, token }: Props) {
 	const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 	const [isDuplicate, setIsDuplicate] = useState(false);
 	const [serverErrorMessage, setServerErrorMessage] = useState<string>("");
@@ -44,7 +45,7 @@ export default function RegstarForm({ email }: Props) {
 
 		setIsCheckingDuplicate(true);
 
-		const count = await searchDeplicateUserId(inputValue);
+		const count = await searchDuplicateUserId(inputValue);
 		setIsDuplicate(count > 0);
 
 		setIsCheckingDuplicate(false);
@@ -74,7 +75,14 @@ export default function RegstarForm({ email }: Props) {
 	}, []);
 
 	const onSubmit = async (data: UserIdFormData) => {
-		const result = await registerUser({ userId: data.userId, email });
+
+
+		const result = await registerUser({
+			userId: data.userId,
+			email,
+			tempToken: token,
+			now: new Date(),
+		});
 		if (result.success) {
 			return redirect("/");
 		}

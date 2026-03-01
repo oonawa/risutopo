@@ -1,34 +1,31 @@
-"use client";
-
-import { useState } from "react";
 import type z from "zod";
+import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { movieInfoSchema } from "@/app/movieInfoSchema";
+import { useExtractMovieInfo } from "@/app/hooks/useExtractMovieInfo";
+import { Button } from "@/components/ui/button";
 import FormTextarea from "../FormTextarea";
-import FormSubmitButton from "../FormSubmitButton";
 
 type MovieInfoValues = z.infer<typeof movieInfoSchema>;
 
 type Props = {
-	onSubmit: (input: {
-		values: MovieInfoValues;
-		isValid: boolean;
-	}) => void;
-	storageErrorMessage: string | null;
+	disabled: boolean;
+	handleExtract: (extracted: MovieInfo | null) => void;
 };
 
-export default function PcForm({ onSubmit, storageErrorMessage }: Props) {
-	const [formDisabled, setFormDisabled] = useState(false);
-
+export default function PcForm({ disabled, handleExtract }: Props) {
 	const {
 		register,
 		getValues,
+		setValue,
 		formState: { errors, isValid },
 	} = useForm<MovieInfoValues>({
 		resolver: zodResolver(movieInfoSchema),
 		mode: "onChange",
 	});
+
+	const { extractMovieInfoFromBrowser } = useExtractMovieInfo();
 
 	return (
 		<div className="w-full md:px-10 flex flex-col justify-center items-center">
@@ -40,7 +37,7 @@ export default function PcForm({ onSubmit, storageErrorMessage }: Props) {
 					<FormTextarea
 						placeholder="ジュラシック・パーク"
 						id="title"
-						disabled={formDisabled}
+						disabled={disabled}
 						{...register("title")}
 					/>
 					{errors.title && <p>{errors.title.message}</p>}
@@ -48,21 +45,35 @@ export default function PcForm({ onSubmit, storageErrorMessage }: Props) {
 						className="min-h-[3lh] break-all"
 						placeholder="https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=cp"
 						id="watch-url"
-						disabled={formDisabled}
+						disabled={disabled}
 						{...register("url")}
 					/>
 					{errors.url && <p>{errors.url.message}</p>}
-					{storageErrorMessage && <p>{storageErrorMessage}</p>}
 				</div>
 			</div>
 
-			<FormSubmitButton
-				onClick={() => {
-					setFormDisabled(true)
-					onSubmit({ values: getValues(), isValid });
-				}}
-				disabled={!isValid || formDisabled}
-			/>
+			<div className="w-full flex justify-end pt-4">
+				<Button
+					className="border-background-light-3 hover:border-background-light-4 hover:bg-background-light-1"
+					variant={"outline"}
+					onClick={() => {
+						if (!isValid) {
+							handleExtract(null);
+							return;
+						}
+
+						const extracted = extractMovieInfoFromBrowser(getValues());
+						handleExtract(extracted);
+
+						setTimeout(() => {
+							setValue("title", "");
+							setValue("url", "");
+						}, 1000);
+					}}
+				>
+					登録
+				</Button>
+			</div>
 		</div>
 	);
 }

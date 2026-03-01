@@ -1,39 +1,33 @@
 import type z from "zod";
-import { useCallback, useState } from "react";
+import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { movieShareLinkSchema } from "@/app/movieShareLinkSchema";
+import { useExtractMovieInfo } from "@/app/hooks/useExtractMovieInfo";
 import Tutorial from "../Tutorial";
 import TutorialContent from "../Tutorial/Content";
-import { movieShareLinkSchema } from "@/app/movieShareLinkSchema";
 import FormTextarea from "../FormTextarea";
-import FormSubmitButton from "../FormSubmitButton";
 
 type MovieShareLinkValue = z.infer<typeof movieShareLinkSchema>;
 
 type Props = {
-	onSubmit: (input: {
-		shareLink: string;
-		isValid: boolean;
-	}) => Promise<void>;
-	storageErrorMessage: string | null;
+	disabled: boolean;
+	handleExtract: (extracted: MovieInfo | null) => void;
 };
 
-export default function MobileForm({ onSubmit, storageErrorMessage }: Props) {
-	const [formDisabled, setFormDisabled] = useState(false);
-
+export default function MobileForm({ disabled, handleExtract }: Props) {
 	const {
 		register,
-		getValues,
-		formState: { errors, isValid },
+		trigger,
+		setValue,
+		formState: { errors },
 	} = useForm<MovieShareLinkValue>({
 		resolver: zodResolver(movieShareLinkSchema),
 		mode: "onChange",
 	});
 
-	const handler = useCallback(() => {
-		setFormDisabled(true);
-		onSubmit({ shareLink: getValues("value"), isValid });
-	}, [getValues, isValid, onSubmit]);
+	const { extractMovieInfoFromMobile } = useExtractMovieInfo();
+	const { onChange, ...valueField } = register("value");
 
 	return (
 		<div className="w-full md:px-10 flex flex-col justify-center items-center">
@@ -44,22 +38,35 @@ export default function MobileForm({ onSubmit, storageErrorMessage }: Props) {
 				<FormTextarea
 					className="min-h-[calc(4lh+(calc(var(--spacing)*4)))] placeholder-shown:text-ellipsis placeholder-shown:overflow-hidden wrap-break-word"
 					placeholder="「 ジュラシック・パーク 」 をNetflix で今 す ぐチ ェ ッ クhttps://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more"
-					disabled={formDisabled}
-					{...register("value")}
+					disabled={disabled}
+					{...valueField}
+					onChange={(event) => {
+						(async () => {
+							onChange(event);
+
+							const inputValue = event.target.value;
+							const isValid = await trigger("value");
+
+							if (!isValid) {
+								handleExtract(null);
+								return;
+							}
+
+							const extracted = extractMovieInfoFromMobile(inputValue);
+							handleExtract(extracted);
+
+							setTimeout(() => {
+								setValue("value", "")
+							}, 1000)
+						})();
+					}}
 				/>
 				{errors.value && <p>{errors.value.message}</p>}
-				{storageErrorMessage && <p>{storageErrorMessage}</p>}
 			</div>
 
 			<Tutorial title="共有リンクの取得方法">
 				<TutorialContent />
 			</Tutorial>
-
-			<FormSubmitButton
-				className="w-full sm:w-fit"
-				onClick={handler}
-				disabled={!isValid || formDisabled}
-			/>
 		</div>
 	);
 }
