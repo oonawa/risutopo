@@ -1,17 +1,17 @@
 import type z from "zod";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { ListItem } from "@/features/list/types/ListItem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { movieInfoSchema } from "@/app/movieInfoSchema";
-import { useExtractMovieInfo } from "@/app/hooks/useExtractMovieInfo";
+import { movieEntrySchema } from "@/features/list/schemas/movieEntrySchema";
+import { useExtractMovieInfo } from "@/features/list/hooks/useExtractMovieInfo";
 import { Button } from "@/components/ui/button";
 import FormTextarea from "../FormTextarea";
 
-type MovieInfoValues = z.infer<typeof movieInfoSchema>;
+type MovieEntryValues = z.infer<typeof movieEntrySchema>;
 
 type Props = {
 	disabled: boolean;
-	handleExtract: (extracted: MovieInfo | null) => void;
+	handleExtract: (extracted: ListItem | null) => void;
 };
 
 export default function PcForm({ disabled, handleExtract }: Props) {
@@ -20,8 +20,8 @@ export default function PcForm({ disabled, handleExtract }: Props) {
 		getValues,
 		setValue,
 		formState: { errors, isValid },
-	} = useForm<MovieInfoValues>({
-		resolver: zodResolver(movieInfoSchema),
+	} = useForm<MovieEntryValues>({
+		resolver: zodResolver(movieEntrySchema),
 		mode: "onChange",
 	});
 
