@@ -1,11 +1,11 @@
 import crypto from "crypto";
-import type { MovieSearchApiResponse } from "@/app/types/MovieInputForm/MovieApi/MovieApiResponse";
+import type { TmdbSearchResponse } from "@/features/movieDatabase/types/TmdbResponse";
 import { Button } from "@/components/ui/button";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
 import ArrowCircleLeftIcon from "@/components/ui/Icons/ArrowCircleLeftIcon";
 
 type Props = {
-	searchResult: MovieSearchApiResponse;
+	searchResult: TmdbSearchResponse;
 	title: string;
 	onSearch: (page: number) => void;
 	onSelect: (externalApiMovieId: number) => void;

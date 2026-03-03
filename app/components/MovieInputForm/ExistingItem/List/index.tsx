@@ -1,8 +1,8 @@
-import type { DuplicateListItem } from "@/app/types/MovieInputForm/DuplicaateItem";
+import type { ListItem } from "@/features/list/types/ListItem";
 import ExistingListItemDetail from "../Detail";
 
 type Props = {
-	items: DuplicateListItem[];
+	items: ListItem[];
 };
 
 export default function ExistingItemList({ items }: Props) {

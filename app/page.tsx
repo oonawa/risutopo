@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
-import { getUserMovieListId } from "@/app/actions/getUserMovieListId";
+import { getUserMovieListId } from "@/features/list/actions/getUserMovieListId";
 import MovieInputForm from "./components/MovieInputForm";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated } from "@/features/auth/services/session";
 
 export default async function Home() {
 	const isVerified = await isAuthenticated();

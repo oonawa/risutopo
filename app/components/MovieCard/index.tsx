@@ -2,17 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useMovieAtom } from "@/app/list/state/useMovieAtom";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
-import { useExternalMovieDatabase } from "@/app/hooks/useExternalMovieDatabase";
-import { useSubmitMovie } from "@/app/hooks/useSubmitMovie";
+import { useMovieAtom } from "@/features/list/state/useMovieAtom";
+import type { ListItem } from "@/features/list/types/ListItem";
+import { useExternalMovieDatabase } from "@/features/movieDatabase/hooks/useExternalMovieDatabase";
+import { useSubmitMovie } from "@/features/list/hooks/useSubmitMovie";
 import MovieCardSearchResult from "./SearchResult";
 import MovieCardDetail from "./Detail";
 import { useStore } from "jotai";
-import { risutopottoAtom } from "@/app/store";
+import { risutopottoAtom } from "@/features/shared/store";
 
 type Props = {
-	movie: MovieInfo;
+	movie: ListItem;
 	listId: number | null;
 	onSuccess?: () => void;
 };
@@ -97,7 +97,7 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 		if (hasSameDetails) {
 			setIsSameMovieDetails(true);
 		} else {
-			setIsSameMovieDetails(false)
+			setIsSameMovieDetails(false);
 		}
 
 		handleSelect(externalMovieId);

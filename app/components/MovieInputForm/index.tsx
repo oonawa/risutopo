@@ -2,11 +2,9 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useStore } from "jotai";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
-import { useActiveTab } from "@/app/hooks/useActiveTab";
-import { useLocalStorage } from "@/app/hooks/useLocalStorage";
-import { risutopottoAtom } from "@/app/store";
+import type { ListItem } from "@/features/list/types/ListItem";
+import { useActiveTab } from "@/features/list/hooks/useActiveTab";
+import { useLocalStorage } from "@/features/list/hooks/useLocalStorage";
 import { Button } from "@/components/ui/button";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
@@ -34,20 +32,19 @@ export default function MovieInputForm({
 		userAgent,
 	});
 
-	const { hydrateLocalStorageFromDb } = useLocalStorage();
-	const store = useStore();
+	const { hydrateLocalStorageFromDb, getMovieService } = useLocalStorage();
 
-	const [extractedMovie, setExtractedMovie] = useState<MovieInfo | null>(null);
+	const [extractedMovie, setExtractedMovie] = useState<ListItem | null>(null);
 
 	const [duplicateListItems, setDuplicateListItems] = useState<
-		MovieInfo[] | null
+		ListItem[] | null
 	>(null);
-	const [sameMovie, setSameMovie] = useState<MovieInfo | null>(null);
+	const [sameMovie, setSameMovie] = useState<ListItem | null>(null);
 
 	const [searchExistingMoviePending, searchExistingMovieTransition] =
 		useTransition();
 
-	const handleExtract = (extracted: MovieInfo | null) => {
+	const handleExtract = (extracted: ListItem | null) => {
 		searchExistingMovieTransition(async () => {
 			if (!extracted) {
 				setExtractedMovie(null);
@@ -59,13 +56,13 @@ export default function MovieInputForm({
 			setExtractedMovie(extracted);
 
 			const movieService = await (async () => {
-				const cachedMovieService = store.get(risutopottoAtom).movie_service;
+				const cachedMovieService = getMovieService();
 				if (!listId || cachedMovieService.length > 0) {
 					return cachedMovieService;
 				}
 
 				await hydrateLocalStorageFromDb({ listId });
-				return store.get(risutopottoAtom).movie_service;
+				return getMovieService();
 			})();
 
 			const extractedExternalMovieId =

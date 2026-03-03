@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { ListItem } from "@/features/list/types/ListItem";
 import MovieCardDetail from "./index";
 
-const movieWithoutDetails: MovieInfo = {
+const movieWithoutDetails: ListItem = {
 	title: "トータル・リコール",
 	url: "https://video-share.unext.jp/video/title/SID0023081?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
 	serviceSlug: "unext",
@@ -10,7 +10,7 @@ const movieWithoutDetails: MovieInfo = {
 	createdAt: new Date(),
 };
 
-const movieWithDetails: MovieInfo = {
+const movieWithDetails: ListItem = {
 	title: "トータル・リコール",
 	url: "https://video-share.unext.jp/video/title/SID0023081?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
 	serviceSlug: "unext",

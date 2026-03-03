@@ -1,12 +1,12 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
-import { useMovieAtom } from "@/app/list/state/useMovieAtom";
+import type { ListItem } from "@/features/list/types/ListItem";
+import { useMovieAtom } from "@/features/list/state/useMovieAtom";
 import { Button } from "@/components/ui/button";
 
 type SearchButtonProps = ComponentProps<"button"> & {
-	movie: MovieInfo;
+	movie: ListItem;
 };
 
 export default function SearchButton({

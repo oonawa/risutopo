@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { useMovieAtom } from "@/app/list/state/useMovieAtom";
+import { useMovieAtom } from "@/features/list/state/useMovieAtom";
 import { Button } from "@/components/ui/button";
 import CrossIcon from "@/components/ui/Icons/CrossIcon";
 import MovieCard from "@/app/components/MovieCard";

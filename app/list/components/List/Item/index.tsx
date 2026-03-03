@@ -1,13 +1,13 @@
 import { formatRelativeDate } from "@/lib/date";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { ListItem } from "@/features/list/types/ListItem";
 import CheckMarkIcon from "@/components/ui/Icons/CheckMarkIcon";
 import SearchButton from "./SearchButton";
 
 type Props = {
-	movie: MovieInfo;
+	movie: ListItem;
 };
 
-export default function ListItem({ movie }: Props) {
+export default function Item({ movie }: Props) {
 	return (
 		<div className="relative mx-2 py-2 h-full w-full sm:w-[calc(calc(100%-16px*2)/2-16px)] md:w-[calc(calc(100%-16px*2)/3-16px)] flex flex-col first">
 			<div className="w-full h-full rounded-xl p-2 transition-colors hover:bg-background-light-1">
