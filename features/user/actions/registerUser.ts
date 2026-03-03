@@ -1,7 +1,7 @@
 "use server";
 
 import { headers, cookies } from "next/headers";
-import type { Result } from "@/app/types/Result";
+import type { Result } from "@/features/shared/types/Result";
 import { db } from "@/db/client";
 import { and, eq } from "drizzle-orm";
 import { usersTable, listsTable, authTokensTable } from "@/db/schema";

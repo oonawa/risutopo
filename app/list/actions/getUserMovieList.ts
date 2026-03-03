@@ -10,15 +10,15 @@ import {
 	moviesTable,
 	streamingServicesTable,
 } from "@/db/schema";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { ListItem } from "@/features/list/types/ListItem";
 
 type ListItemRow = {
 	listItemId: string;
 	title: string;
 	url: string;
 	createdAt: Date;
-	serviceSlug: MovieInfo["serviceSlug"];
-	serviceName: MovieInfo["serviceName"];
+	serviceSlug: ListItem["serviceSlug"];
+	serviceName: ListItem["serviceName"];
 	watchStatus: 0 | 1;
 	movieId: number | null;
 	officialTitle: string | null;
@@ -32,7 +32,7 @@ type ListItemRow = {
 
 type UserMovieList = {
 	listId: number;
-	movies: MovieInfo[];
+	movies: ListItem[];
 };
 
 export async function getUserMovieList(userId: number): Promise<UserMovieList> {

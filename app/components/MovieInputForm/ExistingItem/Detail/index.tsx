@@ -1,8 +1,8 @@
 import { formatRelativeDate } from "@/lib/date";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { ListItem } from "@/features/list/types/ListItem";
 
 type Props = {
-	movie: MovieInfo;
+	movie: ListItem;
 };
 
 export default function ExistingListItemDetail({ movie }: Props) {

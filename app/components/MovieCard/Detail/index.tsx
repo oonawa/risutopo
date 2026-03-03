@@ -1,4 +1,4 @@
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { ListItem } from "@/features/list/types/ListItem";
 import { AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import ArrowCircleRightIcon from "@/components/ui/Icons/ArrowCircleRightIcon";
@@ -8,7 +8,7 @@ import MovieCardDetailOverview from "./Overview";
 import Transition from "./Transition";
 
 type Props = {
-	movie: MovieInfo;
+	movie: ListItem;
 	ctaMode: "watch" | "register";
 	resultState: "idle" | "success" | "error";
 	onSearch: () => void;

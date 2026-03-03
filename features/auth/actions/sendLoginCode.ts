@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm";
 import crypto from "node:crypto";
 import { Resend } from "resend";
 import { checkRateLimit, recordAttempt } from "../services/rateLimit";
-import type { Result } from "@/app/types/Result";
+import type { Result } from "@/features/shared/types/Result";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
 import { authTokensTable, usersTable } from "@/db/schema";

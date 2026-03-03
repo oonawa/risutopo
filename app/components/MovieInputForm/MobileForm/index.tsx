@@ -1,9 +1,9 @@
 import type z from "zod";
-import type { MovieInfo } from "@/app/types/MovieInputForm/MovieInfo";
+import type { ListItem } from "@/features/list/types/ListItem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { movieShareLinkSchema } from "@/app/movieShareLinkSchema";
-import { useExtractMovieInfo } from "@/app/hooks/useExtractMovieInfo";
+import { movieShareLinkSchema } from "@/features/list/schemas/movieShareLinkSchema";
+import { useExtractMovieInfo } from "@/features/list/hooks/useExtractMovieInfo";
 import Tutorial from "../Tutorial";
 import TutorialContent from "../Tutorial/Content";
 import FormTextarea from "../FormTextarea";
@@ -12,7 +12,7 @@ type MovieShareLinkValue = z.infer<typeof movieShareLinkSchema>;
 
 type Props = {
 	disabled: boolean;
-	handleExtract: (extracted: MovieInfo | null) => void;
+	handleExtract: (extracted: ListItem | null) => void;
 };
 
 export default function MobileForm({ disabled, handleExtract }: Props) {

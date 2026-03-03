@@ -1,11 +1,11 @@
 "use server";
 
-import type { Result } from "@/app/types/Result";
 import { cookies, headers } from "next/headers";
 import crypto from "node:crypto";
 import { eq, and, gt } from "drizzle-orm";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
+import type { Result } from "@/features/shared/types/Result";
 import { authTokensTable, usersTable } from "@/db/schema";
 import { loginCodeSchema } from "../schemas/loginSchemas";
 import {
