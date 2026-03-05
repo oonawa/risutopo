@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
@@ -22,10 +23,10 @@ describe("removeListItem", () => {
 			})
 			.returning({ id: usersTable.id });
 
-		const [list] = await db
-			.insert(listsTable)
-			.values({ userId: user.id })
-			.returning({ id: listsTable.id });
+			const [list] = await db
+				.insert(listsTable)
+				.values({ publicId: crypto.randomUUID(), userId: user.id })
+				.returning({ id: listsTable.id });
 
 		const [streamingService] = await db
 			.select({ id: streamingServicesTable.id })

@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "node:crypto";
 import { headers, cookies } from "next/headers";
 import type { Result } from "@/features/shared/types/Result";
 import { db } from "@/db/client";
@@ -67,9 +68,10 @@ export async function registerUser({
 				})
 				.returning();
 
-			await tx.insert(listsTable).values({
-				userId: newUser.id,
-			});
+				await tx.insert(listsTable).values({
+					publicId: crypto.randomUUID(),
+					userId: newUser.id,
+				});
 			const cookieStore = await cookies();
 			const tempToken = cookieStore.get("temp_session_token")?.value;
 

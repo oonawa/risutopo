@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
@@ -216,10 +217,10 @@ describe("storeMovie", () => {
 			})
 			.returning();
 
-		const [list] = await db
-			.insert(listsTable)
-			.values({ userId: user.id })
-			.returning();
+			const [list] = await db
+				.insert(listsTable)
+				.values({ publicId: crypto.randomUUID(), userId: user.id })
+				.returning();
 		testListId = list.id;
 	});
 
