@@ -20,8 +20,8 @@ export function useLocalStorage() {
 	);
 
 	const hydrateLocalStorageFromDb = useCallback(
-		async ({ listId }: { listId: number }) => {
-			const result = await getUserMovieList(listId);
+		async ({ listPublicId }: { listPublicId: string }) => {
+			const result = await getUserMovieList(listPublicId);
 			if (result.success) {
 				replaceMovieService(result.data);
 				setStorageErrorMessage("");

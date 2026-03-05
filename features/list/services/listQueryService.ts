@@ -2,14 +2,14 @@ import type { Result } from "@/features/shared/types/Result";
 import type { ListItem } from "@/features/list/types/ListItem";
 import {
 	findDirectorRowsByMovieIds,
-	findListIdByUserId,
-	findListItemRowsByListId,
+	findListItemRowsByListPublicId,
+	findListPublicIdByUserId,
 } from "@/features/list/repositories/server/listRepository";
 
 export async function getUserMovieList(
-	listId: number,
+	listPublicId: string,
 ): Promise<Result<ListItem[]>> {
-	const rows = await findListItemRowsByListId(listId);
+	const rows = await findListItemRowsByListPublicId(listPublicId);
 
 	const movieIds = rows
 		.flatMap((row) => {
@@ -87,6 +87,8 @@ export async function getUserMovieList(
 	};
 }
 
-export async function getUserMovieListId(userId: number): Promise<number | null> {
-	return await findListIdByUserId(userId);
+export async function getUserMovieListPublicId(
+	userId: number,
+): Promise<string | null> {
+	return await findListPublicIdByUserId(userId);
 }

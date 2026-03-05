@@ -28,22 +28,22 @@ export type ListItemRow = {
 	externalDatabaseMovieId: string | null;
 };
 
-export async function findListById(listId: number) {
+export async function findListIdByPublicId(listPublicId: string) {
 	const [list] = await db
 		.select({ id: listsTable.id })
 		.from(listsTable)
-		.where(eq(listsTable.id, listId));
+		.where(eq(listsTable.publicId, listPublicId));
 
-	return list;
+	return list?.id ?? null;
 }
 
-export async function findListIdByUserId(userId: number) {
+export async function findListPublicIdByUserId(userId: number) {
 	const [list] = await db
-		.select({ id: listsTable.id })
+		.select({ publicId: listsTable.publicId })
 		.from(listsTable)
 		.where(eq(listsTable.userId, userId));
 
-	return list?.id ?? null;
+	return list?.publicId ?? null;
 }
 
 export async function findStreamingServiceBySlug(slug: ListItem["serviceSlug"]) {
@@ -124,15 +124,6 @@ export async function insertListItem({
 	});
 }
 
-export async function findListItemIdByPublicId(listItemPublicId: string) {
-	const [listItem] = await db
-		.select({ id: listItemsTable.id })
-		.from(listItemsTable)
-		.where(eq(listItemsTable.publicId, listItemPublicId));
-
-	return listItem?.id ?? null;
-}
-
 export async function findListItemIdByPublicIdAndListId({
 	listItemPublicId,
 	listId,
@@ -154,13 +145,16 @@ export async function findListItemIdByPublicIdAndListId({
 }
 
 export async function deleteListItemByPublicId(listItemPublicId: string) {
-	await db
+	const [deleted] = await db
 		.delete(listItemsTable)
-		.where(eq(listItemsTable.publicId, listItemPublicId));
+		.where(eq(listItemsTable.publicId, listItemPublicId))
+		.returning({ id: listItemsTable.id });
+
+	return deleted?.id ?? null;
 }
 
-export async function findListItemRowsByListId(
-	listId: number,
+export async function findListItemRowsByListPublicId(
+	listPublicId: string,
 ): Promise<ListItemRow[]> {
 	return await db
 		.select({
@@ -185,8 +179,9 @@ export async function findListItemRowsByListId(
 			streamingServicesTable,
 			eq(listItemsTable.streamingServiceId, streamingServicesTable.id),
 		)
+		.innerJoin(listsTable, eq(listItemsTable.listId, listsTable.id))
 		.leftJoin(moviesTable, eq(listItemsTable.movieId, moviesTable.id))
-		.where(eq(listItemsTable.listId, listId))
+		.where(eq(listsTable.publicId, listPublicId))
 		.orderBy(desc(listItemsTable.id));
 }
 

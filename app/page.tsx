@@ -1,11 +1,13 @@
 import { headers } from "next/headers";
-import { getUserMovieListId } from "@/features/list/actions/getUserMovieListId";
+import { getUserMovieListPublicId } from "@/features/list/actions/getUserMovieListPublicId";
 import MovieInputForm from "./components/MovieInputForm";
 import { isAuthenticated } from "@/features/auth/services/session";
 
 export default async function Home() {
 	const isVerified = await isAuthenticated();
-	const listId = isVerified ? await getUserMovieListId(isVerified.userId) : null;
+	const listPublicId = isVerified
+		? await getUserMovieListPublicId(isVerified.userId)
+		: null;
 
 	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") || "";
@@ -19,7 +21,7 @@ export default async function Home() {
 			<MovieInputForm
 				initialIsMobile={isMobileUA}
 				userAgent={userAgent}
-				listId={listId}
+				listPublicId={listPublicId}
 			/>
 		</div>
 	);
