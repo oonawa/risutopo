@@ -13,14 +13,14 @@ import { risutopottoAtom } from "@/features/shared/store";
 
 type Props = {
 	movie: ListItem;
-	listId: number | null;
+	listPublicId: string | null;
 	onSuccess?: () => void;
 };
 
 type CtaMode = "watch" | "register";
 type ResultState = "idle" | "success" | "error";
 
-export default function MovieCard({ movie, listId, onSuccess }: Props) {
+export default function MovieCard({ movie, listPublicId, onSuccess }: Props) {
 	const { setMovie } = useMovieAtom();
 
 	const store = useStore();
@@ -104,14 +104,14 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 	};
 
 	const handleSubmit = () => {
-		submit({ movie: currentMovieInfo ?? movie, listId });
+		submit({ movie: currentMovieInfo ?? movie, listPublicId });
 	};
 
 	const handleRemove = () => {
 		const listItemId = currentMovieInfo?.listItemId ?? movie.listItemId;
 		if (listItemId) {
 			remove({
-				listId,
+				listPublicId,
 				listItemId,
 			});
 		}
@@ -172,7 +172,7 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 								movie={movie}
 								resultState={resultState}
 								submitErrorMessage={submitErrorMessage}
-								isLoggedIn={listId !== null}
+								isLoggedIn={listPublicId !== null}
 								isSameMovie={isSameMovie}
 							/>
 						</motion.div>
@@ -198,7 +198,7 @@ export default function MovieCard({ movie, listId, onSuccess }: Props) {
 								movie={currentMovieInfo}
 								resultState={resultState}
 								submitErrorMessage={submitErrorMessage}
-								isLoggedIn={listId !== null}
+								isLoggedIn={listPublicId !== null}
 								isSameMovie={isSameMovie}
 								isSameMovieDetails={isSameMovieDetails}
 							/>

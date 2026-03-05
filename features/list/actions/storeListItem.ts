@@ -6,20 +6,20 @@ import type { ListItem } from "../types/ListItem";
 import { storeListItem as storeListItemService } from "../services/listCommandService";
 
 type Args = {
-	listId: number;
+	listPublicId: string;
 	movie: ListItem;
 	isWatched: boolean;
 	now: Date;
 };
 
 export async function storeListItem({
-	listId,
+	listPublicId,
 	movie,
 	isWatched,
 	now,
 }: Args): Promise<Result<ListItem, MovieFormError>> {
 	return await storeListItemService({
-		listId,
+		listPublicId,
 		movie,
 		isWatched,
 		now,

@@ -4,8 +4,7 @@ import type { MovieFormError } from "@/features/list/types/ItemStoreError";
 import type { ListItem } from "@/features/list/types/ListItem";
 import {
 	deleteListItemByPublicId,
-	findListById,
-	findListItemIdByPublicId,
+	findListIdByPublicId,
 	findListItemIdByPublicIdAndListId,
 	findStreamingServiceBySlug,
 	insertListItem,
@@ -13,18 +12,18 @@ import {
 } from "@/features/list/repositories/server/listRepository";
 
 export async function storeListItem({
-	listId,
+	listPublicId,
 	movie,
 	isWatched,
 	now,
 }: {
-	listId: number;
+	listPublicId: string;
 	movie: ListItem;
 	isWatched: boolean;
 	now: Date;
 }): Promise<Result<ListItem, MovieFormError>> {
-	const list = await findListById(listId);
-	if (!list) {
+	const listId = await findListIdByPublicId(listPublicId);
+	if (listId === null) {
 		return {
 			success: false,
 			error: { message: "映画リストが見つかりません。" },
@@ -47,7 +46,7 @@ export async function storeListItem({
 		if (movie.listItemId) {
 			const existingListItem = await findListItemIdByPublicIdAndListId({
 				listItemPublicId: movie.listItemId,
-				listId: list.id,
+				listId,
 			});
 			if (!existingListItem) {
 				return {
@@ -57,7 +56,7 @@ export async function storeListItem({
 			}
 
 			await updateListItemByPublicIdAndListId({
-				listId: list.id,
+				listId,
 				listItemPublicId: movie.listItemId,
 				streamingServiceId: streamingService.id,
 				movieId: movie.details?.movieId ?? null,
@@ -67,7 +66,7 @@ export async function storeListItem({
 			});
 		} else {
 			await insertListItem({
-				listId: list.id,
+				listId,
 				listItemPublicId,
 				streamingServiceId: streamingService.id,
 				movieId: movie.details?.movieId ?? null,
@@ -112,8 +111,8 @@ export async function removeListItem({
 	listItemId: string;
 }): Promise<Result> {
 	try {
-		const existingListItemId = await findListItemIdByPublicId(listItemId);
-		if (!existingListItemId) {
+		const deletedListItemId = await deleteListItemByPublicId(listItemId);
+		if (!deletedListItemId) {
 			return {
 				success: false,
 				error: {
@@ -122,7 +121,6 @@ export async function removeListItem({
 			};
 		}
 
-		await deleteListItemByPublicId(listItemId);
 		return { success: true };
 	} catch (error) {
 		console.error(error);
