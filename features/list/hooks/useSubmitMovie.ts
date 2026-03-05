@@ -16,13 +16,13 @@ export const useSubmitMovie = () => {
 
 	const submit = ({
 		movie,
-		listId,
+		listPublicId,
 	}: {
 		movie: ListItem;
-		listId: number | null;
+		listPublicId: string | null;
 	}) => {
 		startSubmitTransition(async () => {
-			if (!listId) {
+			if (!listPublicId) {
 				setSubmitResult({
 					success: true,
 					data: {
@@ -33,7 +33,7 @@ export const useSubmitMovie = () => {
 			}
 
 			const storeListItemResult = await storeListItem({
-				listId,
+				listPublicId,
 				movie,
 				now: new Date(),
 				isWatched: movie.isWatched ?? false,
@@ -54,14 +54,14 @@ export const useSubmitMovie = () => {
 	};
 
 	const remove = ({
-		listId,
+		listPublicId,
 		listItemId,
 	}: {
-		listId: number | null;
+		listPublicId: string | null;
 		listItemId: string;
 	}) => {
 		startRemoveTransition(async () => {
-			if (!listId) {
+			if (!listPublicId) {
 				setRemoveResult({
 					success: true,
 				});

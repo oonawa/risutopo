@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
@@ -15,18 +16,18 @@ import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
 import { storeListItem } from "./storeListItem";
 
 async function assertStoreMovieResult({
-	listId,
+	listPublicId,
 	movie,
 	expectedTitle,
 	isWatched = false,
 }: {
-	listId: number;
+	listPublicId: string;
 	movie: ListItem;
 	expectedTitle: string;
 	isWatched?: boolean;
 }) {
 	const result = await storeListItem({
-		listId,
+		listPublicId,
 		movie,
 		isWatched,
 		now: new Date(),
@@ -206,6 +207,7 @@ async function assertMovieDirectorRecord({
 
 describe("storeMovie", () => {
 	let testListId: number;
+	let testListPublicId: string;
 
 	beforeEach(async () => {
 		const [user] = await db
@@ -216,11 +218,12 @@ describe("storeMovie", () => {
 			})
 			.returning();
 
-		const [list] = await db
-			.insert(listsTable)
-			.values({ userId: user.id })
-			.returning();
+			const [list] = await db
+				.insert(listsTable)
+				.values({ publicId: crypto.randomUUID(), userId: user.id })
+				.returning();
 		testListId = list.id;
+		testListPublicId = list.publicId;
 	});
 
 	it("【TMDBなし】Netflix：ジュラシック・パークをリスト追加", async () => {
@@ -233,7 +236,7 @@ describe("storeMovie", () => {
 		};
 
 		const storeResult = await assertStoreMovieResult({
-			listId: testListId,
+			listPublicId: testListPublicId,
 			movie,
 			expectedTitle: movie.title,
 		});
@@ -312,7 +315,7 @@ describe("storeMovie", () => {
 		};
 
 		const storeResult = await assertStoreMovieResult({
-			listId: testListId,
+			listPublicId: testListPublicId,
 			movie,
 			expectedTitle: movie.title,
 		});
@@ -351,7 +354,7 @@ describe("storeMovie", () => {
 		};
 
 		const firstResult = await storeListItem({
-			listId: testListId,
+			listPublicId: testListPublicId,
 			movie,
 			isWatched: false,
 			now: new Date(),
@@ -360,7 +363,7 @@ describe("storeMovie", () => {
 		expect(firstResult.success).toBe(true);
 
 		const secondResult = await storeListItem({
-			listId: testListId,
+			listPublicId: testListPublicId,
 			movie,
 			isWatched: false,
 			now: new Date(),

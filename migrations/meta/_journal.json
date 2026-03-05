@@ -134,6 +134,20 @@
       "when": 1772157098378,
       "tag": "0018_tricky_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1772692768130,
+      "tag": "0019_brief_red_shift",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1772692775444,
+      "tag": "0020_slippery_blockbuster",
+      "breakpoints": true
     }
   ]
 }

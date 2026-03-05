@@ -19,13 +19,13 @@ import SelectButtons from "./SelectButtons";
 type Props = {
 	initialIsMobile: boolean;
 	userAgent: string;
-	listId: number | null;
+	listPublicId: string | null;
 };
 
 export default function MovieInputForm({
 	initialIsMobile,
 	userAgent,
-	listId,
+	listPublicId,
 }: Props) {
 	const { activeTab, setActiveTab } = useActiveTab({
 		initialIsMobile,
@@ -55,15 +55,15 @@ export default function MovieInputForm({
 
 			setExtractedMovie(extracted);
 
-			const movieService = await (async () => {
-				const cachedMovieService = getMovieService();
-				if (!listId || cachedMovieService.length > 0) {
-					return cachedMovieService;
-				}
+				const movieService = await (async () => {
+					const cachedMovieService = getMovieService();
+					if (!listPublicId || cachedMovieService.length > 0) {
+						return cachedMovieService;
+					}
 
-				await hydrateLocalStorageFromDb({ listId });
-				return getMovieService();
-			})();
+					await hydrateLocalStorageFromDb({ listPublicId });
+					return getMovieService();
+				})();
 
 			const extractedExternalMovieId =
 				extracted.details?.externalDatabaseMovieId;
@@ -222,7 +222,10 @@ export default function MovieInputForm({
 											exit={{ opacity: 0, y: -4 }}
 											transition={{ duration: 0.2, ease: "easeOut" }}
 										>
-											<MovieCard listId={listId} movie={extractedMovie} />
+											<MovieCard
+												listPublicId={listPublicId}
+												movie={extractedMovie}
+											/>
 										</motion.div>
 									)}
 								</AnimatePresence>

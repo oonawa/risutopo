@@ -1,0 +1,1 @@
+ALTER TABLE `lists_table` ADD `publicId` text;

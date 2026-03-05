@@ -57,6 +57,7 @@ export const movieServicesTable = sqliteTable("movie_services_table", {
 
 export const listsTable = sqliteTable("lists_table", {
 	id: int().primaryKey({ autoIncrement: true }),
+	publicId: text().notNull().unique(),
 	userId: int()
 		.notNull()
 		.unique()
