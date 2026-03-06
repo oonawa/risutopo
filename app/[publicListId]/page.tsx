@@ -16,9 +16,5 @@ export default async function MovieList({ params }: Props) {
 	}
 	const { publicListId } = await params;
 
-	return (
-		<main className="max-w-240 mx-auto pt-10 pb-4 ">
-			<UserMovieList publicListId={publicListId} />
-		</main>
-	);
+	return <UserMovieList publicListId={publicListId} />;
 }

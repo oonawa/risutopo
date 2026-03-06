@@ -89,7 +89,7 @@ export default function MovieCard({ movie, listPublicId, onSuccess }: Props) {
 	}, [isSubmitSuccess, isRemoveSuccess, onSuccess, setMovie]);
 
 	const handleSearchSelect = (externalMovieId: number) => {
-		const list = store.get(risutopottoAtom).movie_service;
+		const list = store.get(risutopottoAtom).list.items;
 		const hasSameDetails = list.find(
 			(item) => item.details?.externalDatabaseMovieId === externalMovieId,
 		);
