@@ -28,7 +28,7 @@ export default function PcForm({ disabled, handleExtract }: Props) {
 	const { extractMovieInfoFromBrowser } = useExtractMovieInfo();
 
 	return (
-		<div className="w-full md:px-10 flex flex-col justify-center items-center">
+		<div className="w-full flex flex-col justify-center items-center">
 			<div className="w-full flex flex-col gap-4">
 				<div className="flex flex-col gap-4 relative">
 					<div className="flex justify-center py-2 font-medium">
