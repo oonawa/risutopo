@@ -17,12 +17,10 @@ export default async function Home() {
 	);
 
 	return (
-		<div className="h-dvh w-dvw flex items-center justify-center">
-			<MovieInputForm
-				initialIsMobile={isMobileUA}
-				userAgent={userAgent}
-				listPublicId={listPublicId}
-			/>
-		</div>
+		<MovieInputForm
+			initialIsMobile={isMobileUA}
+			userAgent={userAgent}
+			listPublicId={listPublicId}
+		/>
 	);
 }

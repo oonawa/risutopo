@@ -55,15 +55,15 @@ export default function MovieInputForm({
 
 			setExtractedMovie(extracted);
 
-				const movieService = await (async () => {
-					const cachedMovieService = getMovieService();
-					if (!listPublicId || cachedMovieService.length > 0) {
-						return cachedMovieService;
-					}
+			const movieService = await (async () => {
+				const cachedMovieService = getMovieService();
+				if (!listPublicId || cachedMovieService.length > 0) {
+					return cachedMovieService;
+				}
 
-					await hydrateLocalStorageFromDb({ listPublicId });
-					return getMovieService();
-				})();
+				await hydrateLocalStorageFromDb({ listPublicId });
+				return getMovieService();
+			})();
 
 			const extractedExternalMovieId =
 				extracted.details?.externalDatabaseMovieId;
@@ -107,9 +107,24 @@ export default function MovieInputForm({
 	}, []);
 
 	return (
-		<>
-			<div className="flex flex-col items-center justify-center md:p-4 w-[90dvw] md:w-[60dvw] max-w-150 h-full max-h-[70dvh]">
-				<div className="w-full h-full flex items-center">
+		<div className="flex justify-center pt-[20dvh]">
+			<div className="md:p-4 w-[90dvw] md:w-[60dvw] max-w-150">
+				<div className="w-full h-full md:px-10 flex flex-col gap-6 items-center justify-center">
+					<div className="grid grid-cols-2 gap-2 bg-background border border-background-light-1 rounded-full p-1">
+						<Tab
+							onClick={() => setActiveTab("pc")}
+							isActive={activeTab === "pc"}
+						>
+							<WebBrowserIcon className="size-5" />
+						</Tab>
+						<Tab
+							onClick={() => setActiveTab("mobile")}
+							isActive={activeTab === "mobile"}
+						>
+							<MobileDeviceIcon className="size-5" />
+						</Tab>
+					</div>
+
 					{activeTab === "pc" ? (
 						<PcForm
 							disabled={extractedMovie !== null}
@@ -121,17 +136,6 @@ export default function MovieInputForm({
 							handleExtract={handleExtract}
 						/>
 					)}
-				</div>
-				<div className="max-w-[50dvw] grid grid-cols-2 gap-2 border border-background-light-1 rounded-full p-1 bg-background">
-					<Tab onClick={() => setActiveTab("pc")} isActive={activeTab === "pc"}>
-						<WebBrowserIcon className="size-5" />
-					</Tab>
-					<Tab
-						onClick={() => setActiveTab("mobile")}
-						isActive={activeTab === "mobile"}
-					>
-						<MobileDeviceIcon className="size-5" />
-					</Tab>
 				</div>
 			</div>
 
@@ -234,6 +238,6 @@ export default function MovieInputForm({
 					</motion.div>
 				)}
 			</AnimatePresence>
-		</>
+		</div>
 	);
 }
