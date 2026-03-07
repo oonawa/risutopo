@@ -16,18 +16,18 @@ import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
 import { storeListItem } from "./storeListItem";
 
 async function assertStoreMovieResult({
-	listPublicId,
+	publicListId,
 	movie,
 	expectedTitle,
 	isWatched = false,
 }: {
-	listPublicId: string;
+	publicListId: string;
 	movie: ListItem;
 	expectedTitle: string;
 	isWatched?: boolean;
 }) {
 	const result = await storeListItem({
-		listPublicId,
+		publicListId,
 		movie,
 		isWatched,
 		now: new Date(),
@@ -236,7 +236,7 @@ describe("storeMovie", () => {
 		};
 
 		const storeResult = await assertStoreMovieResult({
-			listPublicId: testListPublicId,
+			publicListId: testListPublicId,
 			movie,
 			expectedTitle: movie.title,
 		});
@@ -315,7 +315,7 @@ describe("storeMovie", () => {
 		};
 
 		const storeResult = await assertStoreMovieResult({
-			listPublicId: testListPublicId,
+			publicListId: testListPublicId,
 			movie,
 			expectedTitle: movie.title,
 		});
@@ -354,7 +354,7 @@ describe("storeMovie", () => {
 		};
 
 		const firstResult = await storeListItem({
-			listPublicId: testListPublicId,
+			publicListId: testListPublicId,
 			movie,
 			isWatched: false,
 			now: new Date(),
@@ -363,7 +363,7 @@ describe("storeMovie", () => {
 		expect(firstResult.success).toBe(true);
 
 		const secondResult = await storeListItem({
-			listPublicId: testListPublicId,
+			publicListId: testListPublicId,
 			movie,
 			isWatched: false,
 			now: new Date(),

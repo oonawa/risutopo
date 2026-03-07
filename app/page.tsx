@@ -5,7 +5,7 @@ import { isAuthenticated } from "@/features/auth/services/session";
 
 export default async function Home() {
 	const isVerified = await isAuthenticated();
-	const listPublicId = isVerified
+	const publicListId = isVerified
 		? await getUserMovieListPublicId(isVerified.userId)
 		: null;
 
@@ -20,7 +20,7 @@ export default async function Home() {
 		<MovieInputForm
 			initialIsMobile={isMobileUA}
 			userAgent={userAgent}
-			listPublicId={listPublicId}
+			publicListId={publicListId}
 		/>
 	);
 }

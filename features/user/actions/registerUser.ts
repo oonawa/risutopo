@@ -2,31 +2,58 @@
 
 import crypto from "node:crypto";
 import { headers, cookies } from "next/headers";
-import type { Result } from "@/features/shared/types/Result";
 import { db } from "@/db/client";
-import { and, eq } from "drizzle-orm";
-import { usersTable, listsTable, authTokensTable } from "@/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
+import {
+	usersTable,
+	listsTable,
+	authTokensTable,
+	listItemsTable,
+	streamingServicesTable,
+} from "@/db/schema";
+import type { Result } from "@/features/shared/types/Result";
+import type { ListItem } from "@/features/list/types/ListItem";
 import { userIdSchema } from "../schemas/userIdSchema";
+import {
+	registerLocalListPayloadSchema,
+	registerLocalListItemSchema,
+	type RegisterLocalListInput,
+} from "@/features/user/schemas/listItemSchema";
 import {
 	verifyTempSessionToken,
 	generateSessionToken,
 	addDays,
 } from "@/features/auth/services/session";
 import { generateDeviceId } from "@/features/auth/services/devices";
+import { getUserMovieList as getUserMovieListService } from "@/features/list/services/listQueryService";
+
+const emptyLocalList: RegisterLocalListInput = {
+	listId: "",
+	items: [],
+};
+
+const normalizeCreatedAt = (value: Date, fallback: Date): Date => {
+	const date = new Date(value);
+	return Number.isNaN(date.getTime()) ? fallback : date;
+};
 
 export async function registerUser({
 	email,
 	userId,
 	tempToken,
+	localUserList,
 	now,
 }: {
 	email: string;
 	userId: string;
 	tempToken: string;
+	localUserList: RegisterLocalListInput;
 	now: Date;
 }): Promise<
 	Result<{
 		userId: string;
+		listPublicId: string;
+		listItems: ListItem[];
 	}>
 > {
 	const tempSession = await verifyTempSessionToken({ tempToken, now });
@@ -57,9 +84,29 @@ export async function registerUser({
 	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") || "Unknown";
 	const deviceId = generateDeviceId(userAgent);
+	const parsedLocalList =
+		registerLocalListPayloadSchema.safeParse(localUserList);
+	const normalizedLocalList = parsedLocalList.success
+		? parsedLocalList.data
+		: emptyLocalList;
+	const validLocalListItems = normalizedLocalList.items.flatMap((item) => {
+		const parsedItem = registerLocalListItemSchema.safeParse(item);
+		if (!parsedItem.success) {
+			return [];
+		}
+
+		return [parsedItem.data];
+	});
+
+	let transactionResult: {
+		publicId: string;
+		listPublicId: string;
+		sessionToken: string;
+		expiresAt: Date;
+	};
 
 	try {
-		const transactionResult = await db.transaction(async (tx) => {
+		transactionResult = await db.transaction(async (tx) => {
 			const [newUser] = await tx
 				.insert(usersTable)
 				.values({
@@ -68,10 +115,67 @@ export async function registerUser({
 				})
 				.returning();
 
-				await tx.insert(listsTable).values({
-					publicId: crypto.randomUUID(),
+			const normalizedListPublicId =
+				normalizedLocalList.listId.length > 0
+					? normalizedLocalList.listId
+					: crypto.randomUUID();
+			const [newList] = await tx
+				.insert(listsTable)
+				.values({
+					publicId: normalizedListPublicId,
 					userId: newUser.id,
+				})
+				.returning({
+					id: listsTable.id,
+					publicId: listsTable.publicId,
 				});
+
+			if (validLocalListItems.length > 0) {
+				const serviceSlugs = Array.from(
+					new Set(validLocalListItems.map((item) => item.serviceSlug)),
+				);
+				const streamingServices = await tx
+					.select({
+						id: streamingServicesTable.id,
+						slug: streamingServicesTable.slug,
+					})
+					.from(streamingServicesTable)
+					.where(inArray(streamingServicesTable.slug, serviceSlugs));
+
+				const serviceIdBySlug = new Map(
+					streamingServices.map((service) => [service.slug, service.id]),
+				);
+				const seenWatchUrls = new Set<string>();
+				const listItems: Array<typeof listItemsTable.$inferInsert> = [];
+
+				for (const item of validLocalListItems) {
+					if (seenWatchUrls.has(item.url)) {
+						continue;
+					}
+
+					const streamingServiceId = serviceIdBySlug.get(item.serviceSlug);
+					if (!streamingServiceId) {
+						continue;
+					}
+
+					seenWatchUrls.add(item.url);
+					listItems.push({
+						publicId: item.listItemId ?? crypto.randomUUID(),
+						listId: newList.id,
+						streamingServiceId,
+						movieId: item.details?.movieId ?? null,
+						watchUrl: item.url,
+						watchStatus: item.isWatched ? 1 : 0,
+						titleOnService: item.title,
+						createdAt: normalizeCreatedAt(item.createdAt, now),
+					});
+				}
+
+				if (listItems.length > 0) {
+					await tx.insert(listItemsTable).values(listItems);
+				}
+			}
+
 			const cookieStore = await cookies();
 			const tempToken = cookieStore.get("temp_session_token")?.value;
 
@@ -105,6 +209,7 @@ export async function registerUser({
 
 			return {
 				publicId: newUser.publicId,
+				listPublicId: newList.publicId,
 				sessionToken,
 				expiresAt,
 			};
@@ -117,13 +222,6 @@ export async function registerUser({
 			sameSite: "lax",
 			expires: transactionResult.expiresAt,
 		});
-
-		return {
-			success: true,
-			data: {
-				userId: transactionResult.publicId,
-			},
-		};
 	} catch (err) {
 		console.error(err);
 		return {
@@ -131,4 +229,26 @@ export async function registerUser({
 			error: { message: "ユーザー登録の処理に失敗しました。" },
 		};
 	}
+
+	let listItems: ListItem[] = [];
+
+	try {
+		const listItemsResult = await getUserMovieListService(
+			transactionResult.listPublicId,
+		);
+		if (listItemsResult.success) {
+			listItems = listItemsResult.data;
+		}
+	} catch (err) {
+		console.error(err);
+	}
+
+	return {
+		success: true,
+		data: {
+			userId: transactionResult.publicId,
+			listPublicId: transactionResult.listPublicId,
+			listItems,
+		},
+	};
 }

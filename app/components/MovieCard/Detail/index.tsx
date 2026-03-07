@@ -165,18 +165,20 @@ export default function MovieCardDetail({
 									すでにリスト登録されています。
 								</div>
 							)}
-							<div className="pb-4 text-foreground-dark-1">
-								<Button
-									onClick={() => {
-										onCancel();
-										onSearch();
-									}}
-									className="flex items-center"
-								>
-									<ArrowCircleLeftIcon />
-									もどる
-								</Button>
-							</div>
+							{movie.details && (
+								<div className="pb-4 text-foreground-dark-1">
+									<Button
+										onClick={() => {
+											onCancel();
+											onSearch();
+										}}
+										className="flex items-center"
+									>
+										<ArrowCircleLeftIcon />
+										もどる
+									</Button>
+								</div>
+							)}
 							<div className="flex gap-2">
 								<Button
 									disabled={isSubmitPending || isSameMovieDetails}

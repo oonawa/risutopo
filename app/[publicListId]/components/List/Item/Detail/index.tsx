@@ -8,10 +8,10 @@ import CrossIcon from "@/components/ui/Icons/CrossIcon";
 import MovieCard from "@/app/components/MovieCard";
 
 type Props = {
-	listPublicId: string;
+	publicListId: string;
 };
 
-export default function ListItemDetail({ listPublicId }: Props) {
+export default function ListItemDetail({ publicListId }: Props) {
 	const router = useRouter();
 	const { movie, setMovie } = useMovieAtom();
 
@@ -40,7 +40,7 @@ export default function ListItemDetail({ listPublicId }: Props) {
 						</div>
 						<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto">
 							<MovieCard
-								listPublicId={listPublicId}
+								publicListId={publicListId}
 								movie={movie}
 								onSuccess={() => {
 									router.refresh();
