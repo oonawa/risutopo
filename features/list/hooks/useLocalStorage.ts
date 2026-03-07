@@ -6,37 +6,58 @@ import { getUserMovieList } from "../actions/getUserMovieList";
 import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
 
 export function useLocalStorage() {
-	const { appendMovie, replaceMovieService, getMovieService } =
-		useListLocalStorageRepository();
+	const {
+		appendListItem,
+		replaceListItems,
+		getListItems,
+		initializeEmptyList,
+	} = useListLocalStorageRepository();
 	const [storageErrorMessage, setStorageErrorMessage] = useState<string>("");
 
 	const appendMovieToStorage = useCallback(
 		(movie: ListItem) => {
-			appendMovie(movie);
+			appendListItem(movie);
 
 			setStorageErrorMessage("");
 		},
-		[appendMovie],
+		[appendListItem],
 	);
 
-	const hydrateLocalStorageFromDb = useCallback(
-		async ({ listPublicId }: { listPublicId: string }) => {
+	const fetchAndCacheListItems = useCallback(
+		async ({ listPublicId }: { listPublicId: string }): Promise<ListItem[]> => {
 			const result = await getUserMovieList(listPublicId);
 			if (result.success) {
-				replaceMovieService(result.data);
+				replaceListItems(result.data, listPublicId);
 				setStorageErrorMessage("");
-				return;
+				return result.data;
 			}
 
 			setStorageErrorMessage(result.error.message);
+			return getListItems();
 		},
-		[replaceMovieService],
+		[getListItems, replaceListItems],
+	);
+
+	const ensureLocalList = useCallback(
+		async ({ listPublicId }: { listPublicId: string | null }) => {
+			const cachedListItems = getListItems();
+
+			if (!listPublicId || !navigator.onLine) {
+				if (!cachedListItems.length) {
+					initializeEmptyList();
+				}
+				return cachedListItems;
+			}
+
+			return fetchAndCacheListItems({ listPublicId });
+		},
+		[getListItems, fetchAndCacheListItems, initializeEmptyList],
 	);
 
 	return {
 		storageErrorMessage,
 		appendMovieToStorage,
-		hydrateLocalStorageFromDb,
-		getMovieService,
+		ensureLocalList,
+		getListItems,
 	};
 }
