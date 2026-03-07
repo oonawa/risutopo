@@ -32,7 +32,7 @@ export default function MovieInputForm({
 		userAgent,
 	});
 
-	const { hydrateLocalStorageFromDb, getMovieService } = useLocalStorage();
+	const { ensureLocalList } = useLocalStorage();
 
 	const [extractedMovie, setExtractedMovie] = useState<ListItem | null>(null);
 
@@ -55,20 +55,12 @@ export default function MovieInputForm({
 
 			setExtractedMovie(extracted);
 
-			const movieService = await (async () => {
-				const cachedMovieService = getMovieService();
-				if (!listPublicId || cachedMovieService.length > 0) {
-					return cachedMovieService;
-				}
-
-				await hydrateLocalStorageFromDb({ listPublicId });
-				return getMovieService();
-			})();
+			const listItems = await ensureLocalList({ listPublicId });
 
 			const extractedExternalMovieId =
 				extracted.details?.externalDatabaseMovieId;
 
-			const duplicatedMovies = movieService.filter((cachedMovie) => {
+			const duplicatedMovies = listItems.filter((cachedMovie) => {
 				if (
 					extracted.listItemId !== undefined &&
 					cachedMovie.listItemId === extracted.listItemId

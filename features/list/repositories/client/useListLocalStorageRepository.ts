@@ -1,32 +1,46 @@
 "use client";
 
 import { useSetAtom, useStore } from "jotai";
-import {
-	appendMovieServiceAtom,
-	risutopottoAtom,
-} from "@/features/shared/store";
+import { appendListItemAtom, risutopottoAtom } from "@/features/shared/store";
 import type { ListItem } from "@/features/list/types/ListItem";
 
 export function useListLocalStorageRepository() {
-	const appendMovieService = useSetAtom(appendMovieServiceAtom);
+	const appendListItem = useSetAtom(appendListItemAtom);
 	const setRisutopotto = useSetAtom(risutopottoAtom);
 	const store = useStore();
 
-	const getMovieService = (): ListItem[] => {
-		return store.get(risutopottoAtom).movie_service;
+	const getListItems = (): ListItem[] => {
+		return store.get(risutopottoAtom).list.items;
 	};
 
-	const appendMovie = (movie: ListItem) => {
-		appendMovieService(movie);
+	const getListId = (): string => {
+		return store.get(risutopottoAtom).list.listId;
 	};
 
-	const replaceMovieService = (movieService: ListItem[]) => {
-		setRisutopotto({ movie_service: movieService });
+	const replaceListItems = (listItems: ListItem[], listId?: string) => {
+		const current = store.get(risutopottoAtom);
+		setRisutopotto({
+			list: {
+				listId: listId ?? current.list.listId,
+				items: listItems,
+			},
+		});
+	};
+
+	const initializeEmptyList = () => {
+		setRisutopotto({
+			list: {
+				listId: crypto.randomUUID(),
+				items: [],
+			},
+		});
 	};
 
 	return {
-		getMovieService,
-		appendMovie,
-		replaceMovieService,
+		getListItems,
+		getListId,
+		appendListItem,
+		replaceListItems,
+		initializeEmptyList,
 	};
 }

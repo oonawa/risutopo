@@ -5,25 +5,26 @@ import type { ListItem } from "@/features/list/types/ListItem";
 export const LOCAL_STORAGE_KEY = "risutopotto";
 
 export type RisutopottoStorage = {
-	movie_service: ListItem[];
+	list: {
+		listId: string;
+		items: ListItem[];
+	};
 };
 
 export const risutopottoAtom = atomWithStorage<RisutopottoStorage>(
 	LOCAL_STORAGE_KEY,
-	{ movie_service: [] },
+	{ list: { listId: "", items: [] } },
 	undefined,
 	{
 		getOnInit: true,
 	},
 );
 
-export const appendMovieServiceAtom = atom(
+export const appendListItemAtom = atom(
 	null,
 	(get, set, payload: ListItem) => {
 		const current = get(risutopottoAtom);
-		const existing = Array.isArray(current.movie_service)
-			? current.movie_service
-			: [];
+		const existing = current.list.items;
 
 		const next = [
 			...existing,
@@ -35,6 +36,11 @@ export const appendMovieServiceAtom = atom(
 				serviceSlug: payload.serviceSlug,
 			},
 		];
-		set(risutopottoAtom, { movie_service: next });
+		set(risutopottoAtom, {
+			list: {
+				listId: current.list.listId,
+				items: next,
+			},
+		});
 	},
 );
