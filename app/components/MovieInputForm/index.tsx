@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { ListItem } from "@/features/list/types/ListItem";
 import { useActiveTab } from "@/features/list/hooks/useActiveTab";
-import { useLocalStorage } from "@/features/list/hooks/useLocalStorage";
+import { useSearchDuplicateMovie } from "@/features/list/hooks/useSearchDuplicateMovie";
+import { useFetchExistingListItem } from "@/features/list/hooks/useFetchExistingListItem";
 import { Button } from "@/components/ui/button";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
@@ -19,73 +20,47 @@ import SelectButtons from "./SelectButtons";
 type Props = {
 	initialIsMobile: boolean;
 	userAgent: string;
-	listPublicId: string | null;
+	publicListId: string | null;
 };
 
 export default function MovieInputForm({
 	initialIsMobile,
 	userAgent,
-	listPublicId,
+	publicListId,
 }: Props) {
 	const { activeTab, setActiveTab } = useActiveTab({
 		initialIsMobile,
 		userAgent,
 	});
 
-	const { ensureLocalList } = useLocalStorage();
+	const { hydrateLocalStorage } = useFetchExistingListItem({
+		publicListId,
+	});
+
+	useEffect(() => {
+		hydrateLocalStorage();
+	}, [hydrateLocalStorage]);
 
 	const [extractedMovie, setExtractedMovie] = useState<ListItem | null>(null);
 
-	const [duplicateListItems, setDuplicateListItems] = useState<
-		ListItem[] | null
-	>(null);
-	const [sameMovie, setSameMovie] = useState<ListItem | null>(null);
+	const {
+		sameMovie,
+		possibleDuplicateMovies,
+		searchDuplicateMovie,
+		clearDuplicateItem,
+	} = useSearchDuplicateMovie();
 
 	const [searchExistingMoviePending, searchExistingMovieTransition] =
 		useTransition();
 
 	const handleExtract = (extracted: ListItem | null) => {
 		searchExistingMovieTransition(async () => {
-			if (!extracted) {
-				setExtractedMovie(null);
-				setDuplicateListItems(null);
-				setSameMovie(null);
+			if (!extracted || !publicListId) {
 				return;
 			}
 
 			setExtractedMovie(extracted);
-
-			const listItems = await ensureLocalList({ listPublicId });
-
-			const extractedExternalMovieId =
-				extracted.details?.externalDatabaseMovieId;
-
-			const duplicatedMovies = listItems.filter((cachedMovie) => {
-				if (
-					extracted.listItemId !== undefined &&
-					cachedMovie.listItemId === extracted.listItemId
-				) {
-					return false;
-				}
-
-				const hasSameWatchUrl = cachedMovie.url === extracted.url;
-				const hasSameTitle = cachedMovie.title === extracted.title;
-				const hasSameExternalMovieId =
-					extractedExternalMovieId !== undefined &&
-					cachedMovie.details?.externalDatabaseMovieId ===
-						extractedExternalMovieId;
-
-				return hasSameWatchUrl || hasSameTitle || hasSameExternalMovieId;
-			});
-
-			setDuplicateListItems(
-				duplicatedMovies.length > 0 ? duplicatedMovies : null,
-			);
-			setSameMovie(
-				duplicatedMovies.find(
-					(cachedMovie) => cachedMovie.url === extracted.url,
-				) ?? null,
-			);
+			searchDuplicateMovie(extracted);
 		});
 	};
 
@@ -94,9 +69,8 @@ export default function MovieInputForm({
 	}, []);
 
 	const handleRegisterContinue = useCallback(() => {
-		setDuplicateListItems(null);
-		setSameMovie(null);
-	}, []);
+		clearDuplicateItem();
+	}, [clearDuplicateItem]);
 
 	return (
 		<div className="flex justify-center pt-[20dvh]">
@@ -162,7 +136,7 @@ export default function MovieInputForm({
 										</motion.div>
 									)}
 
-									{duplicateListItems && (
+									{possibleDuplicateMovies && (
 										<>
 											<motion.div
 												key="existing-item"
@@ -184,7 +158,7 @@ export default function MovieInputForm({
 															</h2>
 															<div className="w-full max-w-120 pt-4">
 																<ul className="w-full pb-64">
-																	{duplicateListItems.map((item) => (
+																	{possibleDuplicateMovies.map((item) => (
 																		<li
 																			key={
 																				item.listItemId ??
@@ -210,7 +184,7 @@ export default function MovieInputForm({
 										</>
 									)}
 
-									{!duplicateListItems && (
+									{!possibleDuplicateMovies && (
 										<motion.div
 											key="extracted-movie"
 											initial={{ opacity: 0, y: 4 }}
@@ -219,7 +193,7 @@ export default function MovieInputForm({
 											transition={{ duration: 0.2, ease: "easeOut" }}
 										>
 											<MovieCard
-												listPublicId={listPublicId}
+												publicListId={publicListId}
 												movie={extractedMovie}
 											/>
 										</motion.div>

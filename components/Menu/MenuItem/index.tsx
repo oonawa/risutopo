@@ -1,18 +1,27 @@
-export default function MenuItem({
-	isCurrentPage,
-	children,
-}: {
+import Link from "next/link";
+
+type Props = {
+	href: string;
+	prefetch?: boolean;
 	isCurrentPage: boolean;
 	children: React.ReactNode;
-}) {
+};
+
+export default function MenuItem({ href, prefetch, isCurrentPage, children }: Props) {
 	return (
 		<li
 			className={`
-                        flex justify-center active:text-foreground hover:text-foreground hover:bg-background-light-1 rounded-full py-2 transition-colors
-                        ${isCurrentPage ? "text-foreground" : "text-background-light-3"}
-                    `}
+				flex justify-center active:text-foreground hover:text-foreground hover:bg-background-light-1 rounded-full transition-colors
+				${isCurrentPage ? "text-foreground" : "text-background-light-3"}
+			`}
 		>
-			{children}
+			<Link
+				href={href}
+				className="w-full h-full grid place-items-center"
+				prefetch={prefetch}
+			>
+				{children}
+			</Link>
 		</li>
 	);
 }

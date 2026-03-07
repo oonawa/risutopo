@@ -20,7 +20,7 @@ export const risutopottoAtom = atomWithStorage<RisutopottoStorage>(
 	},
 );
 
-export const appendListItemAtom = atom(
+export const localListAtom = atom(
 	null,
 	(get, set, payload: ListItem) => {
 		const current = get(risutopottoAtom);

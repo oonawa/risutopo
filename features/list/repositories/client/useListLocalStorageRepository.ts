@@ -1,11 +1,11 @@
 "use client";
 
 import { useSetAtom, useStore } from "jotai";
-import { appendListItemAtom, risutopottoAtom } from "@/features/shared/store";
+import { localListAtom, risutopottoAtom } from "@/features/shared/store";
 import type { ListItem } from "@/features/list/types/ListItem";
 
 export function useListLocalStorageRepository() {
-	const appendListItem = useSetAtom(appendListItemAtom);
+	const appendListItem = useSetAtom(localListAtom);
 	const setRisutopotto = useSetAtom(risutopottoAtom);
 	const store = useStore();
 
@@ -27,6 +27,30 @@ export function useListLocalStorageRepository() {
 		});
 	};
 
+	const storeListItem = (newItem: ListItem) => {
+		const { items, listId } = store.get(risutopottoAtom).list;
+        const filtered = items.filter((item) => item.listItemId !== newItem.listItemId)
+
+		setRisutopotto({
+			list: {
+				listId,
+				items: [newItem, ...filtered],
+			},
+		});
+	};
+
+	const removeListItem = (listItemId: string) => {
+		const { items, listId } = store.get(risutopottoAtom).list;
+		const removed = items.filter((item) => item.listItemId !== listItemId);
+
+		setRisutopotto({
+			list: {
+				listId,
+				items: removed,
+			},
+		});
+	};
+
 	const initializeEmptyList = () => {
 		setRisutopotto({
 			list: {
@@ -42,5 +66,7 @@ export function useListLocalStorageRepository() {
 		appendListItem,
 		replaceListItems,
 		initializeEmptyList,
+		removeListItem,
+        storeListItem
 	};
 }

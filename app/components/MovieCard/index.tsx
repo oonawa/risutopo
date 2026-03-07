@@ -5,25 +5,24 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMovieAtom } from "@/features/list/state/useMovieAtom";
 import type { ListItem } from "@/features/list/types/ListItem";
 import { useExternalMovieDatabase } from "@/features/movieDatabase/hooks/useExternalMovieDatabase";
+import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import { useSubmitMovie } from "@/features/list/hooks/useSubmitMovie";
 import MovieCardSearchResult from "./SearchResult";
 import MovieCardDetail from "./Detail";
-import { useStore } from "jotai";
-import { risutopottoAtom } from "@/features/shared/store";
 
 type Props = {
 	movie: ListItem;
-	listPublicId: string | null;
+	publicListId: string | null;
 	onSuccess?: () => void;
 };
 
 type CtaMode = "watch" | "register";
 type ResultState = "idle" | "success" | "error";
 
-export default function MovieCard({ movie, listPublicId, onSuccess }: Props) {
+export default function MovieCard({ movie, publicListId, onSuccess }: Props) {
 	const { setMovie } = useMovieAtom();
 
-	const store = useStore();
+	const { removeListItem, storeListItem } = useListLocalStorageRepository();
 
 	const [isSameMovieDetails, setIsSameMovieDetails] = useState(false);
 
@@ -89,29 +88,23 @@ export default function MovieCard({ movie, listPublicId, onSuccess }: Props) {
 	}, [isSubmitSuccess, isRemoveSuccess, onSuccess, setMovie]);
 
 	const handleSearchSelect = (externalMovieId: number) => {
-		const list = store.get(risutopottoAtom).list.items;
-		const hasSameDetails = list.find(
-			(item) => item.details?.externalDatabaseMovieId === externalMovieId,
-		);
-
-		if (hasSameDetails) {
-			setIsSameMovieDetails(true);
-		} else {
-			setIsSameMovieDetails(false);
-		}
+		setIsSameMovieDetails(false);
 
 		handleSelect(externalMovieId);
 	};
 
 	const handleSubmit = () => {
-		submit({ movie: currentMovieInfo ?? movie, listPublicId });
+		const newItem = currentMovieInfo ?? movie;
+		storeListItem(newItem);
+		submit({ movie: newItem, publicListId });
 	};
 
 	const handleRemove = () => {
 		const listItemId = currentMovieInfo?.listItemId ?? movie.listItemId;
 		if (listItemId) {
+			removeListItem(listItemId);
 			remove({
-				listPublicId,
+				publicListId,
 				listItemId,
 			});
 		}
@@ -172,7 +165,7 @@ export default function MovieCard({ movie, listPublicId, onSuccess }: Props) {
 								movie={movie}
 								resultState={resultState}
 								submitErrorMessage={submitErrorMessage}
-								isLoggedIn={listPublicId !== null}
+								isLoggedIn={publicListId !== null}
 								isSameMovie={isSameMovie}
 							/>
 						</motion.div>
@@ -198,7 +191,7 @@ export default function MovieCard({ movie, listPublicId, onSuccess }: Props) {
 								movie={currentMovieInfo}
 								resultState={resultState}
 								submitErrorMessage={submitErrorMessage}
-								isLoggedIn={listPublicId !== null}
+								isLoggedIn={publicListId !== null}
 								isSameMovie={isSameMovie}
 								isSameMovieDetails={isSameMovieDetails}
 							/>

@@ -2,14 +2,25 @@
 
 import type z from "zod";
 import { redirect } from "next/navigation";
-import { useEffect, useState, useRef, useCallback } from "react";
+import {
+	useEffect,
+	useState,
+	useCallback,
+	useDeferredValue,
+	useTransition,
+} from "react";
 import { useForm } from "react-hook-form";
+import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { userIdSchema } from "@/features/user/schemas/userIdSchema";
+import {
+	registerLocalListItemSchema,
+	registerLocalListPayloadSchema,
+} from "@/features/user/schemas/listItemSchema";
+import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
+import { registerUser } from "@/features/user/actions/registerUser";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { userIdSchema } from "@/features/user/schemas/userIdSchema";
-import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
-import { registerUser } from "@/features/user/actions/registerUser";
 
 type UserIdFormData = z.infer<typeof userIdSchema>;
 
@@ -19,9 +30,18 @@ type Props = {
 };
 
 export default function RegisterForm({ email, token }: Props) {
-	const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+	const [inputValue, setInputValue] = useState("");
+
+	const deferredInputValue = useDeferredValue(inputValue);
+
+	const [isPending, startTransition] = useTransition();
+
 	const [isDuplicate, setIsDuplicate] = useState(false);
+
 	const [serverErrorMessage, setServerErrorMessage] = useState<string>("");
+
+	const { getListItems, getListId, replaceListItems } =
+		useListLocalStorageRepository();
 
 	const {
 		register,
@@ -34,56 +54,71 @@ export default function RegisterForm({ email, token }: Props) {
 	});
 
 	const value = watch("userId");
-	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-	const onInput = useCallback(async (inputValue: string) => {
-		const result = userIdSchema.safeParse({ userId: inputValue });
+	const handleInput = useCallback((e: React.FormEvent<HTMLInputElement>) => {
+		const inputValue = e.currentTarget.value;
+		setInputValue(inputValue);
+	}, []);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		const result = userIdSchema.safeParse({ userId: deferredInputValue });
 		if (result.error?.message) {
 			setIsDuplicate(false);
 			return;
 		}
 
-		setIsCheckingDuplicate(true);
-
-		const count = await searchDuplicateUserId(inputValue);
-		setIsDuplicate(count > 0);
-
-		setIsCheckingDuplicate(false);
-	}, []);
-
-	const handleInput = useCallback(
-		(e: React.FormEvent<HTMLInputElement>) => {
-			const inputValue = e.currentTarget.value;
-
-			if (debounceTimerRef.current) {
-				clearTimeout(debounceTimerRef.current);
+		startTransition(async () => {
+			const count = await searchDuplicateUserId(deferredInputValue);
+			if (!cancelled) {
+				setIsDuplicate(count > 0);
 			}
+		});
 
-			debounceTimerRef.current = setTimeout(() => {
-				onInput(inputValue);
-			}, 400);
-		},
-		[onInput],
-	);
-
-	useEffect(() => {
 		return () => {
-			if (debounceTimerRef.current) {
-				clearTimeout(debounceTimerRef.current);
-			}
+			cancelled = true;
 		};
-	}, []);
+	}, [deferredInputValue]);
 
 	const onSubmit = async (data: UserIdFormData) => {
+		const rawLocalUserList = {
+			listId: getListId(),
+			items: getListItems(),
+		};
+		const parsedLocalList =
+			registerLocalListPayloadSchema.safeParse(rawLocalUserList);
+		const localUserList = parsedLocalList.success
+			? {
+					listId: parsedLocalList.data.listId,
+					items: parsedLocalList.data.items.flatMap((item) => {
+						const parsedItem = registerLocalListItemSchema.safeParse(item);
+						if (!parsedItem.success) {
+							return [];
+						}
 
+						return [parsedItem.data];
+					}),
+				}
+			: {
+					listId: "",
+					items: [],
+				};
 
 		const result = await registerUser({
 			userId: data.userId,
 			email,
 			tempToken: token,
+			localUserList,
 			now: new Date(),
 		});
 		if (result.success) {
+			const nextListItems =
+				result.data.listItems.length === 0 && localUserList.items.length > 0
+					? localUserList.items
+					: result.data.listItems;
+
+			replaceListItems(nextListItems, result.data.listPublicId);
 			return redirect("/");
 		}
 
@@ -112,19 +147,19 @@ export default function RegisterForm({ email, token }: Props) {
 					</span>
 					）が使えます
 				</div>
-				{isCheckingDuplicate && (
-					<p className="text-sm text-blue-500">確認中...</p>
-				)}
-				{!isCheckingDuplicate && isDuplicate && (
+				{isPending && <p className="text-sm text-blue-500">確認中...</p>}
+				{isDuplicate && (
 					<p className="text-sm text-red-500">
-						このユーザーIDは既に使用されています
+						このユーザーIDは使用できません。
 					</p>
 				)}
-				{!isCheckingDuplicate && !isDuplicate && value && !errors.userId && (
-					<p className="text-sm text-green-500">このユーザーIDは利用可能です</p>
+				{!isPending && !isDuplicate && value && !errors.userId && (
+					<p className="text-sm text-green-500">
+						このユーザーIDは利用可能です。
+					</p>
 				)}
 				{serverErrorMessage && (
-					<p className="text-sm text-green-500">{serverErrorMessage}</p>
+					<p className="text-sm text-red-500">{serverErrorMessage}</p>
 				)}
 			</div>
 

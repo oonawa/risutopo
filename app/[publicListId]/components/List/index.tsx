@@ -20,7 +20,7 @@ export default async function UserMovieList({ publicListId }: Props) {
 					return <ListItem key={movie.listItemId} movie={movie} />;
 				})}
 			</div>
-			<ListItemDetail listPublicId={publicListId} />
+			<ListItemDetail publicListId={publicListId} />
 		</>
 	);
 }

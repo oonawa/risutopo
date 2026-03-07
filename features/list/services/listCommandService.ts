@@ -12,17 +12,17 @@ import {
 } from "@/features/list/repositories/server/listRepository";
 
 export async function storeListItem({
-	listPublicId,
+	publicListId,
 	movie,
 	isWatched,
 	now,
 }: {
-	listPublicId: string;
+	publicListId: string;
 	movie: ListItem;
 	isWatched: boolean;
 	now: Date;
 }): Promise<Result<ListItem, MovieFormError>> {
-	const listId = await findListIdByPublicId(listPublicId);
+	const listId = await findListIdByPublicId(publicListId);
 	if (listId === null) {
 		return {
 			success: false,
