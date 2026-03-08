@@ -1,16 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import type { ListItem } from "@/features/list/types/ListItem";
-import MovieCardDetail from "./index";
-
-const movieWithoutDetails: ListItem = {
-	title: "トータル・リコール",
-	url: "https://video-share.unext.jp/video/title/SID0023081?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
-	serviceSlug: "unext",
-	serviceName: "U-NEXT",
-	createdAt: new Date(),
-};
+import WatchListItem from "./index";
 
 const movieWithDetails: ListItem = {
+	listItemId: "watch-story-movie-with-details",
 	title: "トータル・リコール",
 	url: "https://video-share.unext.jp/video/title/SID0023081?utm_source=copy&utm_medium=social&utm_campaign=nonad-sns&rid=PM061312883",
 	serviceSlug: "unext",
@@ -33,70 +26,40 @@ const movieWithDetails: ListItem = {
 };
 
 const meta = {
-	title: "app/components/MovieCard/Detail/MovieCardDetail",
-	component: MovieCardDetail,
-	args: {
-		ctaMode: "register",
-		resultState: "idle",
-		onSearch: () => {},
-		onSubmit: () => {},
-		onCancel: () => {},
-		isSearchPending: false,
-		isSubmitPending: false,
-		isRemovePending: false,
-		isLoggedIn: true,
-	},
+	title: "app/components/ListItem/Watch/WatchListItem",
+	component: WatchListItem,
 	parameters: {
 		layout: "centered",
 	},
-} satisfies Meta<typeof MovieCardDetail>;
+	args: {
+		movie: movieWithDetails,
+		isSearchPending: false,
+		isRemovePending: false,
+		handleSearch: () => {},
+		handleRemove: () => {},
+	},
+	decorators: [
+		(Story) => (
+			<div style={{ width: "600px" }}>
+				<Story />
+			</div>
+		),
+	],
+} satisfies Meta<typeof WatchListItem>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const WithoutDetails: Story = {
+export const Default: Story = {};
+
+export const SearchPending: Story = {
 	args: {
-		movie: movieWithoutDetails,
-		resultState: "idle",
+		isSearchPending: true,
 	},
 };
 
-export const WithDetailsIdle: Story = {
+export const RemovePending: Story = {
 	args: {
-		movie: movieWithDetails,
-		ctaMode: "watch",
-		resultState: "idle",
-	},
-};
-
-export const RegisterModeSameMovie: Story = {
-	args: {
-		movie: movieWithDetails,
-		ctaMode: "register",
-		resultState: "idle",
-		isSameMovie: true,
-	},
-};
-
-export const SubmitSuccessLoggedIn: Story = {
-	args: {
-		movie: movieWithDetails,
-		resultState: "success",
-		isLoggedIn: true,
-	},
-};
-
-export const SubmitSuccessGuest: Story = {
-	args: {
-		movie: movieWithDetails,
-		resultState: "success",
-		isLoggedIn: false,
-	},
-};
-
-export const SubmitFailed: Story = {
-	args: {
-		movie: movieWithDetails,
-		resultState: "error",
+		isRemovePending: true,
 	},
 };

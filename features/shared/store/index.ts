@@ -29,6 +29,7 @@ export const localListAtom = atom(
 		const next = [
 			...existing,
 			{
+				listItemId: payload.listItemId,
 				title: payload.title,
 				url: payload.url,
 				createdAt: payload.createdAt,

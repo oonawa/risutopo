@@ -1,5 +1,5 @@
 import type z from "zod";
-import type { ListItem } from "@/features/list/types/ListItem";
+import type { DraftListItem } from "@/features/list/types/ListItem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { movieEntrySchema } from "@/features/list/schemas/movieEntrySchema";
@@ -11,7 +11,7 @@ type MovieEntryValues = z.infer<typeof movieEntrySchema>;
 
 type Props = {
 	disabled: boolean;
-	handleExtract: (extracted: ListItem | null) => void;
+	handleExtract: (extracted: DraftListItem | null) => void;
 };
 
 export default function PcForm({ disabled, handleExtract }: Props) {
@@ -28,12 +28,9 @@ export default function PcForm({ disabled, handleExtract }: Props) {
 	const { extractMovieInfoFromBrowser } = useExtractMovieInfo();
 
 	return (
-		<div className="w-full flex flex-col justify-center items-center">
-			<div className="w-full flex flex-col gap-4">
-				<div className="flex flex-col gap-4 relative">
-					<div className="flex justify-center py-2 font-medium">
-						作品のタイトル・視聴URLを入力
-					</div>
+		<div className="w-full flex flex-col justify-center items-center pt-2">
+			<div className="w-full flex flex-col">
+				<div className="flex flex-col gap-4">
 					<FormTextarea
 						placeholder="ジュラシック・パーク"
 						id="title"

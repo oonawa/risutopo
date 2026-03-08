@@ -29,14 +29,25 @@ export function useListLocalStorageRepository() {
 
 	const storeListItem = (newItem: ListItem) => {
 		const { items, listId } = store.get(risutopottoAtom).list;
-        const filtered = items.filter((item) => item.listItemId !== newItem.listItemId)
+
+		const existingItemIndex = items.findIndex(
+			(item) => item.listItemId === newItem.listItemId,
+		);
+		const nextItems =
+			existingItemIndex === -1
+				? [newItem, ...items]
+				: items.map((item, index) =>
+						index === existingItemIndex ? newItem : item,
+					);
 
 		setRisutopotto({
 			list: {
 				listId,
-				items: [newItem, ...filtered],
+				items: nextItems,
 			},
 		});
+
+		return newItem;
 	};
 
 	const removeListItem = (listItemId: string) => {
@@ -67,6 +78,6 @@ export function useListLocalStorageRepository() {
 		replaceListItems,
 		initializeEmptyList,
 		removeListItem,
-        storeListItem
+		storeListItem,
 	};
 }

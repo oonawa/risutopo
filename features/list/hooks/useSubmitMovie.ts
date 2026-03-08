@@ -1,16 +1,13 @@
 import { useState, useTransition } from "react";
 import type { ListItem } from "@/features/list/types/ListItem";
-import type { Result } from "@/features/shared/types/Result";
 import { storeListItem } from "@/features/list/actions/storeListItem";
 import { removeListItem } from "@/features/list/actions/removeListItem";
 
-type SubmitActionResult = Result<ListItem | { recommendedLogin: true }>;
-
-export const useSubmitMovie = () => {
-	const [submitResult, setSubmitResult] = useState<SubmitActionResult | null>(
-		null,
+export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
+	const [success, setSuccess] = useState<boolean | undefined>(undefined);
+	const [errorMessage, setErrorMessage] = useState<string | undefined>(
+		undefined,
 	);
-	const [removeResult, setRemoveResult] = useState<Result | null>(null);
 	const [isSubmitPending, startSubmitTransition] = useTransition();
 	const [isRemovePending, startRemoveTransition] = useTransition();
 
@@ -23,33 +20,24 @@ export const useSubmitMovie = () => {
 	}) => {
 		startSubmitTransition(async () => {
 			if (!publicListId) {
-				setSubmitResult({
-					success: true,
-					data: {
-						recommendedLogin: true,
-					},
-				});
+				setSuccess(true);
 				return;
 			}
 
-			const storeListItemResult = await storeListItem({
+			const result = await storeListItem({
 				publicListId,
 				movie,
 				now: new Date(),
 				isWatched: movie.isWatched ?? false,
 			});
 
-			if (!storeListItemResult.success) {
-				setSubmitResult({
-					success: false,
-					error: {
-						message: storeListItemResult.error.message,
-					},
-				});
-				return;
+			setSuccess(result.success);
+
+			if (result.success) {
+				return onSuccess?.();
 			}
 
-			setSubmitResult(storeListItemResult);
+			setErrorMessage(result.error.message);
 		});
 	};
 
@@ -62,22 +50,26 @@ export const useSubmitMovie = () => {
 	}) => {
 		startRemoveTransition(async () => {
 			if (!publicListId) {
-				setRemoveResult({
-					success: true,
-				});
+				setSuccess(true);
 				return;
 			}
-			const removeListItemResult = await removeListItem({ listItemId });
-			setRemoveResult(removeListItemResult);
+			const result = await removeListItem({ listItemId });
+			setSuccess(result.success);
+
+			if (result.success) {
+				return onSuccess?.();
+			}
+
+			setErrorMessage(result.error.message);
 		});
 	};
 
 	return {
 		isSubmitPending,
 		submit,
-		submitResult,
 		isRemovePending,
 		remove,
-		removeResult,
+		success,
+		errorMessage,
 	};
 };

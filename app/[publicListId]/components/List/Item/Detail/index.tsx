@@ -5,15 +5,15 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMovieAtom } from "@/features/list/state/useMovieAtom";
 import { Button } from "@/components/ui/button";
 import CrossIcon from "@/components/ui/Icons/CrossIcon";
-import MovieCard from "@/app/components/MovieCard";
+import ListItemCard from "@/app/components/ListItem";
 
 type Props = {
 	publicListId: string;
 };
 
 export default function ListItemDetail({ publicListId }: Props) {
-	const router = useRouter();
 	const { movie, setMovie } = useMovieAtom();
+	const router = useRouter();
 
 	return (
 		<AnimatePresence>
@@ -38,11 +38,11 @@ export default function ListItemDetail({ publicListId }: Props) {
 								<CrossIcon />
 							</Button>
 						</div>
-						<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto">
-							<MovieCard
-								publicListId={publicListId}
+						<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto pt-4 px-4">
+							<ListItemCard
 								movie={movie}
-								onSuccess={() => {
+								publicListId={publicListId}
+								refresh={() => {
 									router.refresh();
 								}}
 							/>

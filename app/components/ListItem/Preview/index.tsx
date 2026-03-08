@@ -1,0 +1,87 @@
+import { AnimatePresence } from "motion/react";
+import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
+import Content from "../Content";
+import ServiceName from "../Content/ServiceName";
+import Menu from "../Content/Menu";
+import SubmitButton from "../Content/SubmitButton";
+import BackSearchResult from "../Content/BackSearchResult";
+import Overview from "../Content/Overview";
+import StoreSuccess from "../Content/Result/Success";
+import StoreFailed from "../Content/Result/Failed";
+import FadeIn from "../Content/FadeIn";
+import Loading from "../Content/Loading";
+
+type Props = {
+	movie: DraftListItem | ListItem | null;
+	isSearchPending: boolean;
+	isSubmitPending: boolean;
+	handleSearch: () => void;
+	handleSubmit: () => void;
+	handleCancel: () => void;
+	storeSuccess?: boolean;
+	isLoggedIn: boolean;
+	errorMessage?: string;
+};
+
+export default function PreviewListItem({
+	movie,
+	isSearchPending,
+	isSubmitPending,
+	handleSearch,
+	handleSubmit,
+	handleCancel,
+	storeSuccess,
+	isLoggedIn,
+	errorMessage,
+}: Props) {
+	return (
+		<AnimatePresence mode="wait">
+			{movie ? (
+				<FadeIn key="content">
+					<Content
+						movie={movie}
+						isSearchPending={isSearchPending}
+						onSearch={handleSearch}
+					>
+						<ServiceName serviceName={movie.serviceName} />
+
+						{storeSuccess === true && (
+							<FadeIn>
+								<StoreSuccess isLoggedIn={isLoggedIn} />
+							</FadeIn>
+						)}
+						{storeSuccess === false && (
+							<FadeIn>
+								<StoreFailed errorMessage={errorMessage} />
+							</FadeIn>
+						)}
+
+						{storeSuccess === undefined && (
+							<>
+								<BackSearchResult
+									onClick={() => {
+										handleSearch();
+										handleCancel();
+									}}
+								/>
+								<Menu
+									Button={
+										<SubmitButton
+											isDisabled={isSubmitPending}
+											onSubmit={handleSubmit}
+										/>
+									}
+								/>
+								{movie.details && (
+									<Overview overview={movie.details.overview} />
+								)}
+							</>
+						)}
+					</Content>
+				</FadeIn>
+			) : (
+				<Loading key="loading" />
+			)}
+		</AnimatePresence>
+	);
+}

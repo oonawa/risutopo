@@ -5,7 +5,7 @@ type Props = {
 	overview: string;
 };
 
-export default function MovieCardDetailOverview({ overview }: Props) {
+export default function Overview({ overview }: Props) {
 	const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
 
 	return (
@@ -14,7 +14,7 @@ export default function MovieCardDetailOverview({ overview }: Props) {
 				あらすじ
 			</h3>
 
-			<div className="pt-2 pb-[10dvh]">
+			<div className="pt-2">
 				{!isOverviewExpanded && (
 					<p
 						key="summary"

@@ -1,6 +1,6 @@
+import type { DraftListItem } from "@/features/list/types/ListItem";
 import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
 import { SUPPORTED_SERVICES } from "@/app/consts";
-import type { ListItem } from "@/features/list/types/ListItem";
 
 export function useExtractMovieInfo() {
 	type ServiceMatcher = {
@@ -90,7 +90,7 @@ export function useExtractMovieInfo() {
 		url: string,
 		matcher: ServiceMatcher,
 		text: string,
-	): ListItem | null => {
+	): DraftListItem | null => {
 		const title = matcher.extractTitle(text);
 		if (!title) return null;
 
@@ -128,7 +128,7 @@ export function useExtractMovieInfo() {
 	}: {
 		title: string;
 		url: string;
-	}): ListItem | null => {
+	}): DraftListItem | null => {
 		const matcherResult = resolveMatcherFromUrl(url);
 		if (!matcherResult) {
 			return matcherResult;

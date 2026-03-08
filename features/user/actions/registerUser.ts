@@ -160,7 +160,7 @@ export async function registerUser({
 
 					seenWatchUrls.add(item.url);
 					listItems.push({
-						publicId: item.listItemId ?? crypto.randomUUID(),
+						publicId: item.listItemId,
 						listId: newList.id,
 						streamingServiceId,
 						movieId: item.details?.movieId ?? null,
