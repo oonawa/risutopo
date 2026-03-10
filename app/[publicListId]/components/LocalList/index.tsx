@@ -1,24 +1,41 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import type { ListItem } from "@/features/list/types/ListItem";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import ListContainer from "../List/Container";
 import ListItemDetail from "../List/Item/Detail";
-import ListItem from "../List/Item";
+import Item from "../List/Item";
+import { formatDate } from "@/lib/date";
 
 type Props = {
 	publicListId: string;
 };
 
 export default function LocalList({ publicListId }: Props) {
+	const [items, setItems] = useState<ListItem[] | undefined>(undefined);
 	const { getListItems } = useListLocalStorageRepository();
+
+	useEffect(() => {
+		setItems(getListItems());
+	}, [getListItems]);
+
+	if (!items) {
+		return <div></div>;
+	}
 
 	return (
 		<>
-			<div className="flex flex-wrap justify-start pl-0 sm:pl-5">
-				{getListItems().map((movie) => {
-					return <ListItem key={movie.listItemId} movie={movie} />;
+			<ListContainer>
+				{items.map((movie, index) => {
+					return (
+						<Item
+							key={`${formatDate(movie.createdAt)}-${index}`}
+							movie={movie}
+						/>
+					);
 				})}
-			</div>
-
+			</ListContainer>
 			<ListItemDetail publicListId={publicListId} />
 		</>
 	);

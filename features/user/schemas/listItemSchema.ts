@@ -30,7 +30,7 @@ const localListItemDetailsSchema = z.object({
 });
 
 export const registerLocalListItemSchema = z.object({
-	listItemId: z.string().min(1).optional(),
+	listItemId: z.string().min(1),
 	title: z.string().min(1),
 	url: z.url(),
 	serviceSlug: supportedServiceSlugSchema,

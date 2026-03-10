@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { ListItem } from "@/features/list/types/ListItem";
+import type { DraftListItem } from "@/features/list/types/ListItem";
 import { useActiveTab } from "@/features/list/hooks/useActiveTab";
 import { useSearchDuplicateMovie } from "@/features/list/hooks/useSearchDuplicateMovie";
 import { useFetchExistingListItem } from "@/features/list/hooks/useFetchExistingListItem";
@@ -13,9 +13,9 @@ import CrossIcon from "@/components/ui/Icons/CrossIcon";
 import Tab from "./Tab";
 import PcForm from "./PcForm";
 import MobileForm from "./MobileForm";
-import MovieCard from "../MovieCard";
 import ExistingListItemDetail from "./ExistingItem/Detail";
 import SelectButtons from "./SelectButtons";
+import ListItemCard from "../ListItem";
 
 type Props = {
 	initialIsMobile: boolean;
@@ -41,7 +41,9 @@ export default function MovieInputForm({
 		hydrateLocalStorage();
 	}, [hydrateLocalStorage]);
 
-	const [extractedMovie, setExtractedMovie] = useState<ListItem | null>(null);
+	const [extractedMovie, setExtractedMovie] = useState<DraftListItem | null>(
+		null,
+	);
 
 	const {
 		sameMovie,
@@ -53,9 +55,9 @@ export default function MovieInputForm({
 	const [searchExistingMoviePending, searchExistingMovieTransition] =
 		useTransition();
 
-	const handleExtract = (extracted: ListItem | null) => {
+	const handleExtract = (extracted: DraftListItem | null) => {
 		searchExistingMovieTransition(async () => {
-			if (!extracted || !publicListId) {
+			if (!extracted) {
 				return;
 			}
 
@@ -73,36 +75,31 @@ export default function MovieInputForm({
 	}, [clearDuplicateItem]);
 
 	return (
-		<div className="flex justify-center pt-[20dvh]">
-			<div className="md:p-4 w-[90dvw] md:w-[60dvw] max-w-150">
-				<div className="w-full h-full md:px-10 flex flex-col gap-6 items-center justify-center">
-					<div className="grid grid-cols-2 gap-2 bg-background border border-background-light-1 rounded-full p-1">
-						<Tab
-							onClick={() => setActiveTab("pc")}
-							isActive={activeTab === "pc"}
-						>
-							<WebBrowserIcon className="size-5" />
-						</Tab>
-						<Tab
-							onClick={() => setActiveTab("mobile")}
-							isActive={activeTab === "mobile"}
-						>
-							<MobileDeviceIcon className="size-5" />
-						</Tab>
-					</div>
-
-					{activeTab === "pc" ? (
-						<PcForm
-							disabled={extractedMovie !== null}
-							handleExtract={handleExtract}
-						/>
-					) : (
-						<MobileForm
-							disabled={extractedMovie !== null}
-							handleExtract={handleExtract}
-						/>
-					)}
+		<>
+			<div className="w-full h-full flex flex-col items-center justify-center">
+				<div className="grid grid-cols-2 gap-2 rounded-full p-1">
+					<Tab onClick={() => setActiveTab("pc")} isActive={activeTab === "pc"}>
+						<WebBrowserIcon className="size-4" />
+					</Tab>
+					<Tab
+						onClick={() => setActiveTab("mobile")}
+						isActive={activeTab === "mobile"}
+					>
+						<MobileDeviceIcon className="size-4" />
+					</Tab>
 				</div>
+
+				{activeTab === "pc" ? (
+					<PcForm
+						disabled={extractedMovie !== null}
+						handleExtract={handleExtract}
+					/>
+				) : (
+					<MobileForm
+						disabled={extractedMovie !== null}
+						handleExtract={handleExtract}
+					/>
+				)}
 			</div>
 
 			<AnimatePresence>
@@ -159,13 +156,7 @@ export default function MovieInputForm({
 															<div className="w-full max-w-120 pt-4">
 																<ul className="w-full pb-64">
 																	{possibleDuplicateMovies.map((item) => (
-																		<li
-																			key={
-																				item.listItemId ??
-																				`${item.url}-${item.title}`
-																			}
-																			className="pb-4"
-																		>
+																		<li key={item.listItemId} className="pb-4">
 																			<ExistingListItemDetail movie={item} />
 																		</li>
 																	))}
@@ -191,8 +182,10 @@ export default function MovieInputForm({
 											animate={{ opacity: 1, y: 0 }}
 											exit={{ opacity: 0, y: -4 }}
 											transition={{ duration: 0.2, ease: "easeOut" }}
+											className="pt-4 px-4"
 										>
-											<MovieCard
+											<ListItemCard
+												mode="extracted"
 												publicListId={publicListId}
 												movie={extractedMovie}
 											/>
@@ -204,6 +197,6 @@ export default function MovieInputForm({
 					</motion.div>
 				)}
 			</AnimatePresence>
-		</div>
+		</>
 	);
 }

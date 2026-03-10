@@ -7,7 +7,7 @@ type Props = {
 	className?: string;
 };
 
-export default function Transition({ children, className }: Props) {
+export default function FadeIn({ children, className }: Props) {
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 8 }}

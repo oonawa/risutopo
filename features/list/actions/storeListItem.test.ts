@@ -228,6 +228,7 @@ describe("storeMovie", () => {
 
 	it("【TMDBなし】Netflix：ジュラシック・パークをリスト追加", async () => {
 		const movie: ListItem = {
+			listItemId: crypto.randomUUID(),
 			title: "ジュラシック・パーク",
 			url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
 			serviceSlug: "netflix",
@@ -303,6 +304,7 @@ describe("storeMovie", () => {
 		});
 
 		const movie: ListItem = {
+			listItemId: crypto.randomUUID(),
 			title: "ジュラシック・パーク (吹替版)",
 			url: "https://watch.amazon.co.jp/detail?gti=amzn1.dv.gti.7ea9f6d9-bdc8-9b2e-97a9-c341306e36ef&territory=JP&ref_=share_ios_movie&r=web",
 			serviceSlug: "prime-video",
@@ -345,17 +347,22 @@ describe("storeMovie", () => {
 	});
 
 	it("同一タイトル・同一URLの作品は登録できない", async () => {
-		const movie: ListItem = {
+		const firstMovie: ListItem = {
+			listItemId: crypto.randomUUID(),
 			title: "ジュラシック・パーク",
 			url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
 			serviceSlug: "netflix",
 			serviceName: "Netflix",
 			createdAt: new Date(),
 		};
+		const secondMovie: ListItem = {
+			...firstMovie,
+			listItemId: crypto.randomUUID(),
+		};
 
 		const firstResult = await storeListItem({
 			publicListId: testListPublicId,
-			movie,
+			movie: firstMovie,
 			isWatched: false,
 			now: new Date(),
 		});
@@ -364,25 +371,27 @@ describe("storeMovie", () => {
 
 		const secondResult = await storeListItem({
 			publicListId: testListPublicId,
-			movie,
+			movie: secondMovie,
 			isWatched: false,
 			now: new Date(),
 		});
 
 		expect(secondResult.success).toBe(false);
 
-		const streamingServiceId = await getStreamingServiceIdBySlug(movie.serviceSlug);
+		const streamingServiceId = await getStreamingServiceIdBySlug(
+			firstMovie.serviceSlug,
+		);
 		const storedListItems = await db
 			.select({ id: listItemsTable.id })
 			.from(listItemsTable)
 			.where(
-				and(
-					eq(listItemsTable.listId, testListId),
-					eq(listItemsTable.streamingServiceId, streamingServiceId),
-					eq(listItemsTable.titleOnService, movie.title),
-					eq(listItemsTable.watchUrl, movie.url),
-				),
-			);
+					and(
+						eq(listItemsTable.listId, testListId),
+						eq(listItemsTable.streamingServiceId, streamingServiceId),
+						eq(listItemsTable.titleOnService, firstMovie.title),
+						eq(listItemsTable.watchUrl, firstMovie.url),
+					),
+				);
 
 		expect(storedListItems).toHaveLength(1);
 	});

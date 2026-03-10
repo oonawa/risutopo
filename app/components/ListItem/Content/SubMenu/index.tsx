@@ -23,7 +23,7 @@ type Props = {
 	removeDisabled: boolean;
 };
 
-export default function MovieCardDetailMenu({
+export default function SubMenu({
 	onSearch,
 	onRemove,
 	searchDisabled,

@@ -1,7 +1,7 @@
 import type { SupportedServiceSlug, SupportedServiceName } from "@/app/consts";
 
 export type ListItem = {
-	listItemId?: string;
+	listItemId: string;
 	title: string;
 	url: string;
 	serviceSlug: SupportedServiceSlug;
@@ -20,3 +20,5 @@ export type ListItem = {
 		overview: string;
 	};
 };
+
+export type DraftListItem = Omit<ListItem, "listItemId">;

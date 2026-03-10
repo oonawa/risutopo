@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import type { Result } from "@/features/shared/types/Result";
 import type { MovieFormError } from "@/features/list/types/ItemStoreError";
 import type { ListItem } from "@/features/list/types/ListItem";
@@ -40,24 +39,17 @@ export async function storeListItem({
 
 	try {
 		const titleOnService = movie.title;
-		const listItemPublicId = movie.listItemId ?? crypto.randomUUID();
-		const createdAt = movie.listItemId ? movie.createdAt : now;
+		const listItemPublicId = movie.listItemId;
+		const existingListItemId = await findListItemIdByPublicIdAndListId({
+			listItemPublicId: movie.listItemId,
+			listId,
+		});
+		const createdAt = existingListItemId === null ? movie.createdAt : now;
 
-		if (movie.listItemId) {
-			const existingListItem = await findListItemIdByPublicIdAndListId({
-				listItemPublicId: movie.listItemId,
-				listId,
-			});
-			if (!existingListItem) {
-				return {
-					success: false,
-					error: { message: "更新対象の作品が見つかりません。" },
-				};
-			}
-
+		if (existingListItemId !== null) {
 			await updateListItemByPublicIdAndListId({
 				listId,
-				listItemPublicId: movie.listItemId,
+				listItemPublicId,
 				streamingServiceId: streamingService.id,
 				movieId: movie.details?.movieId ?? null,
 				watchUrl: movie.url,

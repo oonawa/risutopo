@@ -1,6 +1,8 @@
 import { getUserMovieList } from "@/features/list/actions/getUserMovieList";
+import ListContainer from "./Container";
 import ListItemDetail from "./Item/Detail";
 import ListItem from "./Item";
+import LocalList from "../LocalList";
 
 type Props = {
 	publicListId: string;
@@ -13,13 +15,17 @@ export default async function UserMovieList({ publicListId }: Props) {
 		return null;
 	}
 
+	if (moviesResult.data.length === 0) {
+		return <LocalList publicListId={publicListId} />;
+	}
+
 	return (
 		<>
-			<div className="flex flex-wrap justify-start pl-0 sm:pl-5">
+			<ListContainer>
 				{moviesResult.data.map((movie) => {
 					return <ListItem key={movie.listItemId} movie={movie} />;
 				})}
-			</div>
+			</ListContainer>
 			<ListItemDetail publicListId={publicListId} />
 		</>
 	);

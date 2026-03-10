@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default function Menu({ listPublicId }: Props) {
-	const [localListId, setLocalListId] = useState("");
+	const [localListId, setLocalListId] = useState<string | undefined>(undefined);
 
 	const pathname = usePathname();
 	const params = useParams<{ publicListId?: string }>();

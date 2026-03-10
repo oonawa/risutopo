@@ -26,7 +26,7 @@ export default function SearchButton({
 			}}
 			{...props}
 		>
-			{children ?? "ポスター画像をさがす"}
+			{children ?? "ポスター画像なし"}
 		</Button>
 	);
 }

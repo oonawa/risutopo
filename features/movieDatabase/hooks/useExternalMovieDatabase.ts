@@ -1,13 +1,13 @@
 import { useActionState, startTransition } from "react";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
-import type { ListItem } from "@/features/list/types/ListItem";
+import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
 import type { TmdbSearchResponse } from "@/features/movieDatabase/types/TmdbResponse";
 import { searchExternalMovieDatabase } from "@/features/movieDatabase/actions/searchExternalMovieDatabase";
 import { getDirectorsFromExternalMovieDatabase } from "@/features/movieDatabase/actions/getDirectorsFromExternalMovieDatabase";
 import { getMovieFromExternalMovieDatabase } from "@/features/movieDatabase/actions/getMovieFromExternalMovieDatabase";
 
 type Props = {
-	movie: ListItem;
+	movie: DraftListItem | ListItem;
 };
 
 export const useExternalMovieDatabase = ({ movie }: Props) => {
@@ -60,11 +60,14 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 	);
 
 	const [
-		currentMovieInfo,
+		selectedMovie,
 		fetchExternalMovieDatabaseAction,
 		isFetchExternalMovieDatabasePending,
-	] = useActionState<ListItem | null, number | null>(
-		async (_prev: ListItem | null, externalApiMovieId: number | null) => {
+	] = useActionState<DraftListItem | ListItem | null, number | null>(
+		async (
+			_prev: DraftListItem | ListItem | null,
+			externalApiMovieId: number | null,
+		) => {
 			if (!externalApiMovieId) {
 				return null;
 			}
@@ -93,12 +96,16 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 			const directors = directorsInfo.data;
 
 			return {
-				listItemId: movie.listItemId,
 				title: movie.title,
 				url: movie.url,
 				serviceSlug: movie.serviceSlug,
 				serviceName: movie.serviceName,
 				createdAt: movie.createdAt,
+				...("listItemId" in movie
+					? {
+							listItemId: movie.listItemId,
+						}
+					: {}),
 				details: {
 					movieId,
 					officialTitle: title,
@@ -140,7 +147,7 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 	};
 
 	return {
-		currentMovieInfo,
+		selectedMovie,
 		normalizedTitle,
 		handleSearch,
 		handleSelect,
