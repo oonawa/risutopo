@@ -1,7 +1,6 @@
 "use server";
 
 import type { Result } from "@/features/shared/types/Result";
-import type { MovieFormError } from "../types/ItemStoreError";
 import type { ListItem } from "../types/ListItem";
 import { storeListItem as storeListItemService } from "../services/listCommandService";
 
@@ -17,7 +16,7 @@ export async function storeListItem({
 	movie,
 	isWatched,
 	now,
-}: Args): Promise<Result<ListItem, MovieFormError>> {
+}: Args): Promise<Result<ListItem>> {
 	return await storeListItemService({
 		publicListId,
 		movie,

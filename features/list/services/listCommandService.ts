@@ -1,5 +1,4 @@
 import type { Result } from "@/features/shared/types/Result";
-import type { MovieFormError } from "@/features/list/types/ItemStoreError";
 import type { ListItem } from "@/features/list/types/ListItem";
 import {
 	deleteListItemByPublicId,
@@ -20,22 +19,16 @@ export async function storeListItem({
 	movie: ListItem;
 	isWatched: boolean;
 	now: Date;
-}): Promise<Result<ListItem, MovieFormError>> {
+}): Promise<Result<ListItem>> {
 	const listId = await findListIdByPublicId(publicListId);
 	if (listId === null) {
 		return {
 			success: false,
-			error: { message: "映画リストが見つかりません。" },
+			error: { code: "NOT_FOUND_ERROR", message: "リストが見つかりませんでした。" },
 		};
 	}
 
 	const streamingService = await findStreamingServiceBySlug(movie.serviceSlug);
-	if (!streamingService) {
-		return {
-			success: false,
-			error: { message: "対象の配信サービスが見つかりません。" },
-		};
-	}
 
 	try {
 		const titleOnService = movie.title;
@@ -92,7 +85,10 @@ export async function storeListItem({
 		console.error(error);
 		return {
 			success: false,
-			error: { message: "映画の追加に失敗しました。" },
+			error: {
+				code: "INTERNAL_ERROR",
+				message: "不明なエラーが発生しました。",
+			},
 		};
 	}
 }
@@ -108,7 +104,8 @@ export async function removeListItem({
 			return {
 				success: false,
 				error: {
-					message: "作品がリストへ登録されていないか、すでに削除されています。",
+					code: "NOT_FOUND_ERROR",
+					message: "作品が見つからないか、すでに削除されています。",
 				},
 			};
 		}
@@ -118,7 +115,10 @@ export async function removeListItem({
 		console.error(error);
 		return {
 			success: false,
-			error: { message: "映画の削除に失敗しました。" },
+			error: {
+				code: "INTERNAL_ERROR",
+				message: "不明なエラーが発生しました。",
+			},
 		};
 	}
 }

@@ -59,6 +59,7 @@ export async function getMovieFromExternalMovieDatabase(
 		return {
 			success: false,
 			error: {
+				code: "INTERNAL_ERROR",
 				message: "連携している外部サービスとの接続に不具合があります。",
 			},
 		};
@@ -80,6 +81,7 @@ export async function getMovieFromExternalMovieDatabase(
 		return {
 			success: false,
 			error: {
+				code: "INTERNAL_ERROR",
 				message: "連携している外部サービスとの接続に不具合があります。",
 			},
 		};

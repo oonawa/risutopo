@@ -61,14 +61,20 @@ export async function registerUser({
 	if (!tempSession) {
 		return {
 			success: false,
-			error: { message: "セッションが無効です。最初からやり直してください。" },
+			error: {
+				code: "UNAUTHORIZED_ERROR",
+				message: "セッションが無効です。最初からやり直してください。",
+			},
 		};
 	}
 
 	if (tempSession.email !== email) {
 		return {
 			success: false,
-			error: { message: "メールアドレスが一致しません。" },
+			error: {
+				code: "UNAUTHORIZED_ERROR",
+				message: "メールアドレスが一致しません。",
+			},
 		};
 	}
 
@@ -77,7 +83,10 @@ export async function registerUser({
 	if (error) {
 		return {
 			success: false,
-			error,
+			error: {
+				code: "VALIDATION_ERROR",
+				message: error.message,
+			},
 		};
 	}
 
@@ -99,6 +108,7 @@ export async function registerUser({
 	});
 
 	let transactionResult: {
+		id: number;
 		publicId: string;
 		listPublicId: string;
 		sessionToken: string;
@@ -208,6 +218,7 @@ export async function registerUser({
 			});
 
 			return {
+				id: newUser.id,
 				publicId: newUser.publicId,
 				listPublicId: newList.publicId,
 				sessionToken,
@@ -226,7 +237,10 @@ export async function registerUser({
 		console.error(err);
 		return {
 			success: false,
-			error: { message: "ユーザー登録の処理に失敗しました。" },
+			error: {
+				code: "INTERNAL_ERROR",
+				message: "ユーザー登録の処理に失敗しました。",
+			},
 		};
 	}
 
@@ -235,6 +249,7 @@ export async function registerUser({
 	try {
 		const listItemsResult = await getUserMovieListService(
 			transactionResult.listPublicId,
+			transactionResult.id,
 		);
 		if (listItemsResult.success) {
 			listItems = listItemsResult.data;

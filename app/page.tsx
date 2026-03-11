@@ -6,9 +6,9 @@ import { isAuthenticated } from "@/features/auth/services/session";
 import Section from "@/components/Section";
 
 export default async function Home() {
-	const isVerified = await isAuthenticated();
-	const publicListId = isVerified
-		? await getUserMovieListPublicId(isVerified.userId)
+	const payload = await isAuthenticated();
+	const publicListId = payload
+		? await getUserMovieListPublicId(payload.userId)
 		: null;
 
 	const headersList = await headers();

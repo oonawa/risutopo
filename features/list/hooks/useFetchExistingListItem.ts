@@ -1,4 +1,4 @@
-import { getUserMovieList } from "@/features/list/actions/getUserMovieList";
+import { getCurrentUserMovieList } from "@/features/list/actions/getCurrentUserMovieList";
 import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
 
 type Props = {
@@ -10,7 +10,7 @@ export const useFetchExistingListItem = ({ publicListId }: Props) => {
 		useListLocalStorageRepository();
 
 	const fetchCurrentUserList = async (publicListId: string) => {
-		const result = await getUserMovieList(publicListId);
+		const result = await getCurrentUserMovieList(publicListId);
 
 		if (!result.success) {
 			return [];

@@ -30,7 +30,10 @@ export async function verifyLoginCode(
 	if (!result.success) {
 		return {
 			success: false,
-			error: { message: "ログインコードが不正です" },
+			error: {
+				code: "VALIDATION_ERROR",
+				message: result.error.message,
+			},
 		};
 	}
 
@@ -53,6 +56,7 @@ export async function verifyLoginCode(
 		return {
 			success: false,
 			error: {
+				code: "VALIDATION_ERROR",
 				message: `試行回数が上限に達しました。${minutesUntilRetry}分後に再度お試しください。`,
 			},
 		};
@@ -89,7 +93,7 @@ export async function verifyLoginCode(
 
 					return {
 						success: false,
-						error: { message: "ログインコードが不正です" },
+						error: { code: "VALIDATION_ERROR", message: "ログインコードが不正です" },
 					};
 				}
 
@@ -180,7 +184,10 @@ export async function verifyLoginCode(
 		console.error(err);
 		return {
 			success: false,
-			error: { message: "ログインの処理に不具合があります。" },
+			error: {
+				code: "INTERNAL_ERROR",
+				message: "内部エラーが発生しました。",
+			},
 		};
 	}
 }
