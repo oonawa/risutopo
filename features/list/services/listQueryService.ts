@@ -8,7 +8,20 @@ import {
 
 export async function getUserMovieList(
 	listPublicId: string,
+	userId: number,
 ): Promise<Result<ListItem[]>> {
+	const currentUserListPublicId = await findListPublicIdByUserId(userId);
+
+	if (currentUserListPublicId !== listPublicId) {
+		return {
+			success: false,
+			error: {
+				code: "FORBIDDEN_ERROR",
+				message: "",
+			},
+		};
+	}
+
 	const rows = await findListItemRowsByListPublicId(listPublicId);
 
 	const movieIds = rows

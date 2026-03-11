@@ -6,6 +6,7 @@ import { getUserMovieList as getUserMovieListService } from "../services/listQue
 
 export async function getUserMovieList(
 	listPublicId: string,
+	userId: number,
 ): Promise<Result<ListItem[]>> {
-	return await getUserMovieListService(listPublicId);
+	return await getUserMovieListService(listPublicId, userId);
 }

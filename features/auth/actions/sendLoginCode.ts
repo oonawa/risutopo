@@ -31,6 +31,7 @@ export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 		return {
 			success: false,
 			error: {
+				code: "VALIDATION_ERROR",
 				message: `送信回数が上限に達しました。${minutesUntilRetry}分後に再度お試しください。`,
 			},
 		};
@@ -41,7 +42,7 @@ export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 	if (!result.success) {
 		return {
 			success: false,
-			error: { message: "メールアドレスが不正です" },
+			error: { code: "VALIDATION_ERROR", message: "メールアドレスが不正です" },
 		};
 	}
 
@@ -49,7 +50,10 @@ export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 		console.error("Resend のAPIキーが設定されていません");
 		return {
 			success: false,
-			error: { message: "メール送信に不具合が見つかりました。" },
+			error: {
+				code: "INTERNAL_ERROR",
+				message: "メール送信に不具合が見つかりました。",
+			},
 		};
 	}
 
@@ -88,7 +92,10 @@ export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 
 			return {
 				success: false,
-				error: { message: "メール送信に不具合があります。" },
+				error: {
+					code: "INTERNAL_ERROR",
+					message: "メール送信に不具合があります。",
+				},
 			};
 		}
 
@@ -107,7 +114,10 @@ export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 		console.error(err);
 		return {
 			success: false,
-			error: { message: "メール送信に不具合があります。" },
+			error: {
+				code: "INTERNAL_ERROR",
+				message: "メール送信に不具合があります。",
+			},
 		};
 	}
 }

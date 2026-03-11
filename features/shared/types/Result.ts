@@ -1,6 +1,13 @@
-export type Result<T = void, E = { message: string }> =
+export type AppError =
+	| { code: "UNAUTHORIZED_ERROR"; message: string }
+	| { code: "FORBIDDEN_ERROR"; message: string }
+	| { code: "NOT_FOUND_ERROR"; message: string }
+	| { code: "VALIDATION_ERROR"; message: string }
+	| { code: "INTERNAL_ERROR"; message: string };
+
+export type Result<T = void> =
 	| (T extends void ? { success: true } : { success: true; data: T })
 	| {
 			success: false;
-			error: E;
+			error: AppError;
 	  };
