@@ -17,7 +17,7 @@ export default function MovieDetail({
 }: Props) {
 	return (
 		<div className="relative h-full">
-			<div className="absolute top-0 bg-background-dark-4/85 rounded-2xl">
+			<div className="absolute w-full h-full top-0 bg-background-dark-4/85 rounded-2xl">
 				<div className="w-full aspect-video grid grid-cols-2">
 					<div className="col-start-1 col-end-2 flex items-center">
 						<div className="w-full aspect-square flex justify-center">
@@ -39,7 +39,7 @@ export default function MovieDetail({
 								</span>
 								{director.length > 1 ? director.join("、") : director.join()}
 							</h3>
-							<div className="grid grid-cols-2 pt-1">
+							<div className="grid grid-cols-2 gap-4 pt-1">
 								<p className="font-bold text-foreground-dark-1 text-xs pt-1">
 									<span className="block text-xs text-foreground-dark-3">
 										公開
