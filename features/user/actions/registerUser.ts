@@ -25,7 +25,7 @@ import {
 	addDays,
 } from "@/features/auth/services/session";
 import { generateDeviceId } from "@/features/auth/services/devices";
-import { getUserMovieList as getUserMovieListService } from "@/features/list/services/listQueryService";
+import { getUserListService } from "@/features/list/services/getUserListService";
 
 const emptyLocalList: RegisterLocalListInput = {
 	listId: "",
@@ -247,7 +247,7 @@ export async function registerUser({
 	let listItems: ListItem[] = [];
 
 	try {
-		const listItemsResult = await getUserMovieListService(
+		const listItemsResult = await getUserListService(
 			transactionResult.listPublicId,
 			transactionResult.id,
 		);
