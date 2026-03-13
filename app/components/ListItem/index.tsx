@@ -75,6 +75,7 @@ export default function ListItemCard({
 			: {
 					...newItem,
 					listItemId: window.crypto.randomUUID(),
+					isWatched: false
 				};
 
 		storeListItem(itemToStore);
