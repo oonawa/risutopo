@@ -13,7 +13,8 @@ import {
 	generateTempSessionToken,
 	addDays,
 } from "../services/session";
-import { checkRateLimit, recordAttempt } from "../services/rateLimit";
+import { checkRateLimitService } from "../services/checkRateLimitService";
+import { insertAttempt } from "../repositories/attemptRepository";
 import { generateDeviceId } from "../services/devices";
 
 export async function verifyLoginCode(
@@ -39,12 +40,13 @@ export async function verifyLoginCode(
 
 	const headersList = await headers();
 
-	const { limit, ipAddress } = await checkRateLimit({
+	const { limit, ipAddress } = await checkRateLimitService({
 		ipAddress:
 			headersList.get("x-forwarded-for")?.split(",")[0] ||
 			headersList.get("x-real-ip") ||
 			"unknown",
 		attemptType: "code_verify",
+		now,
 	});
 
 	if (!limit.allowed && limit.retryAfter) {
@@ -83,8 +85,8 @@ export async function verifyLoginCode(
 				});
 
 				if (!founded) {
-					await recordAttempt({
-						executor: tx,
+					await insertAttempt({
+						tx,
 						ipAddress,
 						email: null,
 						attemptType: "code_verify",
@@ -93,12 +95,15 @@ export async function verifyLoginCode(
 
 					return {
 						success: false,
-						error: { code: "VALIDATION_ERROR", message: "ログインコードが不正です" },
+						error: {
+							code: "VALIDATION_ERROR",
+							message: "ログインコードが不正です",
+						},
 					};
 				}
 
-				await recordAttempt({
-					executor: tx,
+				await insertAttempt({
+					tx,
 					ipAddress,
 					email: founded.email,
 					attemptType: "code_verify",
