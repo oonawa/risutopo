@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Loading from "@/components/Loading";
 import { sendLoginCode } from "@/features/auth/actions/sendLoginCode";
-import { verifyLoginCode } from "@/features/auth/actions/verifyLoginCode";
+import { login } from "@/features/auth/actions/login";
 import CodeStep from "./CodeStep";
 import EmailStep from "./EmailStep";
 import ErrorPanel from "./ErrorPanel";
@@ -35,7 +35,7 @@ export default function Flow() {
 
 	const handleLoginCodeSubmit = async (data: FormValue) => {
 		setStatus("loading");
-		const result = await verifyLoginCode(data.value, new Date());
+		const result = await login(data.value, new Date());
 
 		if (result.success) {
 			const { email, isNewUser } = result.data;
