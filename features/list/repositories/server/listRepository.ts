@@ -37,7 +37,7 @@ export async function findListIdByPublicId(listPublicId: string) {
 	return list?.id ?? null;
 }
 
-export async function findListPublicIdByUserId(userId: number) {
+export async function findPublicListIdByUserId(userId: number) {
 	const [list] = await db
 		.select({ publicId: listsTable.publicId })
 		.from(listsTable)
