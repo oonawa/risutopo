@@ -12,10 +12,8 @@ import {
 import { useForm } from "react-hook-form";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import { userIdSchema } from "@/features/user/schemas/userIdSchema";
-import {
-	registerLocalListItemSchema,
-	registerLocalListPayloadSchema,
-} from "@/features/user/schemas/listItemSchema";
+import { listItemSchema } from "@/features/shared/schemas/listItemSchema";
+import { registerLocalListPayloadSchema } from "@/features/user/schemas/listItemSchema";
 import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
 import { registerUser } from "@/features/user/actions/registerUser";
 import { Input } from "@/components/ui/input";
@@ -92,7 +90,7 @@ export default function RegisterForm({ email, token }: Props) {
 			? {
 					listId: parsedLocalList.data.listId,
 					items: parsedLocalList.data.items.flatMap((item) => {
-						const parsedItem = registerLocalListItemSchema.safeParse(item);
+						const parsedItem = listItemSchema.safeParse(item);
 						if (!parsedItem.success) {
 							return [];
 						}

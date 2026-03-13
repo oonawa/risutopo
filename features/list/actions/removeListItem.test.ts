@@ -23,10 +23,10 @@ describe("removeListItem", () => {
 			})
 			.returning({ id: usersTable.id });
 
-			const [list] = await db
-				.insert(listsTable)
-				.values({ publicId: crypto.randomUUID(), userId: user.id })
-				.returning({ id: listsTable.id });
+		const [list] = await db
+			.insert(listsTable)
+			.values({ publicId: crypto.randomUUID(), userId: user.id })
+			.returning({ id: listsTable.id });
 
 		const [streamingService] = await db
 			.select({ id: streamingServicesTable.id })
@@ -41,8 +41,8 @@ describe("removeListItem", () => {
 		testStreamingServiceId = streamingService.id;
 	});
 
-	it("指定した list_items_table.publicId のレコードを削除できる", async () => {
-		const listItemPublicId = "remove-list-item-target";
+	it("リスト内作品を削除できる", async () => {
+		const listItemPublicId = crypto.randomUUID();
 
 		await db.insert(listItemsTable).values({
 			publicId: listItemPublicId,
@@ -65,14 +65,27 @@ describe("removeListItem", () => {
 		expect(records).toHaveLength(0);
 	});
 
-	it("対象の publicId が存在しない場合はエラーを返す", async () => {
-		const result = await removeListItem({ listItemId: "not-found-public-id" });
+	it("無効な入力値に対してはVALIDATION_ERRORを返す", async () => {
+		const result = await removeListItem({ listItemId: "" });
 
 		expect(result.success).toBe(false);
 		if (result.success) {
 			return;
 		}
 
-		expect(result.error.message).toBe("作品がリストへ登録されていないか、すでに削除されています。");
+		expect(result.error.message).toBe("不正なリクエストです。");
+	});
+
+	it("対象のリスト内作品が存在しない場合はNOT_FOUND_ERRORを返す", async () => {
+		const result = await removeListItem({ listItemId: crypto.randomUUID() });
+
+		expect(result.success).toBe(false);
+		if (result.success) {
+			return;
+		}
+
+		expect(result.error.message).toBe(
+			"作品がリストへ登録されていないか、すでに削除されています。",
+		);
 	});
 });

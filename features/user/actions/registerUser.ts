@@ -14,9 +14,9 @@ import {
 import type { Result } from "@/features/shared/types/Result";
 import type { ListItem } from "@/features/list/types/ListItem";
 import { userIdSchema } from "../schemas/userIdSchema";
+import { listItemSchema } from "@/features/shared/schemas/listItemSchema";
 import {
 	registerLocalListPayloadSchema,
-	registerLocalListItemSchema,
 	type RegisterLocalListInput,
 } from "@/features/user/schemas/listItemSchema";
 import {
@@ -99,7 +99,7 @@ export async function registerUser({
 		? parsedLocalList.data
 		: emptyLocalList;
 	const validLocalListItems = normalizedLocalList.items.flatMap((item) => {
-		const parsedItem = registerLocalListItemSchema.safeParse(item);
+		const parsedItem = listItemSchema.safeParse(item);
 		if (!parsedItem.success) {
 			return [];
 		}
