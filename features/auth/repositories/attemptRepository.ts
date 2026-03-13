@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { and, eq, gt } from "drizzle-orm";
 import { loginAttemptsTable } from "@/db/schema";
 
-export async function RecentAttempts(
+export async function getRecentAttempts(
 	ipAddress: string,
 	attemptType: "code_verify" | "code_send",
 	windowStart: Date,
