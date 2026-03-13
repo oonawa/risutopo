@@ -1,6 +1,6 @@
 "use server";
 
-import { getUserMovieListPublicId as getUserMovieListPublicIdService } from "../services/listQueryService";
+import { getUserMovieListPublicIdService } from "../services/getUserListPublicIdService";
 
 export async function getUserMovieListPublicId(
 	userId: number,
