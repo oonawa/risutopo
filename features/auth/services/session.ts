@@ -1,85 +1,8 @@
-import { jwtVerify, SignJWT } from "jose";
+import { SignJWT } from "jose";
 import crypto from "node:crypto";
 import { db } from "@/db/client";
 import { authTokensTable } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
-import { cookies } from "next/headers";
-
-export async function verifySessionToken({
-	sessionToken,
-	now,
-}: {
-	sessionToken?: string;
-	now: Date;
-}): Promise<{
-	userId: number;
-	email: string;
-	deviceId: string;
-} | null> {
-	if (!sessionToken) {
-		return null;
-	}
-
-	try {
-		const secretKey = getSecretKey();
-		const { payload } = await jwtVerify(sessionToken, secretKey, {
-			algorithms: ["HS256"],
-		});
-
-		if (payload.type !== "session_token") {
-			return null;
-		}
-
-		const { userId, email, deviceId, type, exp, iat } = payload;
-
-		if (
-			typeof userId === "string" &&
-			typeof email === "string" &&
-			typeof deviceId === "string" &&
-			typeof type === "string" &&
-			typeof exp === "number" &&
-			typeof iat === "number"
-		) {
-			const parsedUserId = Number(userId);
-			if (!Number.isFinite(parsedUserId)) {
-				return null;
-			}
-
-			const [record] = await db
-				.select({
-					userId: authTokensTable.userId,
-					email: authTokensTable.email,
-					deviceId: authTokensTable.deviceId,
-				})
-				.from(authTokensTable)
-				.where(
-					and(
-						eq(authTokensTable.token, sessionToken),
-						eq(authTokensTable.tokenType, "session_token"),
-						eq(authTokensTable.userId, parsedUserId),
-						eq(authTokensTable.email, email),
-						eq(authTokensTable.deviceId, deviceId),
-						gt(authTokensTable.expiresAt, now),
-					),
-				);
-
-			if (!record) {
-				return null;
-			}
-
-			return {
-				userId: parsedUserId,
-				email: record.email,
-				deviceId: record.deviceId ?? deviceId,
-			};
-		}
-
-		return null;
-	} catch (error) {
-		console.error("Token verification failed:", error);
-		return null;
-	}
-}
 
 export async function verifyTempSessionToken({
 	tempToken,
@@ -117,18 +40,6 @@ export async function verifyTempSessionToken({
 		console.error("Temp token verification failed:", error);
 		return null;
 	}
-}
-
-export async function isAuthenticated() {
-	const cookieStore = await cookies();
-	const sessionToken = cookieStore.get("session_token")?.value;
-
-	const payload = await verifySessionToken({
-		sessionToken,
-		now: new Date(),
-	});
-
-	return payload;
 }
 
 function getSecretKey(): Uint8Array {

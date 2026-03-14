@@ -1,15 +1,12 @@
 import { headers } from "next/headers";
-import { getUserMovieListPublicId } from "@/features/list/actions/getUserMovieListPublicId";
+import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
 import MovieInputForm from "./components/MovieInputForm";
 import Roulette from "./components/Roulette";
-import { isAuthenticated } from "@/features/auth/services/session";
 import Section from "@/components/Section";
 
 export default async function Home() {
-	const payload = await isAuthenticated();
-	const publicListId = payload
-		? await getUserMovieListPublicId(payload.userId)
-		: null;
+	const result = await currentUserPublicListId();
+	const publicListId = result.success ? result.data.publicListId : null;
 
 	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") || "";

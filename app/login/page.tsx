@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/features/auth/services/session";
+import { currentUserId } from "@/features/shared/actions/currentUserId";
 import Login from "./components/Login";
 
 export default async function LoginPage() {
-	const authenticated = await isAuthenticated();
+	const result = await currentUserId();
 
-	if (authenticated) {
+	if (result.success) {
 		redirect("/");
 	}
 

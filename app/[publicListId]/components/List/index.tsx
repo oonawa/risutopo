@@ -1,4 +1,4 @@
-import { isAuthenticated } from "@/features/auth/services/session";
+import { currentUserId } from "@/features/shared/actions/currentUserId";
 import { getUserMovieList } from "@/features/list/actions/getUserMovieList";
 import { notFound } from "next/navigation";
 import ListContainer from "./Container";
@@ -11,13 +11,13 @@ type Props = {
 };
 
 export default async function UserMovieList({ publicListId }: Props) {
-	const payload = await isAuthenticated();
+	const result = await currentUserId();
 
-	if (!payload) {
+	if (!result.success) {
 		return <LocalList publicListId={publicListId} />;
 	}
 
-	const moviesResult = await getUserMovieList(publicListId, payload.userId);
+	const moviesResult = await getUserMovieList(publicListId, result.data.userId);
 
 	if (!moviesResult.success) {
 		if (

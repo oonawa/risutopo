@@ -2,6 +2,7 @@ import { SignJWT } from "jose";
 import crypto from "node:crypto";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
+import { getSecretKey } from "@/lib/jwt";
 import type { Result } from "@/features/shared/types/Result";
 import { insertAttempt } from "../repositories/attemptRepository";
 import {
@@ -138,14 +139,6 @@ export async function loginService({
 
 function generateTempSessionToken() {
 	return crypto.randomBytes(32).toString("hex");
-}
-
-function getSecretKey(): Uint8Array {
-	const secret = process.env.JWT_SECRET;
-	if (!secret) {
-		throw new Error("JWT_SECRET is not defined");
-	}
-	return new TextEncoder().encode(secret);
 }
 
 async function generateSessionToken({
