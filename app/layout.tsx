@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { getUserMovieListPublicId } from "@/features/list/actions/getUserMovieListPublicId";
-import { isAuthenticated } from "@/features/auth/services/session";
+import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Menu from "@/components/Menu";
@@ -16,19 +15,19 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const isVerified = await isAuthenticated();
-	const listPublicId = isVerified
-		? await getUserMovieListPublicId(isVerified.userId)
-		: null;
+	const result = await currentUserPublicListId();
+	const publicListId = result.success ? result.data.publicListId : null;
 
 	return (
 		<html lang="ja">
 			<body className={`antialiased`}>
 				<Header />
 
-				<main className="min-h-[calc(100dvh-var(--header-height))] pb-20">{children}</main>
+				<main className="min-h-[calc(100dvh-var(--header-height))] pb-20">
+					{children}
+				</main>
 
-				<Menu listPublicId={listPublicId} />
+				<Menu listPublicId={publicListId} />
 
 				<Footer />
 			</body>
