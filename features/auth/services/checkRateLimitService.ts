@@ -1,4 +1,4 @@
-import { RecentAttempts } from "../repositories/attemptRepository";
+import { getRecentAttempts } from "../repositories/attemptRepository";
 
 export async function checkRateLimitService({
 	ipAddress,
@@ -17,7 +17,7 @@ export async function checkRateLimitService({
 	ipAddress: string;
 }> {
 	const windowStart = new Date(now.getTime() - 15 * 60 * 1000); // 15分
-	const attempts = await RecentAttempts(ipAddress, attemptType, windowStart);
+	const attempts = await getRecentAttempts(ipAddress, attemptType, windowStart);
 
 	const maxAttempts = attemptType === "code_verify" ? 3 : 3;
 

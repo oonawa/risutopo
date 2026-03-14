@@ -1,8 +1,10 @@
 import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
 import {
+	authTokensTable,
 	directorsTable,
 	listItemsTable,
+	loginAttemptsTable,
 	moviesTable,
 	streamingServicesTable,
 	listMoviesTable,
@@ -21,6 +23,8 @@ export const streamingServicesSeed = Object.values(SUPPORTED_SERVICES).map(
 );
 
 export async function cleanupTables() {
+	await db.delete(loginAttemptsTable);
+	await db.delete(authTokensTable);
 	await db.delete(listItemsTable);
 	await db.delete(listMoviesTable);
 	await db.delete(movieDirectorsTable);
@@ -45,6 +49,7 @@ export async function resetSequences() {
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'movies_table'`);
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'directors_table'`);
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'users_table'`);
+	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'login_attempts_table'`);
 	await db.run(
 		sql`DELETE FROM sqlite_sequence WHERE name = 'movie_services_table'`,
 	);

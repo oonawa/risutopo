@@ -1,11 +1,13 @@
 import crypto from "node:crypto";
 import type { Result } from "@/features/shared/types/Result";
+import { db } from "@/db/client";
 import {
-	refreshLoginCode,
+	insertLoginCode,
 	deleteLoginCode,
 } from "../repositories/authTokenRepository";
 import { sendLoginMail } from "../repositories/sendLoginMailRepository";
 import { insertAttempt } from "../repositories/attemptRepository";
+import { getUserByMail } from "@/features/user/repositories/userRepository";
 
 export async function sendLoginCodeService({
 	email,
@@ -30,11 +32,17 @@ export async function sendLoginCodeService({
 	const loginCode = crypto.randomInt(100000, 1000000).toString();
 
 	try {
-		await refreshLoginCode({
-			email,
-			token: crypto.createHash("sha256").update(loginCode).digest("hex"),
-			expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
-			createdAt: now,
+		await db.transaction(async (tx) => {
+			const user = await getUserByMail(tx, email);
+			await deleteLoginCode({ tx, email });
+			await insertLoginCode({
+				tx,
+				email,
+				userId: user.id,
+				token: crypto.createHash("sha256").update(loginCode).digest("hex"),
+				expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+				createdAt: now,
+			});
 		});
 
 		const response = await sendLoginMail({
