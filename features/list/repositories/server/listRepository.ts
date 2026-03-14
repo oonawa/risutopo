@@ -37,7 +37,7 @@ export async function findListIdByPublicId(listPublicId: string) {
 	return list?.id ?? null;
 }
 
-export async function findListPublicIdByUserId(userId: number) {
+export async function findPublicListIdByUserId(userId: number) {
 	const [list] = await db
 		.select({ publicId: listsTable.publicId })
 		.from(listsTable)
@@ -46,7 +46,9 @@ export async function findListPublicIdByUserId(userId: number) {
 	return list?.publicId ?? null;
 }
 
-export async function findStreamingServiceBySlug(slug: ListItem["serviceSlug"]) {
+export async function findStreamingServiceBySlug(
+	slug: ListItem["serviceSlug"],
+) {
 	const [streamingService] = await db
 		.select({
 			id: streamingServicesTable.id,
@@ -153,9 +155,7 @@ export async function deleteListItemByPublicId(listItemPublicId: string) {
 	return deleted?.id ?? null;
 }
 
-export async function findListItemRowsByListPublicId(
-	listPublicId: string,
-): Promise<ListItemRow[]> {
+export async function findUserListItems(listPublicId: string, userId: number) {
 	return await db
 		.select({
 			listItemId: listItemsTable.publicId,
@@ -181,13 +181,13 @@ export async function findListItemRowsByListPublicId(
 		)
 		.innerJoin(listsTable, eq(listItemsTable.listId, listsTable.id))
 		.leftJoin(moviesTable, eq(listItemsTable.movieId, moviesTable.id))
-		.where(eq(listsTable.publicId, listPublicId))
+		.where(
+			and(eq(listsTable.publicId, listPublicId), eq(listsTable.userId, userId)),
+		)
 		.orderBy(desc(listItemsTable.id));
 }
 
-export async function findDirectorRowsByMovieIds(
-	movieIds: number[],
-): Promise<Array<{ movieId: number; directorName: string }>> {
+export async function findMovieDirectorNames(movieIds: number[]) {
 	if (movieIds.length === 0) {
 		return [];
 	}
@@ -198,6 +198,9 @@ export async function findDirectorRowsByMovieIds(
 			directorName: directorsTable.name,
 		})
 		.from(movieDirectorsTable)
-		.innerJoin(directorsTable, eq(movieDirectorsTable.directorId, directorsTable.id))
+		.innerJoin(
+			directorsTable,
+			eq(movieDirectorsTable.directorId, directorsTable.id),
+		)
 		.where(inArray(movieDirectorsTable.movieId, movieIds));
 }

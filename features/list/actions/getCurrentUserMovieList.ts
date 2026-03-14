@@ -1,13 +1,30 @@
 "use server";
 
+import z from "zod";
 import { isAuthenticated } from "@/features/auth/services/session";
 import type { Result } from "@/features/shared/types/Result";
 import type { ListItem } from "@/features/list/types/ListItem";
-import { getUserMovieList as getUserMovieListService } from "../services/listQueryService";
+import { getUserListService } from "../services/getUserListService";
+
+const getCurrentUserMovieListSchema = z.object({
+	listPublicId: z.uuid(),
+});
 
 export async function getCurrentUserMovieList(
 	listPublicId: string,
 ): Promise<Result<ListItem[]>> {
+	const parsed = getCurrentUserMovieListSchema.safeParse({ listPublicId });
+
+	if (!parsed.success) {
+		return {
+			success: false,
+			error: {
+				code: "VALIDATION_ERROR",
+				message: "不正なリクエストです。",
+			},
+		};
+	}
+
 	const payload = await isAuthenticated();
 
 	if (!payload) {
@@ -20,5 +37,5 @@ export async function getCurrentUserMovieList(
 		};
 	}
 
-	return await getUserMovieListService(listPublicId, payload.userId);
+	return await getUserListService(listPublicId, payload.userId);
 }

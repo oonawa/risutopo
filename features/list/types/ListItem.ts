@@ -6,7 +6,7 @@ export type ListItem = {
 	url: string;
 	serviceSlug: SupportedServiceSlug;
 	serviceName: SupportedServiceName;
-	isWatched?: boolean;
+	isWatched: boolean;
 	createdAt: Date;
 	details?: {
 		movieId: number;
@@ -21,4 +21,4 @@ export type ListItem = {
 	};
 };
 
-export type DraftListItem = Omit<ListItem, "listItemId">;
+export type DraftListItem = Omit<ListItem, "listItemId" | "isWatched">;

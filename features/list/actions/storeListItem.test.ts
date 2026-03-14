@@ -19,17 +19,14 @@ async function assertStoreMovieResult({
 	publicListId,
 	movie,
 	expectedTitle,
-	isWatched = false,
 }: {
 	publicListId: string;
 	movie: ListItem;
 	expectedTitle: string;
-	isWatched?: boolean;
 }) {
 	const result = await storeListItem({
 		publicListId,
 		movie,
-		isWatched,
 		now: new Date(),
 	});
 
@@ -43,7 +40,7 @@ async function assertStoreMovieResult({
 	expect(result.data.url).toBe(movie.url);
 	expect(result.data.serviceSlug).toBe(movie.serviceSlug);
 	expect(result.data.serviceName).toBe(movie.serviceName);
-	expect(result.data.isWatched).toBe(isWatched);
+	expect(result.data.isWatched).toBe(movie.isWatched);
 	expect(result.data.details).toEqual(movie.details);
 	return result.data;
 }
@@ -218,15 +215,15 @@ describe("storeMovie", () => {
 			})
 			.returning();
 
-			const [list] = await db
-				.insert(listsTable)
-				.values({ publicId: crypto.randomUUID(), userId: user.id })
-				.returning();
+		const [list] = await db
+			.insert(listsTable)
+			.values({ publicId: crypto.randomUUID(), userId: user.id })
+			.returning();
 		testListId = list.id;
 		testListPublicId = list.publicId;
 	});
 
-	it("【TMDBなし】Netflix：ジュラシック・パークをリスト追加", async () => {
+	it("配信作品の情報をリストへ新規登録できる", async () => {
 		const movie: ListItem = {
 			listItemId: crypto.randomUUID(),
 			title: "ジュラシック・パーク",
@@ -234,6 +231,7 @@ describe("storeMovie", () => {
 			serviceSlug: "netflix",
 			serviceName: "Netflix",
 			createdAt: new Date(),
+			isWatched: false,
 		};
 
 		const storeResult = await assertStoreMovieResult({
@@ -261,7 +259,7 @@ describe("storeMovie", () => {
 		}
 	});
 
-	it("【TMDBあり】Prime Video：ジュラシック・パークをリスト追加", async () => {
+	it("配信作品の情報＋マスタの情報を紐づけて新規登録できる", async () => {
 		const tmdbMovieDetails = {
 			backgroundImage: `${TMDB_IMAGE_BASE_URL}/njFixYzIxX8jsn6KMSEtAzi4avi.jpg`,
 			posterImage: `${TMDB_IMAGE_BASE_URL}/qIm2nHXLpBBdMxi8dvfrnDkBUDh.jpg`,
@@ -314,6 +312,7 @@ describe("storeMovie", () => {
 				movieId: seededMovie.id,
 				...tmdbMovieDetails,
 			},
+			isWatched: false,
 		};
 
 		const storeResult = await assertStoreMovieResult({
@@ -346,7 +345,7 @@ describe("storeMovie", () => {
 		});
 	});
 
-	it("同一タイトル・同一URLの作品は登録できない", async () => {
+	it("同じサービスの同じ配信作品は登録できない", async () => {
 		const firstMovie: ListItem = {
 			listItemId: crypto.randomUUID(),
 			title: "ジュラシック・パーク",
@@ -354,6 +353,7 @@ describe("storeMovie", () => {
 			serviceSlug: "netflix",
 			serviceName: "Netflix",
 			createdAt: new Date(),
+			isWatched: false,
 		};
 		const secondMovie: ListItem = {
 			...firstMovie,
@@ -363,7 +363,6 @@ describe("storeMovie", () => {
 		const firstResult = await storeListItem({
 			publicListId: testListPublicId,
 			movie: firstMovie,
-			isWatched: false,
 			now: new Date(),
 		});
 
@@ -372,7 +371,6 @@ describe("storeMovie", () => {
 		const secondResult = await storeListItem({
 			publicListId: testListPublicId,
 			movie: secondMovie,
-			isWatched: false,
 			now: new Date(),
 		});
 
@@ -385,14 +383,84 @@ describe("storeMovie", () => {
 			.select({ id: listItemsTable.id })
 			.from(listItemsTable)
 			.where(
-					and(
-						eq(listItemsTable.listId, testListId),
-						eq(listItemsTable.streamingServiceId, streamingServiceId),
-						eq(listItemsTable.titleOnService, firstMovie.title),
-						eq(listItemsTable.watchUrl, firstMovie.url),
-					),
-				);
+				and(
+					eq(listItemsTable.listId, testListId),
+					eq(listItemsTable.streamingServiceId, streamingServiceId),
+					eq(listItemsTable.titleOnService, firstMovie.title),
+					eq(listItemsTable.watchUrl, firstMovie.url),
+				),
+			);
 
 		expect(storedListItems).toHaveLength(1);
+	});
+
+	it("保存先のリストが存在しない場合はNOT_FOUND_ERRORを返す", async () => {
+		const movie: ListItem = {
+			listItemId: crypto.randomUUID(),
+			title: "ジュラシック・パーク",
+			url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
+			serviceSlug: "netflix",
+			serviceName: "Netflix",
+			createdAt: new Date(),
+			isWatched: false,
+		};
+
+		const result = await storeListItem({
+			publicListId: crypto.randomUUID(),
+			movie,
+			now: new Date(),
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: {
+				code: "NOT_FOUND_ERROR",
+				message: "リストが見つかりませんでした。",
+			},
+		});
+
+		const storedListItems = await db
+			.select({ id: listItemsTable.id })
+			.from(listItemsTable)
+			.where(eq(listItemsTable.listId, testListId));
+
+		expect(storedListItems).toHaveLength(0);
+		await assertMoviesTableHasNoRecords();
+		await assertDirectorsTableHasNoRecords();
+	});
+
+	it("無効な入力値に対してはVALIDATION_ERRORを返す", async () => {
+		const invalidMovie: ListItem = {
+			listItemId: "",
+			title: "",
+			url: "",
+			serviceSlug: "netflix",
+			serviceName: "Netflix",
+			createdAt: new Date(),
+			isWatched: false,
+		};
+
+		const result = await storeListItem({
+			publicListId: testListPublicId,
+			movie: invalidMovie,
+			now: new Date(),
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: {
+				code: "VALIDATION_ERROR",
+				message: "不正なリクエストです。",
+			},
+		});
+
+		const storedListItems = await db
+			.select({ id: listItemsTable.id })
+			.from(listItemsTable)
+			.where(eq(listItemsTable.listId, testListId));
+
+		expect(storedListItems).toHaveLength(0);
+		await assertMoviesTableHasNoRecords();
+		await assertDirectorsTableHasNoRecords();
 	});
 });

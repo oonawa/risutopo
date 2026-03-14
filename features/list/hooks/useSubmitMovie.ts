@@ -28,7 +28,6 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 				publicListId,
 				movie,
 				now: new Date(),
-				isWatched: movie.isWatched ?? false,
 			});
 
 			setSuccess(result.success);
