@@ -22,51 +22,54 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 			</Head>
 			<Body
 				style={{
-					color: "#ecf2f1",
-					backgroundColor: "#212f2c",
-					width: "100%",
+					color: "#3f4443",
+					backgroundColor: "#b0c8c3",
 					margin: 0,
 				}}
 			>
 				<Container
 					style={{
 						width: "100%",
+						height: "100%",
+						maxWidth: 500,
+						marginTop: 20,
+						marginBottom: 20,
 						marginLeft: "auto",
 						marginRight: "auto",
-						paddingLeft: "8px",
-						paddingRight: "8px",
+						backgroundColor: "#fff",
+						borderRadius: 20,
 					}}
 				>
 					<Container
 						style={{
-							width: "100%",
+							width: "90%",
 							marginLeft: "auto",
 							marginRight: "auto",
+							marginTop: 20,
 						}}
 					>
+						<Container
+							style={{
+								marginLeft: "auto",
+								marginRight: "auto",
+								width: 80,
+								height: 80,
+							}}
+						>
+							<img src={`${url}/logo.png`} alt="" />
+						</Container>
 						<Heading
 							style={{
 								fontSize: "24px",
+								textAlign: "center",
 								fontWeight: 700,
-								marginTop: "40px",
 							}}
 						>
-							ログインコード
+							りすとぽっと
 						</Heading>
 
-						<Text>
-							こちらのコードを入力してください。
-							<Link
-								href={url}
-								target="_blank"
-								rel="noopener nofollow"
-								style={{
-									color: "#c9d9d5",
-									textDecoration: "underline",
-								}}
-							>
-								{url}
-							</Link>
+						<Text style={{ marginTop: 20, marginBottom: 0 }}>
+							元の画面でこちらを入力してください。
 						</Text>
 
 						<Container
@@ -76,12 +79,16 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 								paddingTop: "16px",
 								paddingBottom: "16px",
 								textAlign: "center",
-								background: "#304c44",
+								background: "#c5dbd7",
+								marginLeft: "auto",
+								marginRight: "auto",
+								marginTop: 20,
 							}}
 						>
 							<Text
 								style={{
 									fontSize: "20px",
+									fontWeight: "bold",
 								}}
 							>
 								{loginCode}
@@ -90,18 +97,45 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 
 						<Container
 							style={{
-								marginTop: "16px",
-								marginBottom: "40px",
-								textAlign: "center",
+								marginTop: 10,
+							}}
+						>
+							<Text></Text>
+
+							<Text style={{ marginTop: 10, marginBottom: 0 }}>
+								コードは発行から<strong>10分間</strong>有効です。
+							</Text>
+							<Text style={{ marginTop: 0, marginBottom: 0 }}>
+								期限が切れてしまったら発行し直してください。
+							</Text>
+							<Text style={{ marginTop: 10, marginBottom: 0 }}>
+								<Link
+									href={url}
+									target="_blank"
+									rel="noopener nofollow"
+									style={{
+										color: "#7c8c88",
+										textDecoration: "underline",
+									}}
+								>
+									{url}/login
+								</Link>
+							</Text>
+						</Container>
+
+						<Container
+							style={{
+								marginTop: "30px",
+								marginBottom: "30px",
 							}}
 						>
 							<Text
 								style={{
-									fontSize: "14px",
-									color: "#acc3bd",
+									fontSize: "12px",
+									color: "#606b69",
 								}}
 							>
-								身に覚えのない方は、このメールを削除してください。
+								※身に覚えのない方は、このメールを削除してください。
 							</Text>
 						</Container>
 					</Container>
