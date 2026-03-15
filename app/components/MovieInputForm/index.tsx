@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import type { DraftListItem } from "@/features/list/types/ListItem";
+import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
 import { useActiveTab } from "@/features/list/hooks/useActiveTab";
+import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import { useSearchDuplicateMovie } from "@/features/list/hooks/useSearchDuplicateMovie";
-import { useFetchExistingListItem } from "@/features/list/hooks/useFetchExistingListItem";
 import { Button } from "@/components/ui/button";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
@@ -20,26 +20,20 @@ import ListItemCard from "../ListItem";
 type Props = {
 	initialIsMobile: boolean;
 	userAgent: string;
+	items?: ListItem[];
 	publicListId: string | null;
 };
 
 export default function MovieInputForm({
 	initialIsMobile,
 	userAgent,
+	items,
 	publicListId,
 }: Props) {
 	const { activeTab, setActiveTab } = useActiveTab({
 		initialIsMobile,
 		userAgent,
 	});
-
-	const { hydrateLocalStorage } = useFetchExistingListItem({
-		publicListId,
-	});
-
-	useEffect(() => {
-		hydrateLocalStorage();
-	}, [hydrateLocalStorage]);
 
 	const [extractedMovie, setExtractedMovie] = useState<DraftListItem | null>(
 		null,
@@ -52,6 +46,8 @@ export default function MovieInputForm({
 		clearDuplicateItem,
 	} = useSearchDuplicateMovie();
 
+	const { getListItems } = useListLocalStorageRepository();
+
 	const [searchExistingMoviePending, searchExistingMovieTransition] =
 		useTransition();
 
@@ -62,7 +58,10 @@ export default function MovieInputForm({
 			}
 
 			setExtractedMovie(extracted);
-			searchDuplicateMovie(extracted);
+
+			return items
+				? searchDuplicateMovie(extracted, items)
+				: searchDuplicateMovie(extracted, getListItems());
 		});
 	};
 

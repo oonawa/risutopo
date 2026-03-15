@@ -1,33 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion, useAnimate } from "motion/react";
 import type { ListItem } from "@/features/list/types/ListItem";
+import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import RisuPot from "@/components/RisuPot";
 import { Button } from "@/components/ui/button";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import ListItemCard from "../ListItem";
 
-export default function Roulette() {
-	const [items, setItems] = useState<ListItem[]>([]);
+type Props = {
+	items?: ListItem[];
+};
+
+export default function Roulette({ items }: Props) {
+	const { getListItems } = useListLocalStorageRepository();
+
 	const [isLacking, setIsLacking] = useState(false);
 	const [isDisabled, setIsDisabled] = useState(false);
 	const [selectedItem, setSelectedItem] = useState<ListItem | null>(null);
 	const [isAnimating, setIsAnimating] = useState(false);
 	const [potScope, animatePot] = useAnimate();
-	const { getListItems, getListId } = useListLocalStorageRepository();
 
-	useEffect(() => {
-		const items = getListItems();
-		setItems(items);
-	}, [getListItems]);
+	const list = items ?? getListItems();
 
 	const getRandomItem = async () => {
 		if (isAnimating) {
 			return;
 		}
 
-		if (items.length < 2) {
+		if (list.length < 2) {
 			return setIsLacking(true);
 		}
 
@@ -48,7 +49,7 @@ export default function Roulette() {
 			{ duration: 0.5, ease: "easeInOut" },
 		);
 
-		const selected = items[Math.floor(Math.random() * items.length)];
+		const selected = list[Math.floor(Math.random() * list.length)];
 		setSelectedItem(selected);
 
 		await animatePot(
@@ -91,7 +92,7 @@ export default function Roulette() {
 						<div className="w-full bg-background-dark-2 rounded-2xl py-10">
 							<h3 className="font-bold">
 								あと
-								<span className="text-xl px-1">{2 - items.length}本</span>
+								<span className="text-xl px-1">{2 - list.length}本</span>
 								リスト登録してください！
 							</h3>
 						</div>
@@ -111,7 +112,7 @@ export default function Roulette() {
 							<ListItemCard
 								mode="drawing"
 								movie={selectedItem}
-								publicListId={getListId()}
+								publicListId={null}
 							/>
 						</div>
 						<div className="border-t border-background-light-2 pt-10 pb-6">
