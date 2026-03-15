@@ -1,13 +1,11 @@
 import { useCallback, useState } from "react";
 import type { DraftListItem, ListItem } from "../types/ListItem";
-import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
 
 const hasListItemId = (movie: DraftListItem | ListItem): movie is ListItem => {
 	return "listItemId" in movie;
 };
 
 export const useSearchDuplicateMovie = () => {
-	const { getListItems } = useListLocalStorageRepository();
 
 	const [possibleDuplicateMovies, setPossibleDuplicateMovies] = useState<
 		ListItem[] | null
@@ -15,11 +13,10 @@ export const useSearchDuplicateMovie = () => {
 	const [sameMovie, setSameMovie] = useState<ListItem | null>(null);
 
 	const searchDuplicateMovie = useCallback(
-		(movie: DraftListItem | ListItem) => {
-			const existingUserList = getListItems();
+		(movie: DraftListItem | ListItem, existingList: ListItem[]) => {
 			const extractedExternalMovieId = movie.details?.externalDatabaseMovieId;
 
-			const duplicatedMovies = existingUserList.filter((item) => {
+			const duplicatedMovies = existingList.filter((item) => {
 				if (hasListItemId(movie) && movie.listItemId === item.listItemId) {
 					return false;
 				}
@@ -41,7 +38,7 @@ export const useSearchDuplicateMovie = () => {
 					null,
 			);
 		},
-		[getListItems],
+		[],
 	);
 
 	const clearDuplicateItem = () => {

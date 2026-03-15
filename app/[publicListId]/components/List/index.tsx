@@ -30,10 +30,6 @@ export default async function UserMovieList({ publicListId }: Props) {
 		return null;
 	}
 
-	if (moviesResult.data.length === 0) {
-		return <LocalList publicListId={publicListId} />;
-	}
-
 	return (
 		<>
 			<ListContainer>

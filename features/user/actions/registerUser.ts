@@ -12,7 +12,6 @@ import {
 	streamingServicesTable,
 } from "@/db/schema";
 import type { Result } from "@/features/shared/types/Result";
-import type { ListItem } from "@/features/list/types/ListItem";
 import { userIdSchema } from "../schemas/userIdSchema";
 import { listItemSchema } from "@/features/shared/schemas/listItemSchema";
 import {
@@ -25,7 +24,6 @@ import {
 	addDays,
 } from "@/features/auth/services/session";
 import { generateDeviceId } from "@/features/auth/services/devices";
-import { getUserListService } from "@/features/list/services/getUserListService";
 
 const emptyLocalList: RegisterLocalListInput = {
 	listId: "",
@@ -49,13 +47,7 @@ export async function registerUser({
 	tempToken: string;
 	localUserList: RegisterLocalListInput;
 	now: Date;
-}): Promise<
-	Result<{
-		userId: string;
-		listPublicId: string;
-		listItems: ListItem[];
-	}>
-> {
+}): Promise<Result<{ userId: string; listPublicId: string }>> {
 	const tempSession = await verifyTempSessionToken({ tempToken, now });
 
 	if (!tempSession) {
@@ -244,26 +236,11 @@ export async function registerUser({
 		};
 	}
 
-	let listItems: ListItem[] = [];
-
-	try {
-		const listItemsResult = await getUserListService(
-			transactionResult.listPublicId,
-			transactionResult.id,
-		);
-		if (listItemsResult.success) {
-			listItems = listItemsResult.data;
-		}
-	} catch (err) {
-		console.error(err);
-	}
-
 	return {
 		success: true,
 		data: {
 			userId: transactionResult.publicId,
 			listPublicId: transactionResult.listPublicId,
-			listItems,
 		},
 	};
 }

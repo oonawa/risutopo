@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
 import { useExternalMovieDatabase } from "@/features/movieDatabase/hooks/useExternalMovieDatabase";
 import { useSubmitMovie } from "@/features/list/hooks/useSubmitMovie";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import NewListItem from "./New";
 import PreviewListItem from "./Preview";
 import EditingListItem from "./Editing";
@@ -49,8 +48,6 @@ export default function ListItemCard({
 		isFetchExternalMovieDatabasePending,
 	} = useExternalMovieDatabase({ movie });
 
-	const { storeListItem, removeListItem } = useListLocalStorageRepository();
-
 	const {
 		isSubmitPending,
 		submit,
@@ -75,10 +72,9 @@ export default function ListItemCard({
 			: {
 					...newItem,
 					listItemId: window.crypto.randomUUID(),
-					isWatched: false
+					isWatched: false,
 				};
 
-		storeListItem(itemToStore);
 		submit({ movie: itemToStore, publicListId });
 	};
 
@@ -105,7 +101,6 @@ export default function ListItemCard({
 
 		const { listItemId } = targetMovie;
 
-		removeListItem(listItemId);
 		remove({
 			publicListId,
 			listItemId,

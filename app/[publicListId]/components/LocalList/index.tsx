@@ -1,28 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ListItem } from "@/features/list/types/ListItem";
+import { useState } from "react";
+import { formatDate } from "@/lib/date";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import ListContainer from "../List/Container";
 import ListItemDetail from "../List/Item/Detail";
 import Item from "../List/Item";
-import { formatDate } from "@/lib/date";
 
 type Props = {
 	publicListId: string;
 };
 
 export default function LocalList({ publicListId }: Props) {
-	const [items, setItems] = useState<ListItem[] | undefined>(undefined);
 	const { getListItems } = useListLocalStorageRepository();
-
-	useEffect(() => {
-		setItems(getListItems());
-	}, [getListItems]);
-
-	if (!items) {
-		return <div></div>;
-	}
+	const [items] = useState(() => getListItems());
 
 	return (
 		<>
