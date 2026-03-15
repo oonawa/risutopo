@@ -1,23 +1,44 @@
 import crypto from "node:crypto";
+import { SignJWT } from "jose";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
 import {
+	authTokensTable,
 	listItemsTable,
 	listsTable,
 	streamingServicesTable,
 	usersTable,
 } from "@/db/schema";
+import { getSecretKey } from "@/lib/jwt";
 import { getCurrentUserMovieList } from "./getCurrentUserMovieList";
 
-const { mockIsAuthenticated } = vi.hoisted(() => {
+const { mockCookies, mockSessionTokenStore } = vi.hoisted(() => {
+	let sessionToken: string | undefined;
+
 	return {
-		mockIsAuthenticated: vi.fn(),
+		mockCookies: vi.fn(async () => ({
+			get: (name: string) => {
+				if (name !== "session_token" || !sessionToken) {
+					return undefined;
+				}
+
+				return { value: sessionToken };
+			},
+		})),
+		mockSessionTokenStore: {
+			clear() {
+				sessionToken = undefined;
+			},
+			set(value: string) {
+				sessionToken = value;
+			},
+		},
 	};
 });
 
-vi.mock("@/features/auth/services/session", () => ({
-	isAuthenticated: mockIsAuthenticated,
+vi.mock("next/headers", () => ({
+	cookies: mockCookies,
 }));
 
 async function findStreamingServiceIdBySlug(slug: "netflix" | "hulu") {
@@ -35,15 +56,67 @@ async function findStreamingServiceIdBySlug(slug: "netflix" | "hulu") {
 	return streamingService.id;
 }
 
+async function generateSessionToken({
+	userId,
+	email,
+	deviceId,
+}: {
+	userId: number;
+	email: string;
+	deviceId: string;
+}) {
+	return await new SignJWT({
+		userId: userId.toString(),
+		email,
+		deviceId,
+		type: "session_token",
+	})
+		.setProtectedHeader({ alg: "HS256" })
+		.setExpirationTime("30d")
+		.setIssuedAt()
+		.sign(getSecretKey());
+}
+
+async function loginAsUser({
+	userId,
+	email,
+	now,
+}: {
+	userId: number;
+	email: string;
+	now: Date;
+}) {
+	const sessionToken = await generateSessionToken({
+		userId,
+		email,
+		deviceId: "test-device-id",
+	});
+
+	await db.insert(authTokensTable).values({
+		token: sessionToken,
+		tokenType: "session_token",
+		email,
+		userId,
+		deviceId: "test-device-id",
+		expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+		createdAt: now,
+	});
+
+	mockSessionTokenStore.set(sessionToken);
+}
+
 describe("getCurrentUserMovieList", () => {
 	let userAId = 0;
 	let userBId = 0;
 	let userAListPublicId = "";
 	let userBListPublicId = "";
+	const now = new Date("2026-03-12T00:00:00.000Z");
 
 	beforeEach(async () => {
-		mockIsAuthenticated.mockReset();
+		mockCookies.mockClear();
+		mockSessionTokenStore.clear();
 
+		await db.delete(authTokensTable);
 		await db.delete(listItemsTable);
 		await db.delete(listsTable);
 		await db.delete(usersTable);
@@ -123,16 +196,16 @@ describe("getCurrentUserMovieList", () => {
 		]);
 	});
 
-	it("ユーザーは自身のリストアイテム全件を取得できる", async () => {
-		mockIsAuthenticated.mockResolvedValue({
+	it("ログイン中ユーザーは自身のリストアイテム全件を取得できる", async () => {
+		await loginAsUser({
 			userId: userAId,
 			email: "get-current-user-movie-list-user-a@example.com",
-			deviceId: "test-device-id",
+			now,
 		});
 
 		const result = await getCurrentUserMovieList(userAListPublicId);
 
-		expect(mockIsAuthenticated).toHaveBeenCalledTimes(1);
+		expect(mockCookies).toHaveBeenCalledTimes(1);
 		expect(result).toEqual({
 			success: true,
 			data: [
@@ -159,10 +232,10 @@ describe("getCurrentUserMovieList", () => {
 	});
 
 	it("ユーザーは他ユーザーのリストアイテムを取得できない", async () => {
-		mockIsAuthenticated.mockResolvedValue({
+		await loginAsUser({
 			userId: userAId,
 			email: "get-current-user-movie-list-user-a@example.com",
-			deviceId: "test-device-id",
+			now,
 		});
 
 		const result = await getCurrentUserMovieList(userBListPublicId);
@@ -177,11 +250,9 @@ describe("getCurrentUserMovieList", () => {
 	});
 
 	it("ユーザーはログイン中でなければリストアイテムを取得できない", async () => {
-		mockIsAuthenticated.mockResolvedValue(null);
-
 		const result = await getCurrentUserMovieList(userAListPublicId);
 
-		expect(mockIsAuthenticated).toHaveBeenCalledTimes(1);
+		expect(mockCookies).toHaveBeenCalledTimes(1);
 		expect(result).toEqual({
 			success: false,
 			error: {
@@ -192,10 +263,10 @@ describe("getCurrentUserMovieList", () => {
 	});
 
 	it("ユーザーは存在しないリストからリストアイテムを取得できない", async () => {
-		mockIsAuthenticated.mockResolvedValue({
+		await loginAsUser({
 			userId: userAId,
 			email: "get-current-user-movie-list-user-a@example.com",
-			deviceId: "test-device-id",
+			now,
 		});
 
 		const result = await getCurrentUserMovieList(crypto.randomUUID());

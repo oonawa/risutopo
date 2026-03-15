@@ -1,15 +1,21 @@
 import { headers } from "next/headers";
-import { getUserMovieListPublicId } from "@/features/list/actions/getUserMovieListPublicId";
+import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
+import { getCurrentUserMovieList } from "@/features/list/actions/getCurrentUserMovieList";
 import MovieInputForm from "./components/MovieInputForm";
 import Roulette from "./components/Roulette";
-import { isAuthenticated } from "@/features/auth/services/session";
 import Section from "@/components/Section";
 
 export default async function Home() {
-	const payload = await isAuthenticated();
-	const publicListId = payload
-		? await getUserMovieListPublicId(payload.userId)
+	const result = await currentUserPublicListId();
+	const publicListId = result.success ? result.data.publicListId : null;
+
+	const items = publicListId
+		? await getCurrentUserMovieList(publicListId)
 		: null;
+
+	if (items?.success === false) {
+		throw new Error(items.error.message);
+	}
 
 	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") || "";
@@ -24,11 +30,12 @@ export default async function Home() {
 				<MovieInputForm
 					initialIsMobile={isMobileUA}
 					userAgent={userAgent}
+					items={items?.data}
 					publicListId={publicListId}
 				/>
 			</Section>
 			<Section title="今日、なに観る？">
-				<Roulette />
+				<Roulette items={items?.data} />
 			</Section>
 		</>
 	);

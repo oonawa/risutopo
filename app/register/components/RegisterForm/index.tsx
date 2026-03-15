@@ -38,7 +38,7 @@ export default function RegisterForm({ email, token }: Props) {
 
 	const [serverErrorMessage, setServerErrorMessage] = useState<string>("");
 
-	const { getListItems, getListId, replaceListItems } =
+	const { getListItems, getListId, initializeEmptyList } =
 		useListLocalStorageRepository();
 
 	const {
@@ -111,12 +111,7 @@ export default function RegisterForm({ email, token }: Props) {
 			now: new Date(),
 		});
 		if (result.success) {
-			const nextListItems =
-				result.data.listItems.length === 0 && localUserList.items.length > 0
-					? localUserList.items
-					: result.data.listItems;
-
-			replaceListItems(nextListItems, result.data.listPublicId);
+			initializeEmptyList();
 			return redirect("/");
 		}
 
