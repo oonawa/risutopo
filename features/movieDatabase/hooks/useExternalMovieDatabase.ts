@@ -19,6 +19,7 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 			.replace(/\s+/g, " ")
 			.replace(/（吹替版）/g, "")
 			.replace(/（字幕版）/g, "")
+			.replace(/™/g, "")
 			.trim();
 	};
 
