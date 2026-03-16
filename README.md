@@ -34,7 +34,7 @@ Next.js / Turso / Vercel のフルスタックな構成になっています。
 
 #### `.env`
 
-| 変数名 | 用途 | 取得する方法 |
+| 変数名 | 用途 | 内容 |
 | --- | --- | --- |
 | RESEND_API_KEY | 認証時のメール送信 | [Resend](https://resend.com/)で発行 |
 | TMDB_API_KEY | 詳細な映画情報の取得 | [TMDB](https://www.themoviedb.org/?language=ja)で発行 |
@@ -43,7 +43,7 @@ Next.js / Turso / Vercel のフルスタックな構成になっています。
 
 #### `.env.test`
 
-| 変数名 | 用途 | 取得する方法 |
+| 変数名 | 用途 | 内容 |
 | --- | --- | --- |
 | TURSO_DATABASE_URL | アプリケーションが接続するデータベースの指定 | `file:local.test.db` |
 | JWT_SECRET | セッションごとに発行されるトークンの検証 | ランダム文字列を指定 or `openssl rand -hex 64`などで作成
