@@ -66,7 +66,7 @@ const mapListItems = (
 			row.backgroundImage === null ||
 			row.posterImage === null ||
 			row.runningMinutes === null ||
-			row.releaseYear === null ||
+			row.releaseDate === null ||
 			row.overview === null ||
 			row.externalDatabaseMovieId === null
 		) {
@@ -77,7 +77,7 @@ const mapListItems = (
 				createdAt: row.createdAt,
 				serviceSlug: row.serviceSlug,
 				serviceName: row.serviceName,
-				isWatched: row.watchStatus === 1,
+				isWatched: row.watchedAt !== null,
 			};
 		}
 
@@ -88,7 +88,7 @@ const mapListItems = (
 			createdAt: row.createdAt,
 			serviceSlug: row.serviceSlug,
 			serviceName: row.serviceName,
-			isWatched: row.watchStatus === 1,
+			isWatched: row.watchedAt !== null,
 			details: {
 				movieId: row.movieId,
 				officialTitle: row.officialTitle,
@@ -96,10 +96,20 @@ const mapListItems = (
 				posterImage: row.posterImage,
 				director: movieDirectors.get(row.movieId) ?? [],
 				runningMinutes: row.runningMinutes,
-				releaseYear: row.releaseYear,
+				releaseYear: getReleaseYear(row.releaseDate),
 				externalDatabaseMovieId: Number(row.externalDatabaseMovieId),
 				overview: row.overview,
 			},
 		};
 	});
+};
+
+const getReleaseYear = (releaseDate: string) => {
+	const releaseYear = new Date(releaseDate).getFullYear();
+
+	if (Number.isNaN(releaseYear)) {
+		throw Error(`releaseDate の形式が不正です: ${releaseDate}`);
+	}
+
+	return releaseYear;
 };

@@ -3,6 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
+	directorCacheTable,
 	directorsTable,
 	movieDirectorsTable,
 	moviesTable,
@@ -29,10 +30,11 @@ export async function getDirectorsFromExternalMovieDatabase(
 	const cachedDirectors = await db
 		.select({
 			name: directorsTable.name,
-			cachedAt: directorsTable.cachedAt,
+			cachedAt: directorCacheTable.cachedAt,
 		})
-		.from(movieDirectorsTable)
-		.innerJoin(moviesTable, eq(movieDirectorsTable.movieId, moviesTable.id))
+		.from(moviesTable)
+		.innerJoin(directorCacheTable, eq(directorCacheTable.movieId, moviesTable.id))
+		.innerJoin(movieDirectorsTable, eq(movieDirectorsTable.movieId, moviesTable.id))
 		.innerJoin(
 			directorsTable,
 			eq(movieDirectorsTable.directorId, directorsTable.id),
@@ -107,17 +109,11 @@ export async function getDirectorsFromExternalMovieDatabase(
 
 				let directorId = existingDirector?.id;
 
-				if (existingDirector) {
-					await tx
-						.update(directorsTable)
-						.set({ cachedAt: now })
-						.where(eq(directorsTable.id, existingDirector.id));
-				} else {
+				if (!existingDirector) {
 					const [insertedDirector] = await tx
 						.insert(directorsTable)
 						.values({
 							name: directorName,
-							cachedAt: now,
 						})
 						.returning({ id: directorsTable.id });
 
@@ -145,6 +141,19 @@ export async function getDirectorsFromExternalMovieDatabase(
 					});
 				}
 			}
+
+			await tx
+				.insert(directorCacheTable)
+				.values({
+					movieId: movie.id,
+					cachedAt: now,
+				})
+				.onConflictDoUpdate({
+					target: directorCacheTable.movieId,
+					set: {
+						cachedAt: now,
+					},
+				});
 		});
 	}
 

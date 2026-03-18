@@ -6,6 +6,7 @@ import {
 	listItemsTable,
 	listsTable,
 	streamingServicesTable,
+	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
 import { removeListItem } from "./removeListItem";
@@ -19,9 +20,12 @@ describe("removeListItem", () => {
 			.insert(usersTable)
 			.values({
 				publicId: "remove-list-item-test-user",
-				email: "remove-list-item-test@risutopo.com",
 			})
 			.returning({ id: usersTable.id });
+		await db.insert(userEmailsTable).values({
+			userId: user.id,
+			email: "remove-list-item-test@risutopo.com",
+		});
 
 		const [list] = await db
 			.insert(listsTable)
@@ -50,9 +54,7 @@ describe("removeListItem", () => {
 			streamingServiceId: testStreamingServiceId,
 			watchUrl: "https://www.netflix.com/jp/title/80100172",
 			titleOnService: "テスト映画",
-			watchStatus: 0,
 			createdAt: new Date(),
-			movieId: null,
 		});
 
 		const result = await removeListItem({ listItemId: listItemPublicId });

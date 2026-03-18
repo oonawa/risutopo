@@ -3,13 +3,17 @@
 import crypto from "node:crypto";
 import { headers, cookies } from "next/headers";
 import { db } from "@/db/client";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import {
 	usersTable,
+	userEmailsTable,
 	listsTable,
-	authTokensTable,
+	listItemMovieMatchTable,
 	listItemsTable,
+	sessionTokensTable,
 	streamingServicesTable,
+	tempSessionTokensTable,
+	watchedItemsTable,
 } from "@/db/schema";
 import type { Result } from "@/features/shared/types/Result";
 import { userIdSchema } from "../schemas/userIdSchema";
@@ -113,9 +117,16 @@ export async function registerUser({
 				.insert(usersTable)
 				.values({
 					publicId: data.userId,
-					email: email,
 				})
-				.returning();
+				.returning({
+					id: usersTable.id,
+					publicId: usersTable.publicId,
+				});
+
+			await tx.insert(userEmailsTable).values({
+				userId: newUser.id,
+				email,
+			});
 
 			const normalizedListPublicId =
 				normalizedLocalList.listId.length > 0
@@ -149,6 +160,8 @@ export async function registerUser({
 				);
 				const seenWatchUrls = new Set<string>();
 				const listItems: Array<typeof listItemsTable.$inferInsert> = [];
+				const movieIdsByPublicId = new Map<string, number>();
+				const watchedItemPublicIds = new Set<string>();
 
 				for (const item of validLocalListItems) {
 					if (seenWatchUrls.has(item.url)) {
@@ -165,16 +178,54 @@ export async function registerUser({
 						publicId: item.listItemId,
 						listId: newList.id,
 						streamingServiceId,
-						movieId: item.details?.movieId ?? null,
 						watchUrl: item.url,
-						watchStatus: item.isWatched ? 1 : 0,
 						titleOnService: item.title,
 						createdAt: normalizeCreatedAt(item.createdAt, now),
 					});
+
+					if (item.details) {
+						movieIdsByPublicId.set(item.listItemId, item.details.movieId);
+					}
+
+					if (item.isWatched) {
+						watchedItemPublicIds.add(item.listItemId);
+					}
 				}
 
 				if (listItems.length > 0) {
-					await tx.insert(listItemsTable).values(listItems);
+					const insertedListItems = await tx
+						.insert(listItemsTable)
+						.values(listItems)
+						.returning({
+							id: listItemsTable.id,
+							publicId: listItemsTable.publicId,
+							createdAt: listItemsTable.createdAt,
+						});
+
+					const matchedMovies = insertedListItems.flatMap((item) => {
+						const movieId = movieIdsByPublicId.get(item.publicId);
+						if (movieId === undefined) {
+							return [];
+						}
+
+						return [{ listItemId: item.id, movieId }];
+					});
+
+					if (matchedMovies.length > 0) {
+						await tx.insert(listItemMovieMatchTable).values(matchedMovies);
+					}
+
+					const watchedItems = insertedListItems.flatMap((item) => {
+						if (!watchedItemPublicIds.has(item.publicId)) {
+							return [];
+						}
+
+						return [{ listItemId: item.id, watchedAt: item.createdAt }];
+					});
+
+					if (watchedItems.length > 0) {
+						await tx.insert(watchedItemsTable).values(watchedItems);
+					}
 				}
 			}
 
@@ -183,25 +234,19 @@ export async function registerUser({
 
 			if (tempToken) {
 				await tx
-					.delete(authTokensTable)
-					.where(
-						and(
-							eq(authTokensTable.token, tempToken),
-							eq(authTokensTable.tokenType, "temp_session_token"),
-						),
-					);
+					.delete(tempSessionTokensTable)
+					.where(eq(tempSessionTokensTable.token, tempToken));
 			}
 
 			const sessionToken = await generateSessionToken({
 				userId: newUser.id,
-				email: newUser.email,
+				email,
 				deviceId,
 			});
 			const expiresAt = addDays(now, 30);
 
-			await tx.insert(authTokensTable).values({
+			await tx.insert(sessionTokensTable).values({
 				token: sessionToken,
-				tokenType: "session_token",
 				deviceId,
 				email,
 				userId: newUser.id,

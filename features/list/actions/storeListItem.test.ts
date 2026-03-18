@@ -3,12 +3,16 @@ import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import {
+	directorCacheTable,
 	directorsTable,
+	listItemMovieMatchTable,
 	listItemsTable,
 	listsTable,
+	movieCacheTable,
 	movieDirectorsTable,
 	moviesTable,
 	streamingServicesTable,
+	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
 import type { ListItem } from "../types/ListItem";
@@ -92,13 +96,11 @@ async function assertListItemRecord({
 	testListId,
 	streamingServiceId,
 	movie,
-	expectedMovieId,
 	expectedTitleOnService,
 }: {
 	testListId: number;
 	streamingServiceId: number;
 	movie: ListItem;
-	expectedMovieId: number | null;
 	expectedTitleOnService: string;
 }) {
 	const [listItemRecord] = await db
@@ -119,8 +121,33 @@ async function assertListItemRecord({
 		return null;
 	}
 
-	expect(listItemRecord.movieId).toBe(expectedMovieId);
 	return listItemRecord.id;
+}
+
+async function assertListItemMovieMatchRecord({
+	listItemId,
+	expectedMovieId,
+}: {
+	listItemId: number;
+	expectedMovieId: number | null;
+}) {
+	const [matchRecord] = await db
+		.select()
+		.from(listItemMovieMatchTable)
+		.where(eq(listItemMovieMatchTable.listItemId, listItemId));
+
+	if (expectedMovieId === null) {
+		expect(matchRecord).toBeUndefined();
+		return;
+	}
+
+	expect(matchRecord).toBeDefined();
+
+	if (!matchRecord) {
+		throw Error("list_item_movie_match_table に映画紐付けが作成されていません");
+	}
+
+	expect(matchRecord.movieId).toBe(expectedMovieId);
 }
 
 async function assertMovieRecordFromTmdbDetails(movie: ListItem) {
@@ -141,7 +168,6 @@ async function assertMovieRecordFromTmdbDetails(movie: ListItem) {
 				eq(moviesTable.backgroundImage, movie.details.backgroundImage),
 				eq(moviesTable.posterImage, movie.details.posterImage),
 				eq(moviesTable.runningMinutes, movie.details.runningMinutes),
-				eq(moviesTable.releaseYear, movie.details.releaseYear),
 			),
 		);
 
@@ -151,7 +177,6 @@ async function assertMovieRecordFromTmdbDetails(movie: ListItem) {
 		throw Error("movies_table にTMDB由来のレコードが作成されていません");
 	}
 
-	expect(movieRecord.cachedAt).toBeInstanceOf(Date);
 	return movieRecord;
 }
 
@@ -178,8 +203,37 @@ async function assertDirectorRecordFromTmdbDetails(movie: ListItem) {
 		throw Error("directors_table に監督レコードが作成されていません");
 	}
 
-	expect(directorRecord.cachedAt).toBeInstanceOf(Date);
 	return directorRecord;
+}
+
+async function assertMovieCacheRecord(movieId: number) {
+	const [movieCacheRecord] = await db
+		.select()
+		.from(movieCacheTable)
+		.where(eq(movieCacheTable.movieId, movieId));
+
+	expect(movieCacheRecord).toBeDefined();
+
+	if (!movieCacheRecord) {
+		throw Error("movie_cache_table にキャッシュレコードが作成されていません");
+	}
+
+	expect(movieCacheRecord.cachedAt).toBeInstanceOf(Date);
+}
+
+async function assertDirectorCacheRecord(movieId: number) {
+	const [directorCacheRecord] = await db
+		.select()
+		.from(directorCacheTable)
+		.where(eq(directorCacheTable.movieId, movieId));
+
+	expect(directorCacheRecord).toBeDefined();
+
+	if (!directorCacheRecord) {
+		throw Error("director_cache_table にキャッシュレコードが作成されていません");
+	}
+
+	expect(directorCacheRecord.cachedAt).toBeInstanceOf(Date);
 }
 
 async function assertMovieDirectorRecord({
@@ -211,9 +265,12 @@ describe("storeMovie", () => {
 			.insert(usersTable)
 			.values({
 				publicId: "test",
-				email: "xxxxxxx@risutopo.com",
 			})
 			.returning();
+		await db.insert(userEmailsTable).values({
+			userId: user.id,
+			email: "xxxxxxx@risutopo.com",
+		});
 
 		const [list] = await db
 			.insert(listsTable)
@@ -251,12 +308,15 @@ describe("storeMovie", () => {
 			testListId,
 			streamingServiceId: netflixStreamingServiceId,
 			movie,
-			expectedMovieId: null,
 			expectedTitleOnService: movie.title,
 		});
 		if (!listItemId) {
 			throw Error("list_items_table へのレコード登録に失敗しています");
 		}
+		await assertListItemMovieMatchRecord({
+			listItemId,
+			expectedMovieId: null,
+		});
 	});
 
 	it("配信作品の情報＋マスタの情報を紐づけて新規登録できる", async () => {
@@ -282,19 +342,26 @@ describe("storeMovie", () => {
 				posterImage: tmdbMovieDetails.posterImage,
 				runningMinutes: tmdbMovieDetails.runningMinutes,
 				releaseDate: "1993-06-11",
-				releaseYear: tmdbMovieDetails.releaseYear,
-				cachedAt: new Date(),
 				overview: tmdbMovieDetails.overview,
 			})
 			.returning({ id: moviesTable.id });
+
+		await db.insert(movieCacheTable).values({
+			movieId: seededMovie.id,
+			cachedAt: new Date(),
+		});
 
 		const [seededDirector] = await db
 			.insert(directorsTable)
 			.values({
 				name: tmdbMovieDetails.director[0],
-				cachedAt: new Date(),
 			})
 			.returning({ id: directorsTable.id });
+
+		await db.insert(directorCacheTable).values({
+			movieId: seededMovie.id,
+			cachedAt: new Date(),
+		});
 
 		await db.insert(movieDirectorsTable).values({
 			movieId: seededMovie.id,
@@ -321,13 +388,11 @@ describe("storeMovie", () => {
 			expectedTitle: movie.title,
 		});
 		expect(storeResult).not.toBeNull();
-		const details = movie.details;
-		if (!details) {
-			throw Error("TMDBありケースのため movie.details が必要です");
-		}
 
 		const movieRecord = await assertMovieRecordFromTmdbDetails(movie);
 		const directorRecord = await assertDirectorRecordFromTmdbDetails(movie);
+		await assertMovieCacheRecord(movieRecord.id);
+		await assertDirectorCacheRecord(movieRecord.id);
 		await assertMovieDirectorRecord({
 			movieId: movieRecord.id,
 			directorId: directorRecord.id,
@@ -336,12 +401,18 @@ describe("storeMovie", () => {
 		const streamingServiceId = await getStreamingServiceIdBySlug(
 			movie.serviceSlug,
 		);
-		await assertListItemRecord({
+		const listItemId = await assertListItemRecord({
 			testListId,
 			streamingServiceId,
 			movie,
-			expectedMovieId: movieRecord.id,
 			expectedTitleOnService: movie.title,
+		});
+		if (!listItemId) {
+			throw Error("list_items_table へのレコード登録に失敗しています");
+		}
+		await assertListItemMovieMatchRecord({
+			listItemId,
+			expectedMovieId: movieRecord.id,
 		});
 	});
 

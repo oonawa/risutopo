@@ -1,7 +1,7 @@
 import { SignJWT } from "jose";
 import crypto from "node:crypto";
 import { db } from "@/db/client";
-import { authTokensTable } from "@/db/schema";
+import { tempSessionTokensTable } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 
 export async function verifyTempSessionToken({
@@ -20,14 +20,13 @@ export async function verifyTempSessionToken({
 	try {
 		const [record] = await db
 			.select({
-				email: authTokensTable.email,
+				email: tempSessionTokensTable.email,
 			})
-			.from(authTokensTable)
+			.from(tempSessionTokensTable)
 			.where(
 				and(
-					eq(authTokensTable.token, tempToken),
-					eq(authTokensTable.tokenType, "temp_session_token"),
-					gt(authTokensTable.expiresAt, now),
+					eq(tempSessionTokensTable.token, tempToken),
+					gt(tempSessionTokensTable.expiresAt, now),
 				),
 			);
 

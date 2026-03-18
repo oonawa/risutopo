@@ -148,6 +148,48 @@
       "when": 1772692775444,
       "tag": "0020_slippery_blockbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1773809373727,
+      "tag": "0021_friendly_nico_minoru",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1773815271560,
+      "tag": "0022_special_virginia_dare",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1773821198307,
+      "tag": "0023_massive_ronan",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1773823742218,
+      "tag": "0024_panoramic_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1773824600673,
+      "tag": "0025_curved_makkari",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1773825646702,
+      "tag": "0026_jazzy_red_hulk",
+      "breakpoints": true
     }
   ]
 }

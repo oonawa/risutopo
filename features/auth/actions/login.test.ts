@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
-import { authTokensTable, loginAttemptsTable, usersTable } from "@/db/schema";
+import {
+	loginAttemptsTable,
+	loginCodesTable,
+	sessionTokensTable,
+	tempSessionTokensTable,
+	userEmailsTable,
+	usersTable,
+} from "@/db/schema";
 import { login } from "./login";
 import { createHash, randomInt } from "node:crypto";
 import { and, eq } from "drizzle-orm";
@@ -57,13 +64,13 @@ async function insertLoginCode({
 	createdAt: Date;
 }) {
 	const [user] = await tx
-		.select()
+		.select({ id: usersTable.id })
 		.from(usersTable)
-		.where(eq(usersTable.email, email));
+		.innerJoin(userEmailsTable, eq(userEmailsTable.userId, usersTable.id))
+		.where(eq(userEmailsTable.email, email));
 
-	await tx.insert(authTokensTable).values({
+	await tx.insert(loginCodesTable).values({
 		token,
-		tokenType: "login_code",
 		email,
 		userId: user?.id ?? null,
 		expiresAt,
@@ -84,8 +91,11 @@ describe("login", () => {
 		mockCookies.mockClear();
 		mockHeaders.mockClear();
 		mockSetCookie.mockReset();
-		await db.insert(usersTable).values({
+		const [user] = await db.insert(usersTable).values({
 			publicId: "verify-login-code-test-user",
+		}).returning({ id: usersTable.id });
+		await db.insert(userEmailsTable).values({
+			userId: user.id,
 			email,
 		});
 
@@ -136,25 +146,15 @@ describe("login", () => {
 
 		const [savedLoginCode] = await db
 			.select()
-			.from(authTokensTable)
-			.where(
-				and(
-					eq(authTokensTable.email, email),
-					eq(authTokensTable.tokenType, "login_code"),
-				),
-			);
+			.from(loginCodesTable)
+			.where(eq(loginCodesTable.email, email));
 
 		expect(savedLoginCode).toBeUndefined();
 
 		const [savedSessionToken] = await db
 			.select()
-			.from(authTokensTable)
-			.where(
-				and(
-					eq(authTokensTable.email, email),
-					eq(authTokensTable.tokenType, "session_token"),
-				),
-			);
+			.from(sessionTokensTable)
+			.where(eq(sessionTokensTable.email, email));
 
 		expect(savedSessionToken).toBeDefined();
 		if (!savedSessionToken) {
@@ -237,25 +237,15 @@ describe("login", () => {
 
 		const [savedLoginCode] = await db
 			.select()
-			.from(authTokensTable)
-			.where(
-				and(
-					eq(authTokensTable.email, newUserEmail),
-					eq(authTokensTable.tokenType, "login_code"),
-				),
-			);
+			.from(loginCodesTable)
+			.where(eq(loginCodesTable.email, newUserEmail));
 
 		expect(savedLoginCode).toBeUndefined();
 
 		const [tempToken] = await db
 			.select()
-			.from(authTokensTable)
-			.where(
-				and(
-					eq(authTokensTable.email, newUserEmail),
-					eq(authTokensTable.tokenType, "temp_session_token"),
-				),
-			);
+			.from(tempSessionTokensTable)
+			.where(eq(tempSessionTokensTable.email, newUserEmail));
 
 		expect(tempToken).toBeDefined();
 		if (!tempToken) {
@@ -263,7 +253,6 @@ describe("login", () => {
 		}
 
 		expect(tempToken.token).toBe(tempCookieValue);
-		expect(tempToken.userId).toBeNull();
 		expect(tempToken.deviceId).toBe(expectedDeviceId);
 		expect(tempToken.createdAt).toEqual(now);
 		expect(tempToken.expiresAt).toEqual(tempSessionTokenExpiresAt);

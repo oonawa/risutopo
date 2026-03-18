@@ -4,6 +4,15 @@ import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
 export const usersTable = sqliteTable("users_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	publicId: text().notNull().unique(),
+});
+
+export const userEmailsTable = sqliteTable("user_emails_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	userId: int("user_id")
+		.notNull()
+		.references(() => usersTable.id, {
+			onDelete: "cascade",
+		}),
 	email: text("email").notNull().unique(),
 });
 
@@ -22,38 +31,47 @@ export const moviesTable = sqliteTable("movies_table", {
 	posterImage: text().notNull(),
 	runningMinutes: int().notNull(),
 	releaseDate: text().notNull(),
-	releaseYear: int().notNull(),
+});
+
+export const movieCacheTable = sqliteTable("movie_cache_table", {
+	movieId: int()
+		.notNull()
+		.primaryKey()
+		.references(() => moviesTable.id),
 	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
 });
 
 export const directorsTable = sqliteTable("directors_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	name: text().notNull(),
+});
+
+export const directorCacheTable = sqliteTable("director_cache_table", {
+	movieId: int()
+		.notNull()
+		.primaryKey()
+		.references(() => moviesTable.id),
 	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
 });
 
-export const movieDirectorsTable = sqliteTable("movie_directors_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	movieId: int()
-		.notNull()
-		.references(() => moviesTable.id),
-	directorId: int()
-		.notNull()
-		.references(() => directorsTable.id),
-});
-
-export const movieServicesTable = sqliteTable("movie_services_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	userId: int()
-		.notNull()
-		.references(() => usersTable.id),
-	movieId: int().references(() => moviesTable.id),
-	streamingServiceId: int()
-		.notNull()
-		.references(() => streamingServicesTable.id),
-	watchUrl: text().notNull(),
-	titleOnService: text().notNull(),
-});
+export const movieDirectorsTable = sqliteTable(
+	"movie_directors_table",
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		movieId: int()
+			.notNull()
+			.references(() => moviesTable.id),
+		directorId: int()
+			.notNull()
+			.references(() => directorsTable.id),
+	},
+	(table) => [
+		uniqueIndex("movie_directors_movie_id_director_id_unique").on(
+			table.movieId,
+			table.directorId,
+		),
+	],
+);
 
 export const listsTable = sqliteTable("lists_table", {
 	id: int().primaryKey({ autoIncrement: true }),
@@ -75,9 +93,7 @@ export const listItemsTable = sqliteTable(
 		streamingServiceId: int()
 			.notNull()
 			.references(() => streamingServicesTable.id),
-		movieId: int().references(() => moviesTable.id),
 		watchUrl: text().notNull(),
-		watchStatus: int().notNull().$type<0 | 1>().default(0),
 		titleOnService: text().notNull(),
 		createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	},
@@ -89,29 +105,64 @@ export const listItemsTable = sqliteTable(
 	],
 );
 
-export const listMoviesTable = sqliteTable("list_movies_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	listId: int()
+export const listItemMovieMatchTable = sqliteTable(
+	"list_item_movie_match_table",
+	{
+		listItemId: int("list_item_id")
+			.notNull()
+			.primaryKey()
+			.references(() => listItemsTable.id, {
+				onDelete: "cascade",
+			}),
+		movieId: int("movie_id")
+			.notNull()
+			.references(() => moviesTable.id),
+	},
+);
+
+export const watchedItemsTable = sqliteTable("watched_items_table", {
+	listItemId: int("list_item_id")
 		.notNull()
-		.references(() => listsTable.id),
-	movieServiceId: int()
-		.notNull()
-		.references(() => movieServicesTable.id),
+		.primaryKey()
+		.references(() => listItemsTable.id, {
+			onDelete: "cascade",
+		}),
+	watchedAt: int("watched_at", { mode: "timestamp" }).notNull(),
 });
 
-export const authTokensTable = sqliteTable("auth_tokens_table", {
+export const loginCodesTable = sqliteTable("login_codes_table", {
 	token: text("token").notNull().unique(),
-	tokenType: text("token_type")
-		.$type<"session_token" | "temp_session_token" | "login_code">()
-		.notNull(),
 	email: text("email").notNull(),
 	userId: int("user_id").references(() => usersTable.id, {
 		onDelete: "cascade",
 	}),
-	deviceId: text("device_id"),
 	expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 });
+
+export const sessionTokensTable = sqliteTable("session_tokens_table", {
+	token: text("token").notNull().unique(),
+	email: text("email").notNull(),
+	userId: int("user_id")
+		.notNull()
+		.references(() => usersTable.id, {
+			onDelete: "cascade",
+		}),
+	deviceId: text("device_id").notNull(),
+	expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const tempSessionTokensTable = sqliteTable(
+	"temp_session_tokens_table",
+	{
+		token: text("token").notNull().unique(),
+		email: text("email").notNull(),
+		deviceId: text("device_id").notNull(),
+		expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
+		createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+	},
+);
 
 export const loginAttemptsTable = sqliteTable("login_attempts_table", {
 	id: int().primaryKey({ autoIncrement: true }),
