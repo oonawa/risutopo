@@ -2,9 +2,11 @@ import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
 import {
 	authTokensTable,
+	directorCacheTable,
 	directorsTable,
 	listItemsTable,
 	loginAttemptsTable,
+	movieCacheTable,
 	moviesTable,
 	streamingServicesTable,
 	listMoviesTable,
@@ -28,9 +30,11 @@ export async function cleanupTables() {
 	await db.delete(authTokensTable);
 	await db.delete(listItemsTable);
 	await db.delete(listMoviesTable);
+	await db.delete(directorCacheTable);
 	await db.delete(movieDirectorsTable);
 	await db.delete(movieServicesTable);
 	await db.delete(directorsTable);
+	await db.delete(movieCacheTable);
 	await db.delete(moviesTable);
 	await db.delete(listsTable);
 	await db.delete(userEmailsTable);
