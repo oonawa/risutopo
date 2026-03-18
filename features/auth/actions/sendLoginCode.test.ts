@@ -70,7 +70,24 @@ function hashLoginCode(loginCode: string) {
 
 describe("sendLoginCode", () => {
 	const now = new Date("2026-02-16T00:00:00.000Z");
-	const email = "send-login-code-test@example.com";
+	const existingUserEmail = "send-login-code-test@example.com";
+	const unregisteredUserEmail = "send-login-code-unregistered@example.com";
+
+	async function seedExistingUser() {
+		const [user] = await db
+			.insert(usersTable)
+			.values({
+				publicId: "send-login-code-test-user",
+				email: existingUserEmail,
+			})
+			.returning();
+
+		if (!user) {
+			throw new Error("既存ユーザーのシードに失敗しました");
+		}
+
+		return user;
+	}
 
 	beforeEach(async () => {
 		process.env.RESEND_API_KEY = "mock-resend-api-key";
@@ -83,10 +100,7 @@ describe("sendLoginCode", () => {
 
 		await db.delete(loginAttemptsTable);
 		await db.delete(authTokensTable);
-		await db.insert(usersTable).values({
-			publicId: "send-login-code-test-user",
-			email,
-		});
+		await db.delete(usersTable);
 	});
 
 	afterEach(() => {
@@ -94,8 +108,10 @@ describe("sendLoginCode", () => {
 		process.env.VERCEL_URL = originalVercelUrl;
 	});
 
-	it("10分間有効な数字6桁の認証コードを発行し、入力されたメールアドレスへ送信する", async () => {
-		const result = await sendLoginCode(email, now);
+	it("【既存ユーザー】10分間有効な数字6桁の認証コードを発行し、入力されたメールアドレスへ送信する", async () => {
+		const existingUser = await seedExistingUser();
+
+		const result = await sendLoginCode(existingUserEmail, now);
 
 		expect(result).toEqual({ success: true });
 
@@ -110,7 +126,7 @@ describe("sendLoginCode", () => {
 		expect(mockSendEmail).toHaveBeenCalledTimes(1);
 		expect(mockSendEmail).toHaveBeenCalledWith(
 			expect.objectContaining({
-				to: email,
+				to: existingUserEmail,
 				subject: "【りすとぽっと】ログインコードをお送りします",
 				from: "りすとぽっと <hi@risutopo.com>",
 				react: `loginCode:${templateArg.loginCode} url:https://localhost:3000`,
@@ -120,7 +136,7 @@ describe("sendLoginCode", () => {
 		const [savedToken] = await db
 			.select()
 			.from(authTokensTable)
-			.where(eq(authTokensTable.email, email));
+			.where(eq(authTokensTable.email, existingUserEmail));
 
 		expect(savedToken).toBeDefined();
 		if (!savedToken) {
@@ -128,7 +144,7 @@ describe("sendLoginCode", () => {
 		}
 
 		expect(savedToken.tokenType).toBe("login_code");
-		expect(savedToken.userId).not.toBeNull();
+		expect(savedToken.userId).toBe(existingUser.id);
 		expect(savedToken.createdAt).toEqual(now);
 		expect(savedToken.expiresAt).toEqual(
 			new Date(now.getTime() + 10 * 60 * 1000),
@@ -138,7 +154,63 @@ describe("sendLoginCode", () => {
 		const [attempt] = await db
 			.select()
 			.from(loginAttemptsTable)
-			.where(eq(loginAttemptsTable.email, email));
+			.where(eq(loginAttemptsTable.email, existingUserEmail));
+
+		expect(attempt).toBeDefined();
+		if (!attempt) {
+			throw new Error("送信試行が記録されていません");
+		}
+
+		expect(attempt.ipAddress).toBe("127.0.0.1");
+		expect(attempt.attemptType).toBe("code_send");
+		expect(attempt.success).toBe(true);
+	});
+
+	it("【未登録ユーザー】10分間有効な数字6桁の認証コードを発行し、入力されたメールアドレスへ送信する", async () => {
+		const result = await sendLoginCode(unregisteredUserEmail, now);
+
+		expect(result).toEqual({ success: true });
+
+		expect(mockResendConstructor).toHaveBeenCalledTimes(1);
+		expect(mockResendConstructor).toHaveBeenCalledWith("mock-resend-api-key");
+
+		expect(mockLoginMailTemplate).toHaveBeenCalledTimes(1);
+		const [templateArg] = mockLoginMailTemplate.mock.calls[0];
+		expect(templateArg.url).toBe("https://localhost:3000");
+		expect(templateArg.loginCode).toMatch(/^\d{6}$/);
+
+		expect(mockSendEmail).toHaveBeenCalledTimes(1);
+		expect(mockSendEmail).toHaveBeenCalledWith(
+			expect.objectContaining({
+				to: unregisteredUserEmail,
+				subject: "【りすとぽっと】ログインコードをお送りします",
+				from: "りすとぽっと <hi@risutopo.com>",
+				react: `loginCode:${templateArg.loginCode} url:https://localhost:3000`,
+			}),
+		);
+
+		const [savedToken] = await db
+			.select()
+			.from(authTokensTable)
+			.where(eq(authTokensTable.email, unregisteredUserEmail));
+
+		expect(savedToken).toBeDefined();
+		if (!savedToken) {
+			throw new Error("認証コードが保存されていません");
+		}
+
+		expect(savedToken.tokenType).toBe("login_code");
+		expect(savedToken.userId).toBeNull();
+		expect(savedToken.createdAt).toEqual(now);
+		expect(savedToken.expiresAt).toEqual(
+			new Date(now.getTime() + 10 * 60 * 1000),
+		);
+		expect(savedToken.token).toBe(hashLoginCode(templateArg.loginCode));
+
+		const [attempt] = await db
+			.select()
+			.from(loginAttemptsTable)
+			.where(eq(loginAttemptsTable.email, unregisteredUserEmail));
 
 		expect(attempt).toBeDefined();
 		if (!attempt) {
@@ -151,26 +223,28 @@ describe("sendLoginCode", () => {
 	});
 
 	it("DBには同一メールアドレスの認証コードが常に最新の一件のみ登録される", async () => {
+		const existingUser = await seedExistingUser();
+
 		const oldLoginCode = "123456";
 		const oldExpiresAt = new Date(now.getTime() + 5 * 60 * 1000);
 
 		await db.insert(authTokensTable).values({
 			token: hashLoginCode(oldLoginCode),
 			tokenType: "login_code",
-			email,
-			userId: 1,
+			email: existingUserEmail,
+			userId: existingUser.id,
 			expiresAt: oldExpiresAt,
 			createdAt: new Date(now.getTime() - 60 * 1000),
 		});
 
-		await sendLoginCode(email, now);
+		await sendLoginCode(existingUserEmail, now);
 
 		const savedTokens = await db
 			.select()
 			.from(authTokensTable)
 			.where(
 				and(
-					eq(authTokensTable.email, email),
+					eq(authTokensTable.email, existingUserEmail),
 					eq(authTokensTable.tokenType, "login_code"),
 				),
 			);

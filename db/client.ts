@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import dotenv from "dotenv";
+import * as schema from "./schema";
 
 dotenv.config({ path: ".env" });
 
@@ -24,7 +25,7 @@ const client =
 				url: tursoDatabaseUrl,
 			});
 
-export const db = drizzle(client);
+export const db = drizzle(client, { schema });
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type Executor = Pick<
