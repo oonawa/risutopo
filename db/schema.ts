@@ -31,13 +31,26 @@ export const moviesTable = sqliteTable("movies_table", {
 	posterImage: text().notNull(),
 	runningMinutes: int().notNull(),
 	releaseDate: text().notNull(),
-	releaseYear: int().notNull(),
+});
+
+export const movieCacheTable = sqliteTable("movie_cache_table", {
+	movieId: int()
+		.notNull()
+		.primaryKey()
+		.references(() => moviesTable.id),
 	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
 });
 
 export const directorsTable = sqliteTable("directors_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	name: text().notNull(),
+});
+
+export const directorCacheTable = sqliteTable("director_cache_table", {
+	movieId: int()
+		.notNull()
+		.primaryKey()
+		.references(() => moviesTable.id),
 	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
 });
 

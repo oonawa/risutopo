@@ -23,7 +23,7 @@ export type ListItemRow = {
 	backgroundImage: string | null;
 	posterImage: string | null;
 	runningMinutes: number | null;
-	releaseYear: number | null;
+	releaseDate: string | null;
 	overview: string | null;
 	externalDatabaseMovieId: string | null;
 };
@@ -170,7 +170,7 @@ export async function findUserListItems(listPublicId: string, userId: number) {
 			backgroundImage: moviesTable.backgroundImage,
 			posterImage: moviesTable.posterImage,
 			runningMinutes: moviesTable.runningMinutes,
-			releaseYear: moviesTable.releaseYear,
+			releaseDate: moviesTable.releaseDate,
 			overview: moviesTable.overview,
 			externalDatabaseMovieId: moviesTable.externalDatabaseMovieId,
 		})
