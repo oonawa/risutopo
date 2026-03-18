@@ -169,6 +169,20 @@
       "when": 1773821198307,
       "tag": "0023_massive_ronan",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1773823742218,
+      "tag": "0024_panoramic_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1773824600673,
+      "tag": "0025_curved_makkari",
+      "breakpoints": true
     }
   ]
 }

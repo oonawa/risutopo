@@ -2,11 +2,13 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
 	directorsTable,
+	listItemMovieMatchTable,
 	listItemsTable,
 	listsTable,
 	movieDirectorsTable,
 	moviesTable,
 	streamingServicesTable,
+	watchedItemsTable,
 } from "@/db/schema";
 import type { ListItem } from "@/features/list/types/ListItem";
 
@@ -17,7 +19,7 @@ export type ListItemRow = {
 	createdAt: Date;
 	serviceSlug: ListItem["serviceSlug"];
 	serviceName: ListItem["serviceName"];
-	watchStatus: 0 | 1;
+	watchedAt: Date | null;
 	movieId: number | null;
 	officialTitle: string | null;
 	backgroundImage: string | null;
@@ -78,21 +80,48 @@ export async function updateListItemByPublicIdAndListId({
 	watchStatus: 0 | 1;
 	titleOnService: string;
 }) {
-	await db
-		.update(listItemsTable)
-		.set({
-			streamingServiceId,
-			movieId,
-			watchUrl,
-			watchStatus,
-			titleOnService,
-		})
-		.where(
-			and(
-				eq(listItemsTable.publicId, listItemPublicId),
-				eq(listItemsTable.listId, listId),
-			),
-		);
+	await db.transaction(async (tx) => {
+		const [updatedListItem] = await tx
+			.update(listItemsTable)
+			.set({
+				streamingServiceId,
+				watchUrl,
+				titleOnService,
+			})
+			.where(
+				and(
+					eq(listItemsTable.publicId, listItemPublicId),
+					eq(listItemsTable.listId, listId),
+				),
+			)
+			.returning({ id: listItemsTable.id });
+
+		if (!updatedListItem) {
+			return;
+		}
+
+		await tx
+			.delete(listItemMovieMatchTable)
+			.where(eq(listItemMovieMatchTable.listItemId, updatedListItem.id));
+
+		if (movieId !== null) {
+			await tx.insert(listItemMovieMatchTable).values({
+				listItemId: updatedListItem.id,
+				movieId,
+			});
+		}
+
+		await tx
+			.delete(watchedItemsTable)
+			.where(eq(watchedItemsTable.listItemId, updatedListItem.id));
+
+		if (watchStatus === 1) {
+			await tx.insert(watchedItemsTable).values({
+				listItemId: updatedListItem.id,
+				watchedAt: new Date(),
+			});
+		}
+	});
 }
 
 export async function insertListItem({
@@ -114,15 +143,32 @@ export async function insertListItem({
 	titleOnService: string;
 	createdAt: Date;
 }) {
-	await db.insert(listItemsTable).values({
-		listId,
-		publicId: listItemPublicId,
-		streamingServiceId,
-		movieId,
-		watchUrl,
-		watchStatus,
-		titleOnService,
-		createdAt,
+	await db.transaction(async (tx) => {
+		const [insertedListItem] = await tx
+			.insert(listItemsTable)
+			.values({
+				listId,
+				publicId: listItemPublicId,
+				streamingServiceId,
+				watchUrl,
+				titleOnService,
+				createdAt,
+			})
+			.returning({ id: listItemsTable.id });
+
+		if (movieId !== null) {
+			await tx.insert(listItemMovieMatchTable).values({
+				listItemId: insertedListItem.id,
+				movieId,
+			});
+		}
+
+		if (watchStatus === 1) {
+			await tx.insert(watchedItemsTable).values({
+				listItemId: insertedListItem.id,
+				watchedAt: createdAt,
+			});
+		}
 	});
 }
 
@@ -164,8 +210,8 @@ export async function findUserListItems(listPublicId: string, userId: number) {
 			createdAt: listItemsTable.createdAt,
 			serviceSlug: streamingServicesTable.slug,
 			serviceName: streamingServicesTable.name,
-			watchStatus: listItemsTable.watchStatus,
-			movieId: listItemsTable.movieId,
+			watchedAt: watchedItemsTable.watchedAt,
+			movieId: listItemMovieMatchTable.movieId,
 			officialTitle: moviesTable.title,
 			backgroundImage: moviesTable.backgroundImage,
 			posterImage: moviesTable.posterImage,
@@ -180,7 +226,12 @@ export async function findUserListItems(listPublicId: string, userId: number) {
 			eq(listItemsTable.streamingServiceId, streamingServicesTable.id),
 		)
 		.innerJoin(listsTable, eq(listItemsTable.listId, listsTable.id))
-		.leftJoin(moviesTable, eq(listItemsTable.movieId, moviesTable.id))
+		.leftJoin(
+			listItemMovieMatchTable,
+			eq(listItemMovieMatchTable.listItemId, listItemsTable.id),
+		)
+		.leftJoin(moviesTable, eq(listItemMovieMatchTable.movieId, moviesTable.id))
+		.leftJoin(watchedItemsTable, eq(watchedItemsTable.listItemId, listItemsTable.id))
 		.where(
 			and(eq(listsTable.publicId, listPublicId), eq(listsTable.userId, userId)),
 		)

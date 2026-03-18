@@ -73,19 +73,6 @@ export const movieDirectorsTable = sqliteTable(
 	],
 );
 
-export const movieServicesTable = sqliteTable("movie_services_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	userId: int()
-		.notNull()
-		.references(() => usersTable.id),
-	movieId: int().references(() => moviesTable.id),
-	streamingServiceId: int()
-		.notNull()
-		.references(() => streamingServicesTable.id),
-	watchUrl: text().notNull(),
-	titleOnService: text().notNull(),
-});
-
 export const listsTable = sqliteTable("lists_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	publicId: text().notNull().unique(),
@@ -106,9 +93,7 @@ export const listItemsTable = sqliteTable(
 		streamingServiceId: int()
 			.notNull()
 			.references(() => streamingServicesTable.id),
-		movieId: int().references(() => moviesTable.id),
 		watchUrl: text().notNull(),
-		watchStatus: int().notNull().$type<0 | 1>().default(0),
 		titleOnService: text().notNull(),
 		createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 	},
@@ -120,14 +105,29 @@ export const listItemsTable = sqliteTable(
 	],
 );
 
-export const listMoviesTable = sqliteTable("list_movies_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	listId: int()
+export const listItemMovieMatchTable = sqliteTable(
+	"list_item_movie_match_table",
+	{
+		listItemId: int("list_item_id")
+			.notNull()
+			.primaryKey()
+			.references(() => listItemsTable.id, {
+				onDelete: "cascade",
+			}),
+		movieId: int("movie_id")
+			.notNull()
+			.references(() => moviesTable.id),
+	},
+);
+
+export const watchedItemsTable = sqliteTable("watched_items_table", {
+	listItemId: int("list_item_id")
 		.notNull()
-		.references(() => listsTable.id),
-	movieServiceId: int()
-		.notNull()
-		.references(() => movieServicesTable.id),
+		.primaryKey()
+		.references(() => listItemsTable.id, {
+			onDelete: "cascade",
+		}),
+	watchedAt: int("watched_at", { mode: "timestamp" }).notNull(),
 });
 
 export const authTokensTable = sqliteTable("auth_tokens_table", {

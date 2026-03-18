@@ -8,6 +8,7 @@ import {
 	streamingServicesTable,
 	userEmailsTable,
 	usersTable,
+	watchedItemsTable,
 } from "@/db/schema";
 import { getUserMovieList } from "./getUserMovieList";
 
@@ -84,16 +85,14 @@ describe("getUserMovieList", () => {
 		const netflixId = await findStreamingServiceIdBySlug("netflix");
 		const huluId = await findStreamingServiceIdBySlug("hulu");
 
-		await db.insert(listItemsTable).values([
+		const insertedListItems = await db.insert(listItemsTable).values([
 			{
 				publicId: "get-user-movie-list-user-a-item-1",
 				listId: userAList.id,
 				streamingServiceId: netflixId,
 				watchUrl: "https://www.netflix.com/jp/title/60002360",
 				titleOnService: "ユーザーAの映画1",
-				watchStatus: 0,
 				createdAt: new Date("2026-03-12T00:00:00.000Z"),
-				movieId: null,
 			},
 			{
 				publicId: "get-user-movie-list-user-a-item-2",
@@ -101,9 +100,7 @@ describe("getUserMovieList", () => {
 				streamingServiceId: huluId,
 				watchUrl: "https://www.hulu.jp/watch/test-user-a",
 				titleOnService: "ユーザーAの映画2",
-				watchStatus: 1,
 				createdAt: new Date("2026-03-11T00:00:00.000Z"),
-				movieId: null,
 			},
 			{
 				publicId: "get-user-movie-list-user-b-item-1",
@@ -111,11 +108,25 @@ describe("getUserMovieList", () => {
 				streamingServiceId: netflixId,
 				watchUrl: "https://www.netflix.com/jp/title/80100172",
 				titleOnService: "ユーザーBの映画1",
-				watchStatus: 0,
 				createdAt: new Date("2026-03-10T00:00:00.000Z"),
-				movieId: null,
 			},
-		]);
+		]).returning({
+			id: listItemsTable.id,
+			publicId: listItemsTable.publicId,
+		});
+
+		const watchedListItem = insertedListItems.find(
+			(item) => item.publicId === "get-user-movie-list-user-a-item-2",
+		);
+
+		if (!watchedListItem) {
+			throw Error("視聴済みテストデータの作成に失敗しました");
+		}
+
+		await db.insert(watchedItemsTable).values({
+			listItemId: watchedListItem.id,
+			watchedAt: new Date("2026-03-11T00:00:00.000Z"),
+		});
 	});
 
 	it("ユーザーは自身のリストアイテム全件を取得できる", async () => {

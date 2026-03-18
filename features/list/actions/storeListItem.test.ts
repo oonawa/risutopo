@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import {
 	directorCacheTable,
 	directorsTable,
+	listItemMovieMatchTable,
 	listItemsTable,
 	listsTable,
 	movieCacheTable,
@@ -95,13 +96,11 @@ async function assertListItemRecord({
 	testListId,
 	streamingServiceId,
 	movie,
-	expectedMovieId,
 	expectedTitleOnService,
 }: {
 	testListId: number;
 	streamingServiceId: number;
 	movie: ListItem;
-	expectedMovieId: number | null;
 	expectedTitleOnService: string;
 }) {
 	const [listItemRecord] = await db
@@ -122,8 +121,33 @@ async function assertListItemRecord({
 		return null;
 	}
 
-	expect(listItemRecord.movieId).toBe(expectedMovieId);
 	return listItemRecord.id;
+}
+
+async function assertListItemMovieMatchRecord({
+	listItemId,
+	expectedMovieId,
+}: {
+	listItemId: number;
+	expectedMovieId: number | null;
+}) {
+	const [matchRecord] = await db
+		.select()
+		.from(listItemMovieMatchTable)
+		.where(eq(listItemMovieMatchTable.listItemId, listItemId));
+
+	if (expectedMovieId === null) {
+		expect(matchRecord).toBeUndefined();
+		return;
+	}
+
+	expect(matchRecord).toBeDefined();
+
+	if (!matchRecord) {
+		throw Error("list_item_movie_match_table に映画紐付けが作成されていません");
+	}
+
+	expect(matchRecord.movieId).toBe(expectedMovieId);
 }
 
 async function assertMovieRecordFromTmdbDetails(movie: ListItem) {
@@ -284,12 +308,15 @@ describe("storeMovie", () => {
 			testListId,
 			streamingServiceId: netflixStreamingServiceId,
 			movie,
-			expectedMovieId: null,
 			expectedTitleOnService: movie.title,
 		});
 		if (!listItemId) {
 			throw Error("list_items_table へのレコード登録に失敗しています");
 		}
+		await assertListItemMovieMatchRecord({
+			listItemId,
+			expectedMovieId: null,
+		});
 	});
 
 	it("配信作品の情報＋マスタの情報を紐づけて新規登録できる", async () => {
@@ -374,12 +401,18 @@ describe("storeMovie", () => {
 		const streamingServiceId = await getStreamingServiceIdBySlug(
 			movie.serviceSlug,
 		);
-		await assertListItemRecord({
+		const listItemId = await assertListItemRecord({
 			testListId,
 			streamingServiceId,
 			movie,
-			expectedMovieId: movieRecord.id,
 			expectedTitleOnService: movie.title,
+		});
+		if (!listItemId) {
+			throw Error("list_items_table へのレコード登録に失敗しています");
+		}
+		await assertListItemMovieMatchRecord({
+			listItemId,
+			expectedMovieId: movieRecord.id,
 		});
 	});
 

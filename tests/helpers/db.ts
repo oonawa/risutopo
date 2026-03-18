@@ -4,17 +4,17 @@ import {
 	authTokensTable,
 	directorCacheTable,
 	directorsTable,
+	listItemMovieMatchTable,
 	listItemsTable,
 	loginAttemptsTable,
 	movieCacheTable,
 	moviesTable,
 	streamingServicesTable,
-	listMoviesTable,
 	movieDirectorsTable,
-	movieServicesTable,
 	listsTable,
 	userEmailsTable,
 	usersTable,
+	watchedItemsTable,
 } from "@/db/schema";
 import { SUPPORTED_SERVICES } from "@/app/consts";
 
@@ -28,11 +28,11 @@ export const streamingServicesSeed = Object.values(SUPPORTED_SERVICES).map(
 export async function cleanupTables() {
 	await db.delete(loginAttemptsTable);
 	await db.delete(authTokensTable);
+	await db.delete(watchedItemsTable);
+	await db.delete(listItemMovieMatchTable);
 	await db.delete(listItemsTable);
-	await db.delete(listMoviesTable);
 	await db.delete(directorCacheTable);
 	await db.delete(movieDirectorsTable);
-	await db.delete(movieServicesTable);
 	await db.delete(directorsTable);
 	await db.delete(movieCacheTable);
 	await db.delete(moviesTable);
@@ -58,15 +58,9 @@ export async function resetSequences() {
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'user_emails_table'`);
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'login_attempts_table'`);
 	await db.run(
-		sql`DELETE FROM sqlite_sequence WHERE name = 'movie_services_table'`,
-	);
-	await db.run(
 		sql`DELETE FROM sqlite_sequence WHERE name = 'movie_directors_table'`,
 	);
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'lists_table'`);
-	await db.run(
-		sql`DELETE FROM sqlite_sequence WHERE name = 'list_movies_table'`,
-	);
 	await db.run(
 		sql`DELETE FROM sqlite_sequence WHERE name = 'list_items_table'`,
 	);

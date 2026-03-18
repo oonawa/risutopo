@@ -77,7 +77,7 @@ const mapListItems = (
 				createdAt: row.createdAt,
 				serviceSlug: row.serviceSlug,
 				serviceName: row.serviceName,
-				isWatched: row.watchStatus === 1,
+				isWatched: row.watchedAt !== null,
 			};
 		}
 
@@ -88,7 +88,7 @@ const mapListItems = (
 			createdAt: row.createdAt,
 			serviceSlug: row.serviceSlug,
 			serviceName: row.serviceName,
-			isWatched: row.watchStatus === 1,
+			isWatched: row.watchedAt !== null,
 			details: {
 				movieId: row.movieId,
 				officialTitle: row.officialTitle,
