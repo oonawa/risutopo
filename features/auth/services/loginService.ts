@@ -12,7 +12,7 @@ import {
 	insertSessionToken,
 	insertTempToken,
 } from "../repositories/authTokenRepository";
-import { getUserByMail } from "@/features/user/repositories/userRepository";
+import { getUserByEmail } from "@/features/user/repositories/userRepository";
 
 export async function loginService({
 	loginCode,
@@ -80,7 +80,7 @@ export async function loginService({
 				});
 
 				await deleteLoginCode({ tx, email: founded.email });
-				const user = await getUserByMail(tx, founded.email);
+				const user = await getUserByEmail(tx, founded.email);
 
 				if (user) {
 					const { sessionToken: newToken, expiresAt } =

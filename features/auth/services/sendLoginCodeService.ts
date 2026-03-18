@@ -7,7 +7,7 @@ import {
 } from "../repositories/authTokenRepository";
 import { sendLoginMail } from "../repositories/sendLoginMailRepository";
 import { insertAttempt } from "../repositories/attemptRepository";
-import { getUserByMail } from "@/features/user/repositories/userRepository";
+import { getUserByEmail } from "@/features/user/repositories/userRepository";
 
 export async function sendLoginCodeService({
 	email,
@@ -33,12 +33,12 @@ export async function sendLoginCodeService({
 
 	try {
 		await db.transaction(async (tx) => {
-			const user = await getUserByMail(tx, email);
+			const user = await getUserByEmail(tx, email);
 			await deleteLoginCode({ tx, email });
 			await insertLoginCode({
 				tx,
 				email,
-				userId: user.id,
+				userId: user?.id,
 				token: crypto.createHash("sha256").update(loginCode).digest("hex"),
 				expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
 				createdAt: now,
