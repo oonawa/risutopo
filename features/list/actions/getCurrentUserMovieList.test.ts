@@ -8,6 +8,7 @@ import {
 	listItemsTable,
 	listsTable,
 	streamingServicesTable,
+	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
 import { getSecretKey } from "@/lib/jwt";
@@ -125,17 +126,23 @@ describe("getCurrentUserMovieList", () => {
 			.insert(usersTable)
 			.values({
 				publicId: "get-current-user-movie-list-user-a",
-				email: "get-current-user-movie-list-user-a@example.com",
 			})
 			.returning({ id: usersTable.id });
+		await db.insert(userEmailsTable).values({
+			userId: userA.id,
+			email: "get-current-user-movie-list-user-a@example.com",
+		});
 
 		const [userB] = await db
 			.insert(usersTable)
 			.values({
 				publicId: "get-current-user-movie-list-user-b",
-				email: "get-current-user-movie-list-user-b@example.com",
 			})
 			.returning({ id: usersTable.id });
+		await db.insert(userEmailsTable).values({
+			userId: userB.id,
+			email: "get-current-user-movie-list-user-b@example.com",
+		});
 
 		userAId = userA.id;
 		userBId = userB.id;

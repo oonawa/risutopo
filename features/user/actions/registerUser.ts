@@ -6,6 +6,7 @@ import { db } from "@/db/client";
 import { and, eq, inArray } from "drizzle-orm";
 import {
 	usersTable,
+	userEmailsTable,
 	listsTable,
 	authTokensTable,
 	listItemsTable,
@@ -113,9 +114,16 @@ export async function registerUser({
 				.insert(usersTable)
 				.values({
 					publicId: data.userId,
-					email: email,
 				})
-				.returning();
+				.returning({
+					id: usersTable.id,
+					publicId: usersTable.publicId,
+				});
+
+			await tx.insert(userEmailsTable).values({
+				userId: newUser.id,
+				email,
+			});
 
 			const normalizedListPublicId =
 				normalizedLocalList.listId.length > 0
@@ -194,7 +202,7 @@ export async function registerUser({
 
 			const sessionToken = await generateSessionToken({
 				userId: newUser.id,
-				email: newUser.email,
+				email,
 				deviceId,
 			});
 			const expiresAt = addDays(now, 30);

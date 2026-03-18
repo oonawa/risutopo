@@ -6,6 +6,7 @@ import {
 	listItemsTable,
 	listsTable,
 	streamingServicesTable,
+	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
 import { getUserMovieList } from "./getUserMovieList";
@@ -40,17 +41,23 @@ describe("getUserMovieList", () => {
 			.insert(usersTable)
 			.values({
 				publicId: "get-user-movie-list-user-a",
-				email: "get-user-movie-list-user-a@example.com",
 			})
 			.returning({ id: usersTable.id });
+		await db.insert(userEmailsTable).values({
+			userId: userA.id,
+			email: "get-user-movie-list-user-a@example.com",
+		});
 
 		const [userB] = await db
 			.insert(usersTable)
 			.values({
 				publicId: "get-user-movie-list-user-b",
-				email: "get-user-movie-list-user-b@example.com",
 			})
 			.returning({ id: usersTable.id });
+		await db.insert(userEmailsTable).values({
+			userId: userB.id,
+			email: "get-user-movie-list-user-b@example.com",
+		});
 
 		userAId = userA.id;
 		userBId = userB.id;

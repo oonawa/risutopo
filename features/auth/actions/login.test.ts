@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
-import { authTokensTable, loginAttemptsTable, usersTable } from "@/db/schema";
+import {
+	authTokensTable,
+	loginAttemptsTable,
+	userEmailsTable,
+	usersTable,
+} from "@/db/schema";
 import { login } from "./login";
 import { createHash, randomInt } from "node:crypto";
 import { and, eq } from "drizzle-orm";
@@ -57,9 +62,10 @@ async function insertLoginCode({
 	createdAt: Date;
 }) {
 	const [user] = await tx
-		.select()
+		.select({ id: usersTable.id })
 		.from(usersTable)
-		.where(eq(usersTable.email, email));
+		.innerJoin(userEmailsTable, eq(userEmailsTable.userId, usersTable.id))
+		.where(eq(userEmailsTable.email, email));
 
 	await tx.insert(authTokensTable).values({
 		token,
@@ -84,8 +90,11 @@ describe("login", () => {
 		mockCookies.mockClear();
 		mockHeaders.mockClear();
 		mockSetCookie.mockReset();
-		await db.insert(usersTable).values({
+		const [user] = await db.insert(usersTable).values({
 			publicId: "verify-login-code-test-user",
+		}).returning({ id: usersTable.id });
+		await db.insert(userEmailsTable).values({
+			userId: user.id,
 			email,
 		});
 

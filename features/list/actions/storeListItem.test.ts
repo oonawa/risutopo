@@ -9,6 +9,7 @@ import {
 	movieDirectorsTable,
 	moviesTable,
 	streamingServicesTable,
+	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
 import type { ListItem } from "../types/ListItem";
@@ -211,9 +212,12 @@ describe("storeMovie", () => {
 			.insert(usersTable)
 			.values({
 				publicId: "test",
-				email: "xxxxxxx@risutopo.com",
 			})
 			.returning();
+		await db.insert(userEmailsTable).values({
+			userId: user.id,
+			email: "xxxxxxx@risutopo.com",
+		});
 
 		const [list] = await db
 			.insert(listsTable)

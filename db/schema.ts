@@ -4,6 +4,15 @@ import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
 export const usersTable = sqliteTable("users_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	publicId: text().notNull().unique(),
+});
+
+export const userEmailsTable = sqliteTable("user_emails_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	userId: int("user_id")
+		.notNull()
+		.references(() => usersTable.id, {
+			onDelete: "cascade",
+		}),
 	email: text("email").notNull().unique(),
 });
 
