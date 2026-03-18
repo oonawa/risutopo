@@ -2,7 +2,12 @@ import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
-import { authTokensTable, loginAttemptsTable, usersTable } from "@/db/schema";
+import {
+	authTokensTable,
+	loginAttemptsTable,
+	userEmailsTable,
+	usersTable,
+} from "@/db/schema";
 
 const originalResendApiKey = process.env.RESEND_API_KEY;
 const originalVercelUrl = process.env.VERCEL_URL;
@@ -78,13 +83,17 @@ describe("sendLoginCode", () => {
 			.insert(usersTable)
 			.values({
 				publicId: "send-login-code-test-user",
-				email: existingUserEmail,
 			})
 			.returning();
 
 		if (!user) {
 			throw new Error("既存ユーザーのシードに失敗しました");
 		}
+
+		await db.insert(userEmailsTable).values({
+			userId: user.id,
+			email: existingUserEmail,
+		});
 
 		return user;
 	}
@@ -100,6 +109,7 @@ describe("sendLoginCode", () => {
 
 		await db.delete(loginAttemptsTable);
 		await db.delete(authTokensTable);
+		await db.delete(userEmailsTable);
 		await db.delete(usersTable);
 	});
 

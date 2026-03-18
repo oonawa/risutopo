@@ -11,6 +11,7 @@ import {
 	movieDirectorsTable,
 	movieServicesTable,
 	listsTable,
+	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
 import { SUPPORTED_SERVICES } from "@/app/consts";
@@ -32,6 +33,7 @@ export async function cleanupTables() {
 	await db.delete(directorsTable);
 	await db.delete(moviesTable);
 	await db.delete(listsTable);
+	await db.delete(userEmailsTable);
 	await db.delete(usersTable);
 }
 
@@ -49,6 +51,7 @@ export async function resetSequences() {
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'movies_table'`);
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'directors_table'`);
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'users_table'`);
+	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'user_emails_table'`);
 	await db.run(sql`DELETE FROM sqlite_sequence WHERE name = 'login_attempts_table'`);
 	await db.run(
 		sql`DELETE FROM sqlite_sequence WHERE name = 'movie_services_table'`,
