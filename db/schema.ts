@@ -130,19 +130,39 @@ export const watchedItemsTable = sqliteTable("watched_items_table", {
 	watchedAt: int("watched_at", { mode: "timestamp" }).notNull(),
 });
 
-export const authTokensTable = sqliteTable("auth_tokens_table", {
+export const loginCodesTable = sqliteTable("login_codes_table", {
 	token: text("token").notNull().unique(),
-	tokenType: text("token_type")
-		.$type<"session_token" | "temp_session_token" | "login_code">()
-		.notNull(),
 	email: text("email").notNull(),
 	userId: int("user_id").references(() => usersTable.id, {
 		onDelete: "cascade",
 	}),
-	deviceId: text("device_id"),
 	expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 });
+
+export const sessionTokensTable = sqliteTable("session_tokens_table", {
+	token: text("token").notNull().unique(),
+	email: text("email").notNull(),
+	userId: int("user_id")
+		.notNull()
+		.references(() => usersTable.id, {
+			onDelete: "cascade",
+		}),
+	deviceId: text("device_id").notNull(),
+	expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const tempSessionTokensTable = sqliteTable(
+	"temp_session_tokens_table",
+	{
+		token: text("token").notNull().unique(),
+		email: text("email").notNull(),
+		deviceId: text("device_id").notNull(),
+		expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
+		createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+	},
+);
 
 export const loginAttemptsTable = sqliteTable("login_attempts_table", {
 	id: int().primaryKey({ autoIncrement: true }),

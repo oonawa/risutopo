@@ -3,15 +3,16 @@
 import crypto from "node:crypto";
 import { headers, cookies } from "next/headers";
 import { db } from "@/db/client";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import {
 	usersTable,
 	userEmailsTable,
 	listsTable,
-	authTokensTable,
 	listItemMovieMatchTable,
 	listItemsTable,
+	sessionTokensTable,
 	streamingServicesTable,
+	tempSessionTokensTable,
 	watchedItemsTable,
 } from "@/db/schema";
 import type { Result } from "@/features/shared/types/Result";
@@ -233,13 +234,8 @@ export async function registerUser({
 
 			if (tempToken) {
 				await tx
-					.delete(authTokensTable)
-					.where(
-						and(
-							eq(authTokensTable.token, tempToken),
-							eq(authTokensTable.tokenType, "temp_session_token"),
-						),
-					);
+					.delete(tempSessionTokensTable)
+					.where(eq(tempSessionTokensTable.token, tempToken));
 			}
 
 			const sessionToken = await generateSessionToken({
@@ -249,9 +245,8 @@ export async function registerUser({
 			});
 			const expiresAt = addDays(now, 30);
 
-			await tx.insert(authTokensTable).values({
+			await tx.insert(sessionTokensTable).values({
 				token: sessionToken,
-				tokenType: "session_token",
 				deviceId,
 				email,
 				userId: newUser.id,

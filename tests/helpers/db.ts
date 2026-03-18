@@ -1,15 +1,17 @@
 import { db } from "@/db/client";
 import { sql } from "drizzle-orm";
 import {
-	authTokensTable,
 	directorCacheTable,
 	directorsTable,
 	listItemMovieMatchTable,
 	listItemsTable,
+	loginCodesTable,
 	loginAttemptsTable,
 	movieCacheTable,
 	moviesTable,
+	sessionTokensTable,
 	streamingServicesTable,
+	tempSessionTokensTable,
 	movieDirectorsTable,
 	listsTable,
 	userEmailsTable,
@@ -27,7 +29,9 @@ export const streamingServicesSeed = Object.values(SUPPORTED_SERVICES).map(
 
 export async function cleanupTables() {
 	await db.delete(loginAttemptsTable);
-	await db.delete(authTokensTable);
+	await db.delete(loginCodesTable);
+	await db.delete(tempSessionTokensTable);
+	await db.delete(sessionTokensTable);
 	await db.delete(watchedItemsTable);
 	await db.delete(listItemMovieMatchTable);
 	await db.delete(listItemsTable);

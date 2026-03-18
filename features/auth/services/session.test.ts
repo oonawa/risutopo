@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
-import { authTokensTable, usersTable } from "@/db/schema";
+import { tempSessionTokensTable, usersTable } from "@/db/schema";
 import {
 	generateTempSessionToken,
 	verifyTempSessionToken,
@@ -10,7 +10,7 @@ describe("auth token verification", () => {
 	const now = new Date("2026-02-16T00:00:00.000Z");
 
 	beforeEach(async () => {
-		await db.delete(authTokensTable);
+		await db.delete(tempSessionTokensTable);
 		await db.delete(usersTable);
 	});
 
@@ -18,10 +18,10 @@ describe("auth token verification", () => {
 		const email = "verify-temp-session-token-test@example.com";
 		const tempToken = generateTempSessionToken();
 
-		await db.insert(authTokensTable).values({
+		await db.insert(tempSessionTokensTable).values({
 			token: tempToken,
-			tokenType: "temp_session_token",
 			email,
+			deviceId: "verify-temp-session-token-device-id",
 			expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
 			createdAt: now,
 		});
