@@ -54,9 +54,7 @@ describe("removeListItem", () => {
 			streamingServiceId: testStreamingServiceId,
 			watchUrl: "https://www.netflix.com/jp/title/80100172",
 			titleOnService: "テスト映画",
-			watchStatus: 0,
 			createdAt: new Date(),
-			movieId: null,
 		});
 
 		const result = await removeListItem({ listItemId: listItemPublicId });

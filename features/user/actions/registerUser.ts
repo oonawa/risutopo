@@ -9,8 +9,10 @@ import {
 	userEmailsTable,
 	listsTable,
 	authTokensTable,
+	listItemMovieMatchTable,
 	listItemsTable,
 	streamingServicesTable,
+	watchedItemsTable,
 } from "@/db/schema";
 import type { Result } from "@/features/shared/types/Result";
 import { userIdSchema } from "../schemas/userIdSchema";
@@ -157,6 +159,8 @@ export async function registerUser({
 				);
 				const seenWatchUrls = new Set<string>();
 				const listItems: Array<typeof listItemsTable.$inferInsert> = [];
+				const movieIdsByPublicId = new Map<string, number>();
+				const watchedItemPublicIds = new Set<string>();
 
 				for (const item of validLocalListItems) {
 					if (seenWatchUrls.has(item.url)) {
@@ -173,16 +177,54 @@ export async function registerUser({
 						publicId: item.listItemId,
 						listId: newList.id,
 						streamingServiceId,
-						movieId: item.details?.movieId ?? null,
 						watchUrl: item.url,
-						watchStatus: item.isWatched ? 1 : 0,
 						titleOnService: item.title,
 						createdAt: normalizeCreatedAt(item.createdAt, now),
 					});
+
+					if (item.details) {
+						movieIdsByPublicId.set(item.listItemId, item.details.movieId);
+					}
+
+					if (item.isWatched) {
+						watchedItemPublicIds.add(item.listItemId);
+					}
 				}
 
 				if (listItems.length > 0) {
-					await tx.insert(listItemsTable).values(listItems);
+					const insertedListItems = await tx
+						.insert(listItemsTable)
+						.values(listItems)
+						.returning({
+							id: listItemsTable.id,
+							publicId: listItemsTable.publicId,
+							createdAt: listItemsTable.createdAt,
+						});
+
+					const matchedMovies = insertedListItems.flatMap((item) => {
+						const movieId = movieIdsByPublicId.get(item.publicId);
+						if (movieId === undefined) {
+							return [];
+						}
+
+						return [{ listItemId: item.id, movieId }];
+					});
+
+					if (matchedMovies.length > 0) {
+						await tx.insert(listItemMovieMatchTable).values(matchedMovies);
+					}
+
+					const watchedItems = insertedListItems.flatMap((item) => {
+						if (!watchedItemPublicIds.has(item.publicId)) {
+							return [];
+						}
+
+						return [{ listItemId: item.id, watchedAt: item.createdAt }];
+					});
+
+					if (watchedItems.length > 0) {
+						await tx.insert(watchedItemsTable).values(watchedItems);
+					}
 				}
 			}
 
