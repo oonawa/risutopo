@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
 import {
-	authTokensTable,
+	loginCodesTable,
 	loginAttemptsTable,
 	userEmailsTable,
 	usersTable,
@@ -108,7 +108,7 @@ describe("sendLoginCode", () => {
 		mockResendConstructor.mockClear();
 
 		await db.delete(loginAttemptsTable);
-		await db.delete(authTokensTable);
+		await db.delete(loginCodesTable);
 		await db.delete(userEmailsTable);
 		await db.delete(usersTable);
 	});
@@ -145,15 +145,14 @@ describe("sendLoginCode", () => {
 
 		const [savedToken] = await db
 			.select()
-			.from(authTokensTable)
-			.where(eq(authTokensTable.email, existingUserEmail));
+			.from(loginCodesTable)
+			.where(eq(loginCodesTable.email, existingUserEmail));
 
 		expect(savedToken).toBeDefined();
 		if (!savedToken) {
 			throw new Error("認証コードが保存されていません");
 		}
 
-		expect(savedToken.tokenType).toBe("login_code");
 		expect(savedToken.userId).toBe(existingUser.id);
 		expect(savedToken.createdAt).toEqual(now);
 		expect(savedToken.expiresAt).toEqual(
@@ -201,15 +200,14 @@ describe("sendLoginCode", () => {
 
 		const [savedToken] = await db
 			.select()
-			.from(authTokensTable)
-			.where(eq(authTokensTable.email, unregisteredUserEmail));
+			.from(loginCodesTable)
+			.where(eq(loginCodesTable.email, unregisteredUserEmail));
 
 		expect(savedToken).toBeDefined();
 		if (!savedToken) {
 			throw new Error("認証コードが保存されていません");
 		}
 
-		expect(savedToken.tokenType).toBe("login_code");
 		expect(savedToken.userId).toBeNull();
 		expect(savedToken.createdAt).toEqual(now);
 		expect(savedToken.expiresAt).toEqual(
@@ -238,9 +236,8 @@ describe("sendLoginCode", () => {
 		const oldLoginCode = "123456";
 		const oldExpiresAt = new Date(now.getTime() + 5 * 60 * 1000);
 
-		await db.insert(authTokensTable).values({
+		await db.insert(loginCodesTable).values({
 			token: hashLoginCode(oldLoginCode),
-			tokenType: "login_code",
 			email: existingUserEmail,
 			userId: existingUser.id,
 			expiresAt: oldExpiresAt,
@@ -251,13 +248,8 @@ describe("sendLoginCode", () => {
 
 		const savedTokens = await db
 			.select()
-			.from(authTokensTable)
-			.where(
-				and(
-					eq(authTokensTable.email, existingUserEmail),
-					eq(authTokensTable.tokenType, "login_code"),
-				),
-			);
+			.from(loginCodesTable)
+			.where(eq(loginCodesTable.email, existingUserEmail));
 
 		expect(savedTokens).toHaveLength(1);
 

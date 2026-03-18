@@ -1,7 +1,7 @@
 import type { Result } from "@/features/shared/types/Result";
 import { jwtVerify } from "jose";
 import { db } from "@/db/client";
-import { authTokensTable } from "@/db/schema";
+import { sessionTokensTable } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 import { getSecretKey } from "@/lib/jwt";
 
@@ -29,7 +29,7 @@ export async function verifySessionTokenService({
 			};
 		}
 
-		const { userId, email, deviceId, type } = payload;
+		const { userId, email, deviceId } = payload;
 
 		const isString = (propName: unknown): propName is string => {
 			return typeof propName === "string";
@@ -66,19 +66,18 @@ export async function verifySessionTokenService({
 
 		const [record] = await db
 			.select({
-				userId: authTokensTable.userId,
-				email: authTokensTable.email,
-				deviceId: authTokensTable.deviceId,
+				userId: sessionTokensTable.userId,
+				email: sessionTokensTable.email,
+				deviceId: sessionTokensTable.deviceId,
 			})
-			.from(authTokensTable)
+			.from(sessionTokensTable)
 			.where(
 				and(
-					eq(authTokensTable.token, sessionToken),
-					eq(authTokensTable.tokenType, type),
-					eq(authTokensTable.userId, parsedUserId),
-					eq(authTokensTable.email, email),
-					eq(authTokensTable.deviceId, deviceId),
-					gt(authTokensTable.expiresAt, now),
+					eq(sessionTokensTable.token, sessionToken),
+					eq(sessionTokensTable.userId, parsedUserId),
+					eq(sessionTokensTable.email, email),
+					eq(sessionTokensTable.deviceId, deviceId),
+					gt(sessionTokensTable.expiresAt, now),
 				),
 			);
 

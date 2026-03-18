@@ -4,9 +4,9 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
 import {
-	authTokensTable,
 	listItemsTable,
 	listsTable,
+	sessionTokensTable,
 	streamingServicesTable,
 	userEmailsTable,
 	usersTable,
@@ -94,9 +94,8 @@ async function loginAsUser({
 		deviceId: "test-device-id",
 	});
 
-	await db.insert(authTokensTable).values({
+	await db.insert(sessionTokensTable).values({
 		token: sessionToken,
-		tokenType: "session_token",
 		email,
 		userId,
 		deviceId: "test-device-id",
@@ -118,7 +117,7 @@ describe("getCurrentUserMovieList", () => {
 		mockCookies.mockClear();
 		mockSessionTokenStore.clear();
 
-		await db.delete(authTokensTable);
+		await db.delete(sessionTokensTable);
 		await db.delete(listItemsTable);
 		await db.delete(listsTable);
 		await db.delete(usersTable);

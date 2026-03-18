@@ -1,6 +1,10 @@
 import type { Tx } from "@/db/client";
 import { db } from "@/db/client";
-import { authTokensTable } from "@/db/schema";
+import {
+	loginCodesTable,
+	sessionTokensTable,
+	tempSessionTokensTable,
+} from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 
 export async function searchLoginCode({
@@ -14,12 +18,11 @@ export async function searchLoginCode({
 }) {
 	const [loginCode] = await tx
 		.select()
-		.from(authTokensTable)
+		.from(loginCodesTable)
 		.where(
 			and(
-				eq(authTokensTable.token, loginCodeHash),
-				eq(authTokensTable.tokenType, "login_code"),
-				gt(authTokensTable.expiresAt, now),
+				eq(loginCodesTable.token, loginCodeHash),
+				gt(loginCodesTable.expiresAt, now),
 			),
 		);
 
@@ -35,13 +38,8 @@ export async function deleteLoginCode({
 }) {
 	const executor = tx || db;
 	await executor
-		.delete(authTokensTable)
-		.where(
-			and(
-				eq(authTokensTable.email, email),
-				eq(authTokensTable.tokenType, "login_code"),
-			),
-		);
+		.delete(loginCodesTable)
+		.where(eq(loginCodesTable.email, email));
 }
 
 export async function insertLoginCode({
@@ -59,9 +57,8 @@ export async function insertLoginCode({
 	expiresAt: Date;
 	createdAt: Date;
 }) {
-	await tx.insert(authTokensTable).values({
+	await tx.insert(loginCodesTable).values({
 		token,
-		tokenType: "login_code",
 		email,
 		userId: userId ?? null,
 		expiresAt,
@@ -79,12 +76,11 @@ export async function deleteSessionToken({
 	deviceId: string;
 }) {
 	await tx
-		.delete(authTokensTable)
+		.delete(sessionTokensTable)
 		.where(
 			and(
-				eq(authTokensTable.tokenType, "session_token"),
-				eq(authTokensTable.userId, userId),
-				eq(authTokensTable.deviceId, deviceId),
+				eq(sessionTokensTable.userId, userId),
+				eq(sessionTokensTable.deviceId, deviceId),
 			),
 		);
 }
@@ -106,9 +102,8 @@ export async function insertSessionToken({
 	now: Date;
 	expiresAt: Date;
 }) {
-	await tx.insert(authTokensTable).values({
+	await tx.insert(sessionTokensTable).values({
 		token: sessionToken,
-		tokenType: "session_token",
 		deviceId,
 		email,
 		userId,
@@ -132,12 +127,10 @@ export async function insertTempToken({
 	deviceId: string;
 	createdAt: Date;
 }) {
-	await tx.insert(authTokensTable).values({
+	await tx.insert(tempSessionTokensTable).values({
 		token: tempToken,
-		tokenType: "temp_session_token",
 		deviceId,
 		email,
-		userId: null,
 		createdAt,
 		expiresAt,
 	});
