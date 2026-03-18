@@ -54,15 +54,24 @@ export const directorCacheTable = sqliteTable("director_cache_table", {
 	cachedAt: int("cached_at", { mode: "timestamp" }).notNull(),
 });
 
-export const movieDirectorsTable = sqliteTable("movie_directors_table", {
-	id: int().primaryKey({ autoIncrement: true }),
-	movieId: int()
-		.notNull()
-		.references(() => moviesTable.id),
-	directorId: int()
-		.notNull()
-		.references(() => directorsTable.id),
-});
+export const movieDirectorsTable = sqliteTable(
+	"movie_directors_table",
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		movieId: int()
+			.notNull()
+			.references(() => moviesTable.id),
+		directorId: int()
+			.notNull()
+			.references(() => directorsTable.id),
+	},
+	(table) => [
+		uniqueIndex("movie_directors_movie_id_director_id_unique").on(
+			table.movieId,
+			table.directorId,
+		),
+	],
+);
 
 export const movieServicesTable = sqliteTable("movie_services_table", {
 	id: int().primaryKey({ autoIncrement: true }),
