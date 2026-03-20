@@ -233,6 +233,7 @@ describe("getCurrentUserMovieList", () => {
 					serviceSlug: "hulu",
 					serviceName: "Hulu",
 					isWatched: true,
+					watchedAt: new Date("2026-03-11T00:00:00.000Z"),
 					createdAt: new Date("2026-03-11T00:00:00.000Z"),
 				},
 				{
@@ -242,6 +243,7 @@ describe("getCurrentUserMovieList", () => {
 					serviceSlug: "netflix",
 					serviceName: "Netflix",
 					isWatched: false,
+					watchedAt: null,
 					createdAt: new Date("2026-03-12T00:00:00.000Z"),
 				},
 			],

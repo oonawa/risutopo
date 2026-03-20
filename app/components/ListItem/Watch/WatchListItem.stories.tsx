@@ -10,6 +10,7 @@ const movieWithDetails: ListItem = {
 	serviceName: "U-NEXT",
 	createdAt: new Date(),
 	isWatched: false,
+	watchedAt: null,
 	details: {
 		movieId: 1,
 		officialTitle: "トータル・リコール",

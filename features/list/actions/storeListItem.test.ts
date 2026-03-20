@@ -14,6 +14,7 @@ import {
 	streamingServicesTable,
 	userEmailsTable,
 	usersTable,
+	watchedItemsTable,
 } from "@/db/schema";
 import type { ListItem } from "../types/ListItem";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
@@ -150,6 +151,32 @@ async function assertListItemMovieMatchRecord({
 	expect(matchRecord.movieId).toBe(expectedMovieId);
 }
 
+async function assertWatchedItemRecord({
+	listItemId,
+	expectedWatchedAt,
+}: {
+	listItemId: number;
+	expectedWatchedAt: Date | null;
+}) {
+	const [watchedItemRecord] = await db
+		.select()
+		.from(watchedItemsTable)
+		.where(eq(watchedItemsTable.listItemId, listItemId));
+
+	if (expectedWatchedAt === null) {
+		expect(watchedItemRecord).toBeUndefined();
+		return;
+	}
+
+	expect(watchedItemRecord).toBeDefined();
+
+	if (!watchedItemRecord) {
+		throw Error("watched_items_table に視聴済みレコードが作成されていません");
+	}
+
+	expect(watchedItemRecord.watchedAt).toEqual(expectedWatchedAt);
+}
+
 async function assertMovieRecordFromTmdbDetails(movie: ListItem) {
 	if (!movie.details) {
 		throw Error("TMDBありケースのため movie.details が必要です");
@@ -230,7 +257,9 @@ async function assertDirectorCacheRecord(movieId: number) {
 	expect(directorCacheRecord).toBeDefined();
 
 	if (!directorCacheRecord) {
-		throw Error("director_cache_table にキャッシュレコードが作成されていません");
+		throw Error(
+			"director_cache_table にキャッシュレコードが作成されていません",
+		);
 	}
 
 	expect(directorCacheRecord.cachedAt).toBeInstanceOf(Date);
@@ -289,6 +318,7 @@ describe("storeMovie", () => {
 			serviceName: "Netflix",
 			createdAt: new Date(),
 			isWatched: false,
+			watchedAt: null,
 		};
 
 		const storeResult = await assertStoreMovieResult({
@@ -375,11 +405,12 @@ describe("storeMovie", () => {
 			serviceSlug: "prime-video",
 			serviceName: "Prime Video",
 			createdAt: new Date(),
+			watchedAt: null,
+			isWatched: false,
 			details: {
 				movieId: seededMovie.id,
 				...tmdbMovieDetails,
 			},
-			isWatched: false,
 		};
 
 		const storeResult = await assertStoreMovieResult({
@@ -414,6 +445,102 @@ describe("storeMovie", () => {
 			listItemId,
 			expectedMovieId: movieRecord.id,
 		});
+		await assertWatchedItemRecord({
+			listItemId,
+			expectedWatchedAt: null,
+		});
+	});
+
+	it("視聴済みの配信作品をリストへ新規登録できる", async () => {
+		const watchedAt = new Date("2026-03-20T00:00:00.000Z");
+		const movie: ListItem = {
+			listItemId: crypto.randomUUID(),
+			title: "ジュラシック・パーク",
+			url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
+			serviceSlug: "netflix",
+			serviceName: "Netflix",
+			createdAt: new Date("2026-03-19T00:00:00.000Z"),
+			isWatched: true,
+			watchedAt,
+		};
+
+		const storeResult = await assertStoreMovieResult({
+			publicListId: testListPublicId,
+			movie,
+			expectedTitle: movie.title,
+		});
+		expect(storeResult).not.toBeNull();
+		await assertMoviesTableHasNoRecords();
+		await assertDirectorsTableHasNoRecords();
+
+		const netflixStreamingServiceId = await getStreamingServiceIdBySlug(
+			movie.serviceSlug,
+		);
+
+		const listItemId = await assertListItemRecord({
+			testListId,
+			streamingServiceId: netflixStreamingServiceId,
+			movie,
+			expectedTitleOnService: movie.title,
+		});
+		if (!listItemId) {
+			throw Error("list_items_table へのレコード登録に失敗しています");
+		}
+
+		await assertListItemMovieMatchRecord({
+			listItemId,
+			expectedMovieId: null,
+		});
+		await assertWatchedItemRecord({
+			listItemId,
+			expectedWatchedAt: watchedAt,
+		});
+	});
+
+	it("未視聴の配信作品を視聴済みに変更できる", async () => {
+		const streamingServiceId = await getStreamingServiceIdBySlug("netflix");
+		const listItemPublicId = crypto.randomUUID();
+
+		const [seededListItem] = await db
+			.insert(listItemsTable)
+			.values({
+				publicId: listItemPublicId,
+				listId: testListId,
+				streamingServiceId,
+				watchUrl:
+					"https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
+				titleOnService: "ジュラシック・パーク",
+				createdAt: new Date("2026-03-19T00:00:00.000Z"),
+			})
+			.returning({ id: listItemsTable.id });
+
+		await assertWatchedItemRecord({
+			listItemId: seededListItem.id,
+			expectedWatchedAt: null,
+		});
+
+		const watchedMovie: ListItem = {
+			listItemId: listItemPublicId,
+			title: "ジュラシック・パーク",
+			url: "https://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more",
+			serviceSlug: "netflix",
+			serviceName: "Netflix",
+			createdAt: new Date("2026-03-19T00:00:00.000Z"),
+			isWatched: true,
+			watchedAt: new Date("2026-03-20T00:00:00.000Z"),
+		};
+
+		const result = await storeListItem({
+			publicListId: testListPublicId,
+			movie: watchedMovie,
+			now: new Date("2026-03-21T00:00:00.000Z"),
+		});
+
+		expect(result.success).toBe(true);
+		await assertWatchedItemRecord({
+			listItemId: seededListItem.id,
+			expectedWatchedAt: watchedMovie.watchedAt,
+		});
 	});
 
 	it("同じサービスの同じ配信作品は登録できない", async () => {
@@ -425,6 +552,7 @@ describe("storeMovie", () => {
 			serviceName: "Netflix",
 			createdAt: new Date(),
 			isWatched: false,
+			watchedAt: null,
 		};
 		const secondMovie: ListItem = {
 			...firstMovie,
@@ -474,6 +602,7 @@ describe("storeMovie", () => {
 			serviceName: "Netflix",
 			createdAt: new Date(),
 			isWatched: false,
+			watchedAt: null,
 		};
 
 		const result = await storeListItem({
@@ -509,6 +638,7 @@ describe("storeMovie", () => {
 			serviceName: "Netflix",
 			createdAt: new Date(),
 			isWatched: false,
+			watchedAt: null,
 		};
 
 		const result = await storeListItem({

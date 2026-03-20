@@ -67,12 +67,12 @@ export default function ListItemCard({
 
 	const handleSubmit = () => {
 		const newItem = selectedMovie ?? movie;
+
 		const itemToStore = hasListItemId(newItem)
 			? newItem
 			: {
 					...newItem,
 					listItemId: window.crypto.randomUUID(),
-					isWatched: false,
 				};
 
 		submit({ movie: itemToStore, publicListId });

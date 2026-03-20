@@ -65,11 +65,8 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 		fetchExternalMovieDatabaseAction,
 		isFetchExternalMovieDatabasePending,
 	] = useActionState<DraftListItem | ListItem | null, number | null>(
-		async (
-			_prev: DraftListItem | ListItem | null,
-			externalApiMovieId: number | null,
-		) => {
-			if (!externalApiMovieId) {
+		async (_prev, externalApiMovieId) => {
+			if (externalApiMovieId === null) {
 				return null;
 			}
 
@@ -94,30 +91,68 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 				overview,
 			} = officialMovieInfo.data;
 
-			const directors = directorsInfo.data;
+			const details = {
+				movieId,
+				officialTitle: title,
+				backgroundImage: TMDB_IMAGE_BASE_URL + backdrop_path,
+				posterImage: TMDB_IMAGE_BASE_URL + poster_path,
+				runningMinutes: runtime,
+				releaseYear: new Date(release_date).getFullYear(),
+				director: directorsInfo.data,
+				externalDatabaseMovieId: externalApiMovieId,
+				overview,
+			};
+
+			if ("listItemId" in movie) {
+				if (movie.isWatched) {
+					return {
+						listItemId: movie.listItemId,
+						title: movie.title,
+						url: movie.url,
+						serviceSlug: movie.serviceSlug,
+						serviceName: movie.serviceName,
+						isWatched: true,
+						watchedAt: movie.watchedAt,
+						createdAt: movie.createdAt,
+						details,
+					};
+				}
+
+				return {
+					listItemId: movie.listItemId,
+					title: movie.title,
+					url: movie.url,
+					serviceSlug: movie.serviceSlug,
+					serviceName: movie.serviceName,
+					isWatched: false,
+					watchedAt: null,
+					createdAt: movie.createdAt,
+					details,
+				};
+			}
+
+			if (movie.isWatched) {
+				return {
+					title: movie.title,
+					url: movie.url,
+					serviceSlug: movie.serviceSlug,
+					serviceName: movie.serviceName,
+					isWatched: true,
+					watchedAt: movie.watchedAt,
+					createdAt: movie.createdAt,
+					details,
+				};
+			}
 
 			return {
 				title: movie.title,
 				url: movie.url,
 				serviceSlug: movie.serviceSlug,
 				serviceName: movie.serviceName,
+				isWatched: false,
+				watchedAt: null,
 				createdAt: movie.createdAt,
-				...("listItemId" in movie
-					? {
-							listItemId: movie.listItemId,
-						}
-					: {}),
-				details: {
-					movieId,
-					officialTitle: title,
-					backgroundImage: TMDB_IMAGE_BASE_URL + backdrop_path,
-					posterImage: TMDB_IMAGE_BASE_URL + poster_path,
-					runningMinutes: runtime,
-					releaseYear: new Date(release_date).getFullYear(),
-					director: directors,
-					externalDatabaseMovieId: externalApiMovieId,
-					overview,
-				},
+				details,
 			};
 		},
 		null,

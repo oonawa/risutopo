@@ -29,13 +29,23 @@ const listItemDetailsSchema = z.object({
 	overview: z.string().min(1),
 });
 
-export const listItemSchema = z.object({
+const listItemBaseSchema = z.object({
 	listItemId: z.uuid(),
 	title: z.string().min(1),
 	url: z.url(),
 	serviceSlug: supportedServiceSlugSchema,
 	serviceName: supportedServiceNameSchema,
-	isWatched: z.boolean(),
 	createdAt: z.coerce.date(),
 	details: listItemDetailsSchema.optional(),
 });
+
+export const listItemSchema = z.discriminatedUnion("isWatched", [
+	listItemBaseSchema.extend({
+		isWatched: z.literal(true),
+		watchedAt: z.coerce.date(),
+	}),
+	listItemBaseSchema.extend({
+		isWatched: z.literal(false),
+		watchedAt: z.null(),
+	}),
+]);
