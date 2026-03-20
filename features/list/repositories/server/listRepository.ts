@@ -10,7 +10,11 @@ import {
 	streamingServicesTable,
 	watchedItemsTable,
 } from "@/db/schema";
-import type { ListItem } from "@/features/list/types/ListItem";
+import type {
+	ListItem,
+	WatchedState,
+	UnwatchedState,
+} from "@/features/list/types/ListItem";
 
 export type ListItemRow = {
 	listItemId: string;
@@ -63,23 +67,27 @@ export async function findStreamingServiceBySlug(
 	return streamingService;
 }
 
+type WatchStateInput = WatchedState | UnwatchedState;
+
+type UpsertListItemInput = {
+	listId: number;
+	listItemPublicId: string;
+	streamingServiceId: number;
+	movieId: number | null;
+	watchUrl: string;
+	titleOnService: string;
+} & WatchStateInput;
+
 export async function updateListItemByPublicIdAndListId({
 	listId,
 	listItemPublicId,
 	streamingServiceId,
 	movieId,
 	watchUrl,
-	watchStatus,
+	isWatched,
+	watchedAt,
 	titleOnService,
-}: {
-	listId: number;
-	listItemPublicId: string;
-	streamingServiceId: number;
-	movieId: number | null;
-	watchUrl: string;
-	watchStatus: 0 | 1;
-	titleOnService: string;
-}) {
+}: UpsertListItemInput) {
 	await db.transaction(async (tx) => {
 		const [updatedListItem] = await tx
 			.update(listItemsTable)
@@ -111,15 +119,18 @@ export async function updateListItemByPublicIdAndListId({
 			});
 		}
 
-		await tx
-			.delete(watchedItemsTable)
-			.where(eq(watchedItemsTable.listItemId, updatedListItem.id));
+		if (isWatched) {
+			const [existingWatchedItem] = await tx
+				.select({ listItemId: watchedItemsTable.listItemId })
+				.from(watchedItemsTable)
+				.where(eq(watchedItemsTable.listItemId, updatedListItem.id));
 
-		if (watchStatus === 1) {
-			await tx.insert(watchedItemsTable).values({
-				listItemId: updatedListItem.id,
-				watchedAt: new Date(),
-			});
+			if (!existingWatchedItem) {
+				await tx.insert(watchedItemsTable).values({
+					listItemId: updatedListItem.id,
+					watchedAt,
+				});
+			}
 		}
 	});
 }
@@ -130,19 +141,13 @@ export async function insertListItem({
 	streamingServiceId,
 	movieId,
 	watchUrl,
-	watchStatus,
+	isWatched,
+	watchedAt,
 	titleOnService,
 	createdAt,
 }: {
-	listId: number;
-	listItemPublicId: string;
-	streamingServiceId: number;
-	movieId: number | null;
-	watchUrl: string;
-	watchStatus: 0 | 1;
-	titleOnService: string;
 	createdAt: Date;
-}) {
+} & UpsertListItemInput) {
 	await db.transaction(async (tx) => {
 		const [insertedListItem] = await tx
 			.insert(listItemsTable)
@@ -163,10 +168,10 @@ export async function insertListItem({
 			});
 		}
 
-		if (watchStatus === 1) {
+		if (isWatched) {
 			await tx.insert(watchedItemsTable).values({
 				listItemId: insertedListItem.id,
-				watchedAt: createdAt,
+				watchedAt,
 			});
 		}
 	});
@@ -231,7 +236,10 @@ export async function findUserListItems(listPublicId: string, userId: number) {
 			eq(listItemMovieMatchTable.listItemId, listItemsTable.id),
 		)
 		.leftJoin(moviesTable, eq(listItemMovieMatchTable.movieId, moviesTable.id))
-		.leftJoin(watchedItemsTable, eq(watchedItemsTable.listItemId, listItemsTable.id))
+		.leftJoin(
+			watchedItemsTable,
+			eq(watchedItemsTable.listItemId, listItemsTable.id),
+		)
 		.where(
 			and(eq(listsTable.publicId, listPublicId), eq(listsTable.userId, userId)),
 		)

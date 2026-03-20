@@ -10,6 +10,7 @@ const movieWithDetails: ListItem = {
 	serviceName: "U-NEXT",
 	createdAt: new Date(),
 	isWatched: false,
+	watchedAt: null,
 	details: {
 		movieId: 1,
 		officialTitle: "トータル・リコール",
@@ -94,6 +95,6 @@ export const StoreFailed: Story = {
 export const StoreFailedWithErrorMessage: Story = {
 	args: {
 		storeSuccess: false,
-		errorMessage: "映画の追加に失敗しました。"
+		errorMessage: "映画の追加に失敗しました。",
 	},
 };

@@ -60,6 +60,17 @@ const mapListItems = (
 	movieDirectors: Map<number, string[]>,
 ) => {
 	return rows.map((row) => {
+		const watchedState =
+			row.watchedAt === null
+				? {
+						isWatched: false as const,
+						watchedAt: null,
+					}
+				: {
+						isWatched: true as const,
+						watchedAt: row.watchedAt,
+					};
+
 		if (
 			row.movieId === null ||
 			row.officialTitle === null ||
@@ -77,7 +88,7 @@ const mapListItems = (
 				createdAt: row.createdAt,
 				serviceSlug: row.serviceSlug,
 				serviceName: row.serviceName,
-				isWatched: row.watchedAt !== null,
+				...watchedState,
 			};
 		}
 
@@ -88,7 +99,7 @@ const mapListItems = (
 			createdAt: row.createdAt,
 			serviceSlug: row.serviceSlug,
 			serviceName: row.serviceName,
-			isWatched: row.watchedAt !== null,
+			...watchedState,
 			details: {
 				movieId: row.movieId,
 				officialTitle: row.officialTitle,

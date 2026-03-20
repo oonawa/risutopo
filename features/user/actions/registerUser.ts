@@ -161,7 +161,7 @@ export async function registerUser({
 				const seenWatchUrls = new Set<string>();
 				const listItems: Array<typeof listItemsTable.$inferInsert> = [];
 				const movieIdsByPublicId = new Map<string, number>();
-				const watchedItemPublicIds = new Set<string>();
+				const watchedAtByPublicId = new Map<string, Date>();
 
 				for (const item of validLocalListItems) {
 					if (seenWatchUrls.has(item.url)) {
@@ -188,7 +188,7 @@ export async function registerUser({
 					}
 
 					if (item.isWatched) {
-						watchedItemPublicIds.add(item.listItemId);
+						watchedAtByPublicId.set(item.listItemId, item.watchedAt);
 					}
 				}
 
@@ -216,11 +216,12 @@ export async function registerUser({
 					}
 
 					const watchedItems = insertedListItems.flatMap((item) => {
-						if (!watchedItemPublicIds.has(item.publicId)) {
+						const watchedAt = watchedAtByPublicId.get(item.publicId);
+						if (watchedAt === undefined) {
 							return [];
 						}
 
-						return [{ listItemId: item.id, watchedAt: item.createdAt }];
+						return [{ listItemId: item.id, watchedAt }];
 					});
 
 					if (watchedItems.length > 0) {

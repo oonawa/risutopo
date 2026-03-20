@@ -99,6 +99,8 @@ export function useExtractMovieInfo() {
 			url,
 			serviceSlug: matcher.slug,
 			serviceName: matcher.name,
+			isWatched: false,
+			watchedAt: null,
 			createdAt: new Date(),
 		};
 	};
@@ -139,6 +141,8 @@ export function useExtractMovieInfo() {
 			url,
 			serviceSlug: matcherResult.slug,
 			serviceName: matcherResult.name,
+			isWatched: false,
+			watchedAt: null,
 			createdAt: new Date(),
 		};
 	};
