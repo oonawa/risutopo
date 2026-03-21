@@ -5,6 +5,7 @@ import type { Result } from "@/features/shared/types/Result";
 import type { ListItem } from "@/features/list/types/ListItem";
 import { getUserListService } from "../services/getUserListService";
 import { currentUserId } from "@/features/shared/actions/currentUserId";
+import { userListId } from "../repositories/server/listRepository";
 
 const getCurrentUserMovieListSchema = z.object({
 	listPublicId: z.uuid(),
@@ -32,10 +33,22 @@ export async function getCurrentUserMovieList(
 			success: false,
 			error: {
 				code: "UNAUTHORIZED_ERROR",
-				message: "",
+				message: "ログインかユーザー登録をしてください。",
 			},
 		};
 	}
 
-	return await getUserListService(listPublicId, result.data.userId);
+	const listId = await userListId(result.data.userId, listPublicId);
+
+	if (!listId) {
+		return {
+			success: false,
+			error: {
+				code: "NOT_FOUND_ERROR",
+				message: "リストが見つかりませんでした。",
+			},
+		};
+	}
+
+	return await getUserListService(listId, result.data.userId);
 }

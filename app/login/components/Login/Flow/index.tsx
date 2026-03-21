@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from "motion/react";
 import Loading from "@/components/Loading";
 import { sendLoginCode } from "@/features/auth/actions/sendLoginCode";
 import { login } from "@/features/auth/actions/login";
+import { syncUserList } from "@/features/list/actions/syncUserList";
+import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import CodeStep from "./CodeStep";
 import EmailStep from "./EmailStep";
 import ErrorPanel from "./ErrorPanel";
@@ -17,6 +19,8 @@ export default function Flow() {
 	const router = useRouter();
 	const [status, setStatus] = useState<Status>("idle");
 	const [errorMessage, setErrorMessage] = useState<string>("");
+
+	const { parseLocalList, clearLocalList } = useListLocalStorageRepository();
 
 	const handleEmailSubmit = async (data: FormValue) => {
 		setStatus("loading");
@@ -35,17 +39,33 @@ export default function Flow() {
 
 	const handleLoginCodeSubmit = async (data: FormValue) => {
 		setStatus("loading");
-		const result = await login(data.value, new Date());
+		const loginResult = await login(data.value, new Date());
 
-		if (result.success) {
-			const { email, isNewUser } = result.data;
-			sessionStorage.setItem("registrationEmail", email);
-			router.push(isNewUser ? "/register" : "/");
+		if (!loginResult.success) {
+			setStatus("error");
+			setErrorMessage(loginResult.error.message);
+
 			return;
 		}
 
-		setStatus("error");
-		setErrorMessage(result.error.message);
+		const { email, isNewUser } = loginResult.data;
+
+		if (isNewUser) {
+			sessionStorage.setItem("registrationEmail", email);
+			return router.push("/register");
+		}
+
+		const localUserList = parseLocalList();
+		const result = await syncUserList({
+			localUserListItems: localUserList.items,
+		});
+
+		if (result.success) {
+			clearLocalList();
+			return router.push(`/${result.data.publicListId}`);
+		}
+
+		return router.push(`/${localUserList.listId}`);
 	};
 
 	return (
@@ -59,7 +79,10 @@ export default function Flow() {
 					transition={{ duration: 0.3 }}
 					className="w-full"
 				>
-					<EmailStep serverErrorMessage={errorMessage} onSubmit={handleEmailSubmit} />
+					<EmailStep
+						serverErrorMessage={errorMessage}
+						onSubmit={handleEmailSubmit}
+					/>
 				</motion.div>
 			)}
 

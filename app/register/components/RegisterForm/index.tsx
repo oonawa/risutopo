@@ -12,8 +12,6 @@ import {
 import { useForm } from "react-hook-form";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import { userIdSchema } from "@/features/user/schemas/userIdSchema";
-import { listItemSchema } from "@/features/shared/schemas/listItemSchema";
-import { registerLocalListPayloadSchema } from "@/features/user/schemas/listItemSchema";
 import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
 import { registerUser } from "@/features/user/actions/registerUser";
 import { Input } from "@/components/ui/input";
@@ -38,8 +36,7 @@ export default function RegisterForm({ email, token }: Props) {
 
 	const [serverErrorMessage, setServerErrorMessage] = useState<string>("");
 
-	const { getListItems, getListId, initializeEmptyList } =
-		useListLocalStorageRepository();
+	const { parseLocalList, clearLocalList } = useListLocalStorageRepository();
 
 	const {
 		register,
@@ -59,13 +56,13 @@ export default function RegisterForm({ email, token }: Props) {
 	}, []);
 
 	useEffect(() => {
-		let cancelled = false;
-
 		const result = userIdSchema.safeParse({ userId: deferredInputValue });
-		if (result.error?.message) {
+		if (!result.success) {
 			setIsDuplicate(false);
 			return;
 		}
+
+		let cancelled = false;
 
 		startTransition(async () => {
 			const count = await searchDuplicateUserId(deferredInputValue);
@@ -80,28 +77,7 @@ export default function RegisterForm({ email, token }: Props) {
 	}, [deferredInputValue]);
 
 	const onSubmit = async (data: UserIdFormData) => {
-		const rawLocalUserList = {
-			listId: getListId(),
-			items: getListItems(),
-		};
-		const parsedLocalList =
-			registerLocalListPayloadSchema.safeParse(rawLocalUserList);
-		const localUserList = parsedLocalList.success
-			? {
-					listId: parsedLocalList.data.listId,
-					items: parsedLocalList.data.items.flatMap((item) => {
-						const parsedItem = listItemSchema.safeParse(item);
-						if (!parsedItem.success) {
-							return [];
-						}
-
-						return [parsedItem.data];
-					}),
-				}
-			: {
-					listId: "",
-					items: [],
-				};
+		const localUserList = parseLocalList();
 
 		const result = await registerUser({
 			userId: data.userId,
@@ -110,8 +86,9 @@ export default function RegisterForm({ email, token }: Props) {
 			localUserList,
 			now: new Date(),
 		});
+
 		if (result.success) {
-			initializeEmptyList();
+			clearLocalList();
 			return redirect("/");
 		}
 
