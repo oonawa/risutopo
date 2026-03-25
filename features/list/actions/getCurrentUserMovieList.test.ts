@@ -276,7 +276,7 @@ describe("getCurrentUserMovieList", () => {
 			success: false,
 			error: {
 				code: "UNAUTHORIZED_ERROR",
-				message: "",
+				message: "ログインかユーザー登録をしてください。",
 			},
 		});
 	});

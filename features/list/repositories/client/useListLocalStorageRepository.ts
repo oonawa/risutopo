@@ -3,6 +3,7 @@
 import { useSetAtom, useStore } from "jotai";
 import { localListAtom, risutopottoAtom } from "@/features/shared/store";
 import type { ListItem } from "@/features/list/types/ListItem";
+import { localListSchema } from "@/features/user/schemas/localListSchema";
 
 export function useListLocalStorageRepository() {
 	const appendListItem = useSetAtom(localListAtom);
@@ -71,6 +72,30 @@ export function useListLocalStorageRepository() {
 		});
 	};
 
+	const clearLocalList = () => {
+		const listId = getListId();
+
+		setRisutopotto({
+			list: {
+				listId,
+				items: [],
+			},
+		});
+	};
+
+	const parseLocalList = () => {
+		const parsedLocalList = localListSchema.safeParse(
+			store.get(risutopottoAtom).list,
+		);
+
+		return parsedLocalList.success
+			? parsedLocalList.data
+			: {
+					listId: "",
+					items: [],
+				};
+	};
+
 	return {
 		getListItems,
 		getListId,
@@ -79,5 +104,7 @@ export function useListLocalStorageRepository() {
 		initializeEmptyList,
 		removeListItem,
 		storeListItem,
+		parseLocalList,
+		clearLocalList,
 	};
 }

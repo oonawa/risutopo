@@ -1,3 +1,5 @@
+import type { Tx } from "@/db/client";
+import type { SupportedServiceSlug, SupportedServiceName } from "@/app/consts";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
@@ -11,7 +13,6 @@ import {
 	watchedItemsTable,
 } from "@/db/schema";
 import type {
-	ListItem,
 	WatchedState,
 	UnwatchedState,
 } from "@/features/list/types/ListItem";
@@ -21,8 +22,8 @@ export type ListItemRow = {
 	title: string;
 	url: string;
 	createdAt: Date;
-	serviceSlug: ListItem["serviceSlug"];
-	serviceName: ListItem["serviceName"];
+	serviceSlug: SupportedServiceSlug;
+	serviceName: SupportedServiceName;
 	watchedAt: Date | null;
 	movieId: number | null;
 	officialTitle: string | null;
@@ -33,6 +34,26 @@ export type ListItemRow = {
 	overview: string | null;
 	externalDatabaseMovieId: string | null;
 };
+
+export async function userListId(userId: number, publicListId: string) {
+	const [list] = await db
+		.select({ id: listsTable.id })
+		.from(listsTable)
+		.where(
+			and(eq(listsTable.publicId, publicListId), eq(listsTable.userId, userId)),
+		);
+
+	return list ? list.id : null;
+}
+
+export async function userListIdAndPublicListId(userId: number) {
+	const [list] = await db
+		.select({ id: listsTable.id, publicListId: listsTable.publicId })
+		.from(listsTable)
+		.where(eq(listsTable.userId, userId));
+
+	return list ? list : null;
+}
 
 export async function findListIdByPublicId(listPublicId: string) {
 	const [list] = await db
@@ -49,12 +70,19 @@ export async function findPublicListIdByUserId(userId: number) {
 		.from(listsTable)
 		.where(eq(listsTable.userId, userId));
 
-	return list?.publicId ?? null;
+	return list ? list.publicId : null;
 }
 
-export async function findStreamingServiceBySlug(
-	slug: ListItem["serviceSlug"],
-) {
+export async function findListIdByUserId(userId: number) {
+	const [list] = await db
+		.select({ id: listsTable.id })
+		.from(listsTable)
+		.where(eq(listsTable.userId, userId));
+
+	return list ? list.id : null;
+}
+
+export async function findStreamingServiceBySlug(slug: SupportedServiceSlug) {
 	const [streamingService] = await db
 		.select({
 			id: streamingServicesTable.id,
@@ -65,6 +93,19 @@ export async function findStreamingServiceBySlug(
 		.where(eq(streamingServicesTable.slug, slug));
 
 	return streamingService;
+}
+
+export async function stremaingServiceIdListBySlugList(
+	tx: Tx,
+	serviceSlugs: SupportedServiceSlug[],
+) {
+	return await tx
+		.select({
+			id: streamingServicesTable.id,
+			slug: streamingServicesTable.slug,
+		})
+		.from(streamingServicesTable)
+		.where(inArray(streamingServicesTable.slug, serviceSlugs));
 }
 
 type WatchStateInput = WatchedState | UnwatchedState;
@@ -177,6 +218,44 @@ export async function insertListItem({
 	});
 }
 
+export async function storeListItems(
+	tx: Tx,
+	items: {
+		publicId: string;
+		listId: number;
+		streamingServiceId: number;
+		watchUrl: string;
+		titleOnService: string;
+		createdAt: Date;
+	}[],
+) {
+	return await tx.insert(listItemsTable).values(items).returning({
+		id: listItemsTable.id,
+		publicId: listItemsTable.publicId,
+		createdAt: listItemsTable.createdAt,
+	});
+}
+
+export async function storeListItemMovieMatch(
+	tx: Tx,
+	matchedMovies: {
+		listItemId: number;
+		movieId: number;
+	}[],
+) {
+	return await tx.insert(listItemMovieMatchTable).values(matchedMovies);
+}
+
+export async function storeWatchedListItem(
+	tx: Tx,
+	watchedItems: {
+		listItemId: number;
+		watchedAt: Date;
+	}[],
+) {
+	await tx.insert(watchedItemsTable).values(watchedItems);
+}
+
 export async function findListItemIdByPublicIdAndListId({
 	listItemPublicId,
 	listId,
@@ -206,7 +285,7 @@ export async function deleteListItemByPublicId(listItemPublicId: string) {
 	return deleted?.id ?? null;
 }
 
-export async function findUserListItems(listPublicId: string, userId: number) {
+export async function userListItemsByListId(listId: number, userId: number) {
 	return await db
 		.select({
 			listItemId: listItemsTable.publicId,
@@ -240,9 +319,7 @@ export async function findUserListItems(listPublicId: string, userId: number) {
 			watchedItemsTable,
 			eq(watchedItemsTable.listItemId, listItemsTable.id),
 		)
-		.where(
-			and(eq(listsTable.publicId, listPublicId), eq(listsTable.userId, userId)),
-		)
+		.where(and(eq(listsTable.id, listId), eq(listsTable.userId, userId)))
 		.orderBy(desc(listItemsTable.id));
 }
 
@@ -262,4 +339,30 @@ export async function findMovieDirectorNames(movieIds: number[]) {
 			eq(movieDirectorsTable.directorId, directorsTable.id),
 		)
 		.where(inArray(movieDirectorsTable.movieId, movieIds));
+}
+
+export async function findSameListItems({
+	listId,
+	watchUrls,
+}: {
+	listId: number;
+	watchUrls: string[];
+}) {
+	if (watchUrls.length === 0) {
+		return [];
+	}
+
+	return await db
+		.select({
+			id: listItemsTable.id,
+			publicId: listItemsTable.publicId,
+			watchUrl: listItemsTable.watchUrl,
+		})
+		.from(listItemsTable)
+		.where(
+			and(
+				eq(listItemsTable.listId, listId),
+				inArray(listItemsTable.watchUrl, watchUrls),
+			),
+		);
 }
