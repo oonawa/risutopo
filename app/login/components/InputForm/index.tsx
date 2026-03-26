@@ -18,7 +18,6 @@ type Props = {
 	htmlFor: "email" | "loginCode";
 	placeholder: string;
 	onSubmit: (data: EmailFormData | LoginCodeFormData) => void;
-	serverErrorMessage?: string;
 };
 
 export default function InputForm({
@@ -26,7 +25,6 @@ export default function InputForm({
 	htmlFor,
 	placeholder,
 	onSubmit,
-	serverErrorMessage,
 }: Props) {
 	const schema = htmlFor === "email" ? emailSchema : loginCodeSchema;
 	const {
@@ -43,7 +41,7 @@ export default function InputForm({
 
 	return (
 		<form
-			className="w-full flex flex-col gap-4 pb-10"
+			className="w-full flex flex-col gap-4"
 			onSubmit={handleSubmit(onSubmit)}
 		>
 			<label htmlFor={htmlFor}>{label}</label>
@@ -55,9 +53,6 @@ export default function InputForm({
 				{...register("value")}
 			/>
 
-			{serverErrorMessage && (
-				<p className="text-sm text-red-500">{serverErrorMessage}</p>
-			)}
 			{errors.value && (
 				<p className="text-sm text-red-500">{errors.value.message}</p>
 			)}

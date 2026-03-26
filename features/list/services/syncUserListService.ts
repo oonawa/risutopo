@@ -73,7 +73,8 @@ export const syncUserListService = async ({
 			success: false,
 			error: {
 				code: "INTERNAL_ERROR",
-				message: "リストの同期に失敗しました。",
+				message:
+					"システムの内部エラーにより、ログインしていないときに追加した作品を保存できませんでした。",
 			},
 		};
 	}

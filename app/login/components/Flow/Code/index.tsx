@@ -1,4 +1,4 @@
-import InputForm from "./InputForm";
+import InputForm from "../../InputForm";
 
 type FormValue = { value: string };
 
@@ -6,7 +6,7 @@ type Props = {
 	onSubmit: (data: FormValue) => void;
 };
 
-export default function CodeStep({ onSubmit }: Props) {
+export default function Code({ onSubmit }: Props) {
 	return (
 		<InputForm
 			placeholder="認証コードを入力"

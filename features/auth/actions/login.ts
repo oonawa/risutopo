@@ -23,7 +23,7 @@ export async function login(
 			success: false,
 			error: {
 				code: "VALIDATION_ERROR",
-				message: "無効なリクエストです。",
+				message: parsed.error.message,
 			},
 		};
 	}
