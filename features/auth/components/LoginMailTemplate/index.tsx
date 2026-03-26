@@ -25,6 +25,7 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 					color: "#3f4443",
 					backgroundColor: "#b0c8c3",
 					margin: 0,
+					padding: 20,
 				}}
 			>
 				<Container
@@ -32,8 +33,6 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 						width: "100%",
 						height: "100%",
 						maxWidth: 500,
-						marginTop: 20,
-						marginBottom: 20,
 						marginLeft: "auto",
 						marginRight: "auto",
 						backgroundColor: "#fff",
