@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { AnimatePresence } from "motion/react";
 import type { TmdbSearchResponse } from "@/features/movieDatabase/types/TmdbResponse";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
@@ -50,7 +49,7 @@ export default function SearchResult({
 						<ul className="flex flex-col gap-4 relative">
 							{searchResult.results.map((result) => (
 								<li
-									key={String(crypto.randomBytes(32))}
+									key={String(result.id)}
 									className="w-full aspect-video bg-background-dark-2 rounded-md"
 								>
 									<div className="absolute w-full grid grid-cols-7 rounded-md aspect-video bg-background-dark-4/90 p-4">

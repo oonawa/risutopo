@@ -2,32 +2,25 @@ import type { Result } from "@/features/shared/types/Result";
 import type { ListItem } from "@/features/list/types/ListItem";
 import type { ListItemRow } from "../repositories/server/listRepository";
 import {
-	findUserListItems,
+	userListItemsByListId,
 	findMovieDirectorNames,
 } from "../repositories/server/listRepository";
 
 export const getUserListService = async (
-	listPublicId: string,
+	listId: number,
 	userId: number,
 ): Promise<Result<ListItem[]>> => {
-	const userListItems = await findUserListItems(listPublicId, userId);
-
-	if (userListItems.length === 0) {
-		return {
-			success: false,
-			error: {
-				code: "NOT_FOUND_ERROR",
-				message: "リストが見つかりませんでした。",
-			},
-		};
-	}
+	const userListItems = await userListItemsByListId(listId, userId);
 
 	const movieIds = userListItems
 		.map((row) => row.movieId)
 		.filter((id) => id !== null);
 
 	const directors = await findMovieDirectorNames(movieIds);
-	const movies: ListItem[] = mapListItems(userListItems, mapMovieDirector(directors));
+	const movies: ListItem[] = mapListItems(
+		userListItems,
+		mapMovieDirector(directors),
+	);
 
 	return {
 		success: true,
@@ -60,6 +53,17 @@ const mapListItems = (
 	movieDirectors: Map<number, string[]>,
 ) => {
 	return rows.map((row) => {
+		const watchedState =
+			row.watchedAt === null
+				? {
+						isWatched: false as const,
+						watchedAt: null,
+					}
+				: {
+						isWatched: true as const,
+						watchedAt: row.watchedAt,
+					};
+
 		if (
 			row.movieId === null ||
 			row.officialTitle === null ||
@@ -77,7 +81,7 @@ const mapListItems = (
 				createdAt: row.createdAt,
 				serviceSlug: row.serviceSlug,
 				serviceName: row.serviceName,
-				isWatched: row.watchedAt !== null,
+				...watchedState,
 			};
 		}
 
@@ -88,7 +92,7 @@ const mapListItems = (
 			createdAt: row.createdAt,
 			serviceSlug: row.serviceSlug,
 			serviceName: row.serviceName,
-			isWatched: row.watchedAt !== null,
+			...watchedState,
 			details: {
 				movieId: row.movieId,
 				officialTitle: row.officialTitle,

@@ -1,16 +1,14 @@
-import InputForm from "./InputForm";
+import InputForm from "../../InputForm";
 
 type FormValue = { value: string };
 
 type Props = {
 	onSubmit: (data: FormValue) => void;
-	serverErrorMessage: string;
 };
 
-export default function EmailStep({ onSubmit, serverErrorMessage }: Props) {
+export default function Email({ onSubmit }: Props) {
 	return (
 		<InputForm
-			serverErrorMessage={serverErrorMessage}
 			placeholder="メールアドレスを入力"
 			onSubmit={onSubmit}
 			htmlFor={"email"}

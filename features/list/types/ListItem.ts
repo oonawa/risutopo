@@ -1,12 +1,10 @@
 import type { SupportedServiceSlug, SupportedServiceName } from "@/app/consts";
 
-export type ListItem = {
-	listItemId: string;
+type ListItemBase = {
 	title: string;
 	url: string;
 	serviceSlug: SupportedServiceSlug;
 	serviceName: SupportedServiceName;
-	isWatched: boolean;
 	createdAt: Date;
 	details?: {
 		movieId: number;
@@ -21,4 +19,20 @@ export type ListItem = {
 	};
 };
 
-export type DraftListItem = Omit<ListItem, "listItemId" | "isWatched">;
+export type WatchedState = {
+	isWatched: true;
+	watchedAt: Date;
+};
+
+export type UnwatchedState = {
+	isWatched: false;
+	watchedAt: null;
+};
+
+export type ListItem =
+	| (ListItemBase & { listItemId: string } & WatchedState)
+	| (ListItemBase & { listItemId: string } & UnwatchedState);
+
+export type DraftListItem =
+	| (ListItemBase & WatchedState)
+	| (ListItemBase & UnwatchedState);

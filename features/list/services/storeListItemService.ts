@@ -33,6 +33,15 @@ export async function storeListItemService({
 	try {
 		const titleOnService = movie.title;
 		const listItemPublicId = movie.listItemId;
+		const watchState = movie.isWatched
+			? {
+					isWatched: true as const,
+					watchedAt: movie.watchedAt,
+				}
+			: {
+					isWatched: false as const,
+					watchedAt: null,
+				};
 		const existingListItemId = await findListItemIdByPublicIdAndListId({
 			listItemPublicId: movie.listItemId,
 			listId,
@@ -46,7 +55,7 @@ export async function storeListItemService({
 				streamingServiceId: streamingService.id,
 				movieId: movie.details?.movieId ?? null,
 				watchUrl: movie.url,
-				watchStatus: movie.isWatched ? 1 : 0,
+				...watchState,
 				titleOnService,
 			});
 		} else {
@@ -56,10 +65,35 @@ export async function storeListItemService({
 				streamingServiceId: streamingService.id,
 				movieId: movie.details?.movieId ?? null,
 				watchUrl: movie.url,
-				watchStatus: movie.isWatched ? 1 : 0,
+				...watchState,
 				titleOnService,
 				createdAt: now,
 			});
+		}
+
+		const details = movie.details
+			? {
+					details: {
+						...movie.details,
+					},
+				}
+			: {};
+
+		if (movie.isWatched) {
+			return {
+				success: true,
+				data: {
+					listItemId: listItemPublicId,
+					title: titleOnService,
+					url: movie.url,
+					serviceSlug: streamingService.slug,
+					serviceName: streamingService.name,
+					isWatched: true,
+					watchedAt: movie.watchedAt,
+					createdAt,
+					...details,
+				},
+			};
 		}
 
 		return {
@@ -70,15 +104,10 @@ export async function storeListItemService({
 				url: movie.url,
 				serviceSlug: streamingService.slug,
 				serviceName: streamingService.name,
-				isWatched: movie.isWatched,
+				isWatched: false,
+				watchedAt: null,
 				createdAt,
-				...(movie.details
-					? {
-							details: {
-								...movie.details,
-							},
-						}
-					: {}),
+				...details,
 			},
 		};
 	} catch (error) {

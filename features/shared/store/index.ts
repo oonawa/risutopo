@@ -24,18 +24,7 @@ export const localListAtom = atom(null, (get, set, payload: ListItem) => {
 	const current = get(risutopottoAtom);
 	const existing = current.list.items;
 
-	const next = [
-		...existing,
-		{
-			listItemId: payload.listItemId,
-			title: payload.title,
-			url: payload.url,
-			isWatched: payload.isWatched,
-			createdAt: payload.createdAt,
-			serviceName: payload.serviceName,
-			serviceSlug: payload.serviceSlug,
-		},
-	];
+	const next = [...existing, payload];
 	set(risutopottoAtom, {
 		list: {
 			listId: current.list.listId,

@@ -3,40 +3,29 @@
 import crypto from "node:crypto";
 import { headers, cookies } from "next/headers";
 import { db } from "@/db/client";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
 	usersTable,
 	userEmailsTable,
 	listsTable,
-	listItemMovieMatchTable,
-	listItemsTable,
 	sessionTokensTable,
-	streamingServicesTable,
 	tempSessionTokensTable,
-	watchedItemsTable,
 } from "@/db/schema";
 import type { Result } from "@/features/shared/types/Result";
+import type { LocalList } from "@/features/user/schemas/localListSchema";
+import { localListSchema } from "@/features/user/schemas/localListSchema";
 import { userIdSchema } from "../schemas/userIdSchema";
-import { listItemSchema } from "@/features/shared/schemas/listItemSchema";
-import {
-	registerLocalListPayloadSchema,
-	type RegisterLocalListInput,
-} from "@/features/user/schemas/listItemSchema";
 import {
 	verifyTempSessionToken,
 	generateSessionToken,
 	addDays,
 } from "@/features/auth/services/session";
 import { generateDeviceId } from "@/features/auth/services/devices";
+import { syncUserListService } from "@/features/list/services/syncUserListService";
 
-const emptyLocalList: RegisterLocalListInput = {
+const emptyLocalList: LocalList = {
 	listId: "",
 	items: [],
-};
-
-const normalizeCreatedAt = (value: Date, fallback: Date): Date => {
-	const date = new Date(value);
-	return Number.isNaN(date.getTime()) ? fallback : date;
 };
 
 export async function registerUser({
@@ -49,7 +38,7 @@ export async function registerUser({
 	email: string;
 	userId: string;
 	tempToken: string;
-	localUserList: RegisterLocalListInput;
+	localUserList: LocalList;
 	now: Date;
 }): Promise<Result<{ userId: string; listPublicId: string }>> {
 	const tempSession = await verifyTempSessionToken({ tempToken, now });
@@ -89,19 +78,11 @@ export async function registerUser({
 	const headersList = await headers();
 	const userAgent = headersList.get("user-agent") || "Unknown";
 	const deviceId = generateDeviceId(userAgent);
-	const parsedLocalList =
-		registerLocalListPayloadSchema.safeParse(localUserList);
+	const parsedLocalList = localListSchema.safeParse(localUserList);
 	const normalizedLocalList = parsedLocalList.success
 		? parsedLocalList.data
 		: emptyLocalList;
-	const validLocalListItems = normalizedLocalList.items.flatMap((item) => {
-		const parsedItem = listItemSchema.safeParse(item);
-		if (!parsedItem.success) {
-			return [];
-		}
-
-		return [parsedItem.data];
-	});
+	const validLocalListItems = normalizedLocalList.items;
 
 	let transactionResult: {
 		id: number;
@@ -144,89 +125,10 @@ export async function registerUser({
 				});
 
 			if (validLocalListItems.length > 0) {
-				const serviceSlugs = Array.from(
-					new Set(validLocalListItems.map((item) => item.serviceSlug)),
-				);
-				const streamingServices = await tx
-					.select({
-						id: streamingServicesTable.id,
-						slug: streamingServicesTable.slug,
-					})
-					.from(streamingServicesTable)
-					.where(inArray(streamingServicesTable.slug, serviceSlugs));
-
-				const serviceIdBySlug = new Map(
-					streamingServices.map((service) => [service.slug, service.id]),
-				);
-				const seenWatchUrls = new Set<string>();
-				const listItems: Array<typeof listItemsTable.$inferInsert> = [];
-				const movieIdsByPublicId = new Map<string, number>();
-				const watchedItemPublicIds = new Set<string>();
-
-				for (const item of validLocalListItems) {
-					if (seenWatchUrls.has(item.url)) {
-						continue;
-					}
-
-					const streamingServiceId = serviceIdBySlug.get(item.serviceSlug);
-					if (!streamingServiceId) {
-						continue;
-					}
-
-					seenWatchUrls.add(item.url);
-					listItems.push({
-						publicId: item.listItemId,
-						listId: newList.id,
-						streamingServiceId,
-						watchUrl: item.url,
-						titleOnService: item.title,
-						createdAt: normalizeCreatedAt(item.createdAt, now),
-					});
-
-					if (item.details) {
-						movieIdsByPublicId.set(item.listItemId, item.details.movieId);
-					}
-
-					if (item.isWatched) {
-						watchedItemPublicIds.add(item.listItemId);
-					}
-				}
-
-				if (listItems.length > 0) {
-					const insertedListItems = await tx
-						.insert(listItemsTable)
-						.values(listItems)
-						.returning({
-							id: listItemsTable.id,
-							publicId: listItemsTable.publicId,
-							createdAt: listItemsTable.createdAt,
-						});
-
-					const matchedMovies = insertedListItems.flatMap((item) => {
-						const movieId = movieIdsByPublicId.get(item.publicId);
-						if (movieId === undefined) {
-							return [];
-						}
-
-						return [{ listItemId: item.id, movieId }];
-					});
-
-					if (matchedMovies.length > 0) {
-						await tx.insert(listItemMovieMatchTable).values(matchedMovies);
-					}
-
-					const watchedItems = insertedListItems.flatMap((item) => {
-						if (!watchedItemPublicIds.has(item.publicId)) {
-							return [];
-						}
-
-						return [{ listItemId: item.id, watchedAt: item.createdAt }];
-					});
-
-					if (watchedItems.length > 0) {
-						await tx.insert(watchedItemsTable).values(watchedItems);
-					}
-				}
+				await syncUserListService({
+					listId: newList.id,
+					items: validLocalListItems,
+				});
 			}
 
 			const cookieStore = await cookies();
