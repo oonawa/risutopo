@@ -1,40 +1,19 @@
-import { currentUserId } from "@/features/shared/actions/currentUserId";
-import { getUserMovieList } from "@/features/list/actions/getUserMovieList";
-import { notFound } from "next/navigation";
+import type { ListItem } from "@/features/list/types/ListItem";
 import ListContainer from "./Container";
 import ListItemDetail from "./Item/Detail";
-import ListItem from "./Item";
-import LocalList from "../LocalList";
+import ListItemCard from "./Item";
 
 type Props = {
 	publicListId: string;
+	items: ListItem[];
 };
 
-export default async function UserMovieList({ publicListId }: Props) {
-	const result = await currentUserId();
-
-	if (!result.success) {
-		return <LocalList publicListId={publicListId} />;
-	}
-
-	const moviesResult = await getUserMovieList(publicListId, result.data.userId);
-
-	if (!moviesResult.success) {
-		if (
-			moviesResult.error.code === "FORBIDDEN_ERROR" ||
-			moviesResult.error.code === "NOT_FOUND_ERROR"
-		) {
-			notFound();
-		}
-
-		return null;
-	}
-
+export default async function List({ publicListId, items }: Props) {
 	return (
 		<>
 			<ListContainer>
-				{moviesResult.data.map((movie) => {
-					return <ListItem key={movie.listItemId} movie={movie} />;
+				{items.map((movie) => {
+					return <ListItemCard key={movie.listItemId} movie={movie} />;
 				})}
 			</ListContainer>
 			<ListItemDetail publicListId={publicListId} />

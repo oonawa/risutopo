@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { currentUserId } from "@/features/shared/actions/currentUserId";
-import Login from "./components/Login";
+import LoginForm from "./components/Form";
 
 export default async function LoginPage() {
 	const result = await currentUserId();
@@ -9,5 +9,5 @@ export default async function LoginPage() {
 		redirect("/");
 	}
 
-	return <Login />;
+	return <LoginForm />;
 }

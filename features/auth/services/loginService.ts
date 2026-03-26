@@ -66,7 +66,8 @@ export async function loginService({
 						success: false,
 						error: {
 							code: "UNAUTHORIZED_ERROR",
-							message: "ログインコードが不正です。",
+							message:
+								"使用できないログインコードです。もう一度発行してください。",
 						},
 					};
 				}
@@ -131,7 +132,7 @@ export async function loginService({
 			success: false,
 			error: {
 				code: "INTERNAL_ERROR",
-				message: "内部エラーが発生しました。",
+				message: "システム内部でエラーが発生しています。",
 			},
 		};
 	}

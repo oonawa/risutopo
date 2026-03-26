@@ -9,6 +9,6 @@ export const emailSchema = z.object({
 export const loginCodeSchema = z.object({
 	value: z
 		.string()
-		.min(1, "ログインコードを入力してください")
-		.regex(/^[0-9]{6}$/, "6桁の数字を入力してください"),
+		.min(1, "ログインコードが入力されていません。")
+		.regex(/^[0-9]{6}$/, "ログインコードの形式が違います。"),
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import { formatDate } from "@/lib/date";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import ListContainer from "../List/Container";
@@ -13,7 +13,19 @@ type Props = {
 
 export default function LocalList({ publicListId }: Props) {
 	const { getListItems } = useListLocalStorageRepository();
-	const [items] = useState(() => getListItems());
+
+	const items = useSyncExternalStore(
+		(onStoreChange) => {
+			window.addEventListener("storage", onStoreChange);
+			return () => window.removeEventListener("storage", onStoreChange);
+		},
+		() => getListItems(),
+		() => null,
+	);
+
+	if (!items) {
+		return;
+	}
 
 	return (
 		<>
