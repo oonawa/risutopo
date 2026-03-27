@@ -40,7 +40,7 @@ export async function registerUser({
 	tempToken: string;
 	localUserList: LocalList;
 	now: Date;
-}): Promise<Result<{ userId: string; listPublicId: string }>> {
+}): Promise<Result<{ userId: string; publicListId: string }>> {
 	const tempSession = await verifyTempSessionToken({ tempToken, now });
 
 	if (!tempSession) {
@@ -87,7 +87,7 @@ export async function registerUser({
 	let transactionResult: {
 		id: number;
 		publicId: string;
-		listPublicId: string;
+		publicListId: string;
 		sessionToken: string;
 		expiresAt: Date;
 	};
@@ -109,14 +109,14 @@ export async function registerUser({
 				email,
 			});
 
-			const normalizedListPublicId =
+			const normalizedPublicListId =
 				normalizedLocalList.listId.length > 0
 					? normalizedLocalList.listId
 					: crypto.randomUUID();
 			const [newList] = await tx
 				.insert(listsTable)
 				.values({
-					publicId: normalizedListPublicId,
+					publicId: normalizedPublicListId,
 					userId: newUser.id,
 				})
 				.returning({
@@ -159,7 +159,7 @@ export async function registerUser({
 			return {
 				id: newUser.id,
 				publicId: newUser.publicId,
-				listPublicId: newList.publicId,
+				publicListId: newList.publicId,
 				sessionToken,
 				expiresAt,
 			};
@@ -187,7 +187,7 @@ export async function registerUser({
 		success: true,
 		data: {
 			userId: transactionResult.publicId,
-			listPublicId: transactionResult.listPublicId,
+			publicListId: transactionResult.publicListId,
 		},
 	};
 }

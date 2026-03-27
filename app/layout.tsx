@@ -21,13 +21,13 @@ export default async function RootLayout({
 	return (
 		<html lang="ja">
 			<body className={`antialiased`}>
-				<Header />
+				<Header isLoggedIn={result.success} />
 
 				<main className="min-h-[calc(100dvh-var(--header-height))] pb-20">
 					{children}
 				</main>
 
-				<Menu listPublicId={publicListId} />
+				<Menu publicListId={publicListId} isLoggedIn={result.success} />
 
 				<Footer />
 			</body>

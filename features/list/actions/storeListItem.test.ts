@@ -287,7 +287,7 @@ async function assertMovieDirectorRecord({
 
 describe("storeMovie", () => {
 	let testListId: number;
-	let testListPublicId: string;
+	let testPublicListId: string;
 
 	beforeEach(async () => {
 		const [user] = await db
@@ -306,7 +306,7 @@ describe("storeMovie", () => {
 			.values({ publicId: crypto.randomUUID(), userId: user.id })
 			.returning();
 		testListId = list.id;
-		testListPublicId = list.publicId;
+		testPublicListId = list.publicId;
 	});
 
 	it("配信作品の情報をリストへ新規登録できる", async () => {
@@ -322,7 +322,7 @@ describe("storeMovie", () => {
 		};
 
 		const storeResult = await assertStoreMovieResult({
-			publicListId: testListPublicId,
+			publicListId: testPublicListId,
 			movie,
 			expectedTitle: movie.title,
 		});
@@ -414,7 +414,7 @@ describe("storeMovie", () => {
 		};
 
 		const storeResult = await assertStoreMovieResult({
-			publicListId: testListPublicId,
+			publicListId: testPublicListId,
 			movie,
 			expectedTitle: movie.title,
 		});
@@ -465,7 +465,7 @@ describe("storeMovie", () => {
 		};
 
 		const storeResult = await assertStoreMovieResult({
-			publicListId: testListPublicId,
+			publicListId: testPublicListId,
 			movie,
 			expectedTitle: movie.title,
 		});
@@ -531,7 +531,7 @@ describe("storeMovie", () => {
 		};
 
 		const result = await storeListItem({
-			publicListId: testListPublicId,
+			publicListId: testPublicListId,
 			movie: watchedMovie,
 			now: new Date("2026-03-21T00:00:00.000Z"),
 		});
@@ -560,7 +560,7 @@ describe("storeMovie", () => {
 		};
 
 		const firstResult = await storeListItem({
-			publicListId: testListPublicId,
+			publicListId: testPublicListId,
 			movie: firstMovie,
 			now: new Date(),
 		});
@@ -568,7 +568,7 @@ describe("storeMovie", () => {
 		expect(firstResult.success).toBe(true);
 
 		const secondResult = await storeListItem({
-			publicListId: testListPublicId,
+			publicListId: testPublicListId,
 			movie: secondMovie,
 			now: new Date(),
 		});
@@ -642,7 +642,7 @@ describe("storeMovie", () => {
 		};
 
 		const result = await storeListItem({
-			publicListId: testListPublicId,
+			publicListId: testPublicListId,
 			movie: invalidMovie,
 			now: new Date(),
 		});

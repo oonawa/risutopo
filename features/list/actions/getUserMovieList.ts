@@ -7,15 +7,15 @@ import { getUserListService } from "../services/getUserListService";
 import { userListId } from "../repositories/server/listRepository";
 
 const getUserMovieListSchema = z.object({
-	listPublicId: z.uuid(),
+	publicListId: z.uuid(),
 	userId: z.int(),
 });
 
 export async function getUserMovieList(
-	listPublicId: string,
+	publicListId: string,
 	userId: number,
 ): Promise<Result<ListItem[]>> {
-	const parsed = getUserMovieListSchema.safeParse({ listPublicId, userId });
+	const parsed = getUserMovieListSchema.safeParse({ publicListId, userId });
 
 	if (!parsed.success) {
 		return {
@@ -27,7 +27,7 @@ export async function getUserMovieList(
 		};
 	}
 
-	const listId = await userListId(userId, listPublicId);
+	const listId = await userListId(userId, publicListId);
 
 	if (!listId) {
 		return {

@@ -150,9 +150,9 @@ async function insertExistingListItem({
 	return insertedListItem.id;
 }
 
-function expectSyncSuccess(
-	result: Result<{ publicListId: string }>,
-): { publicListId: string } {
+function expectSyncSuccess(result: Result<{ publicListId: string }>): {
+	publicListId: string;
+} {
 	if (!result.success) {
 		throw new Error(
 			`syncUserList が失敗しました: ${result.error.code} ${result.error.message}`,
@@ -165,7 +165,7 @@ function expectSyncSuccess(
 describe("syncUserList", () => {
 	let userId = 0;
 	let listId = 0;
-	let listPublicId = "";
+	let PublicListId = "";
 
 	beforeEach(async () => {
 		mockCurrentUserId.mockReset();
@@ -198,7 +198,7 @@ describe("syncUserList", () => {
 			});
 
 		listId = list.id;
-		listPublicId = list.publicId;
+		PublicListId = list.publicId;
 
 		mockCurrentUserId.mockResolvedValue({
 			success: true,
@@ -247,7 +247,7 @@ describe("syncUserList", () => {
 		});
 		const data = expectSyncSuccess(result);
 
-		expect(data.publicListId).toBe(listPublicId);
+		expect(data.publicListId).toBe(PublicListId);
 
 		const storedListItems = await db
 			.select({
@@ -351,7 +351,7 @@ describe("syncUserList", () => {
 		});
 		const data = expectSyncSuccess(result);
 
-		expect(data.publicListId).toBe(listPublicId);
+		expect(data.publicListId).toBe(PublicListId);
 
 		const storedListItems = await db
 			.select({
@@ -404,7 +404,7 @@ describe("syncUserList", () => {
 		});
 		const data = expectSyncSuccess(result);
 
-		expect(data.publicListId).toBe(listPublicId);
+		expect(data.publicListId).toBe(PublicListId);
 
 		const [storedListItem] = await db
 			.select({
@@ -473,7 +473,7 @@ describe("syncUserList", () => {
 		});
 		const data = expectSyncSuccess(result);
 
-		expect(data.publicListId).toBe(listPublicId);
+		expect(data.publicListId).toBe(PublicListId);
 		const storedListItems = await db
 			.select({
 				id: listItemsTable.id,
@@ -540,7 +540,7 @@ describe("syncUserList", () => {
 		});
 		const data = expectSyncSuccess(result);
 
-		expect(data.publicListId).toBe(listPublicId);
+		expect(data.publicListId).toBe(PublicListId);
 
 		const storedListItems = await db
 			.select({
@@ -636,12 +636,10 @@ describe("syncUserList", () => {
 				publicId: crypto.randomUUID(),
 			})
 			.returning({ id: usersTable.id });
-		await db
-			.insert(listsTable)
-			.values({
-				publicId: crypto.randomUUID(),
-				userId: otherUser.id,
-			})
+		await db.insert(listsTable).values({
+			publicId: crypto.randomUUID(),
+			userId: otherUser.id,
+		});
 
 		await db.delete(listsTable).where(eq(listsTable.id, listId));
 

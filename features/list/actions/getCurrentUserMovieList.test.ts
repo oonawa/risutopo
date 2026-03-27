@@ -109,8 +109,8 @@ async function loginAsUser({
 describe("getCurrentUserMovieList", () => {
 	let userAId = 0;
 	let userBId = 0;
-	let userAListPublicId = "";
-	let userBListPublicId = "";
+	let userAPublicListId = "";
+	let userBPublicListId = "";
 	const now = new Date("2026-03-12T00:00:00.000Z");
 
 	beforeEach(async () => {
@@ -147,13 +147,13 @@ describe("getCurrentUserMovieList", () => {
 		userAId = userA.id;
 		userBId = userB.id;
 
-		userAListPublicId = crypto.randomUUID();
-		userBListPublicId = crypto.randomUUID();
+		userAPublicListId = crypto.randomUUID();
+		userBPublicListId = crypto.randomUUID();
 
 		const [userAList] = await db
 			.insert(listsTable)
 			.values({
-				publicId: userAListPublicId,
+				publicId: userAPublicListId,
 				userId: userAId,
 			})
 			.returning({ id: listsTable.id });
@@ -161,7 +161,7 @@ describe("getCurrentUserMovieList", () => {
 		const [userBList] = await db
 			.insert(listsTable)
 			.values({
-				publicId: userBListPublicId,
+				publicId: userBPublicListId,
 				userId: userBId,
 			})
 			.returning({ id: listsTable.id });
@@ -220,7 +220,7 @@ describe("getCurrentUserMovieList", () => {
 			now,
 		});
 
-		const result = await getCurrentUserMovieList(userAListPublicId);
+		const result = await getCurrentUserMovieList(userAPublicListId);
 
 		expect(mockCookies).toHaveBeenCalledTimes(1);
 		expect(result).toEqual({
@@ -257,7 +257,7 @@ describe("getCurrentUserMovieList", () => {
 			now,
 		});
 
-		const result = await getCurrentUserMovieList(userBListPublicId);
+		const result = await getCurrentUserMovieList(userBPublicListId);
 
 		expect(result).toEqual({
 			success: false,
@@ -269,7 +269,7 @@ describe("getCurrentUserMovieList", () => {
 	});
 
 	it("ユーザーはログイン中でなければリストアイテムを取得できない", async () => {
-		const result = await getCurrentUserMovieList(userAListPublicId);
+		const result = await getCurrentUserMovieList(userAPublicListId);
 
 		expect(mockCookies).toHaveBeenCalledTimes(1);
 		expect(result).toEqual({

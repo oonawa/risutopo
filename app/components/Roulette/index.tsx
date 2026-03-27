@@ -86,16 +86,21 @@ export default function Roulette({ items }: Props) {
 						initial={{ height: 0, opacity: 0 }}
 						animate={{ height: "auto", opacity: 1 }}
 						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.3, ease: "easeInOut" }}
+						transition={{ duration: 0.2, ease: "easeInOut" }}
 						className="w-full overflow-hidden py-4 text-center"
 					>
-						<div className="w-full bg-background-dark-2 rounded-2xl py-10">
+						<Button
+							onClick={() => {
+								setIsLacking(false);
+							}}
+							className="w-full gap-2 bg-background-dark-2 rounded-2xl py-10 cursor-pointer"
+						>
 							<h3 className="font-bold">
 								あと
 								<span className="text-xl px-1">{2 - list.length}本</span>
 								リスト登録してください！
 							</h3>
-						</div>
+						</Button>
 					</motion.div>
 				)}
 
