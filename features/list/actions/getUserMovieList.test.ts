@@ -30,8 +30,8 @@ async function findStreamingServiceIdBySlug(slug: "netflix" | "hulu") {
 describe("getUserMovieList", () => {
 	let userAId = 0;
 	let userBId = 0;
-	let userAListPublicId = "";
-	let userBListPublicId = "";
+	let userAPublicListId = "";
+	let userBPublicListId = "";
 
 	beforeEach(async () => {
 		await db.delete(listItemsTable);
@@ -63,13 +63,13 @@ describe("getUserMovieList", () => {
 		userAId = userA.id;
 		userBId = userB.id;
 
-		userAListPublicId = crypto.randomUUID();
-		userBListPublicId = crypto.randomUUID();
+		userAPublicListId = crypto.randomUUID();
+		userBPublicListId = crypto.randomUUID();
 
 		const [userAList] = await db
 			.insert(listsTable)
 			.values({
-				publicId: userAListPublicId,
+				publicId: userAPublicListId,
 				userId: userAId,
 			})
 			.returning({ id: listsTable.id });
@@ -77,7 +77,7 @@ describe("getUserMovieList", () => {
 		const [userBList] = await db
 			.insert(listsTable)
 			.values({
-				publicId: userBListPublicId,
+				publicId: userBPublicListId,
 				userId: userBId,
 			})
 			.returning({ id: listsTable.id });
@@ -85,35 +85,38 @@ describe("getUserMovieList", () => {
 		const netflixId = await findStreamingServiceIdBySlug("netflix");
 		const huluId = await findStreamingServiceIdBySlug("hulu");
 
-		const insertedListItems = await db.insert(listItemsTable).values([
-			{
-				publicId: "get-user-movie-list-user-a-item-1",
-				listId: userAList.id,
-				streamingServiceId: netflixId,
-				watchUrl: "https://www.netflix.com/jp/title/60002360",
-				titleOnService: "ユーザーAの映画1",
-				createdAt: new Date("2026-03-12T00:00:00.000Z"),
-			},
-			{
-				publicId: "get-user-movie-list-user-a-item-2",
-				listId: userAList.id,
-				streamingServiceId: huluId,
-				watchUrl: "https://www.hulu.jp/watch/test-user-a",
-				titleOnService: "ユーザーAの映画2",
-				createdAt: new Date("2026-03-11T00:00:00.000Z"),
-			},
-			{
-				publicId: "get-user-movie-list-user-b-item-1",
-				listId: userBList.id,
-				streamingServiceId: netflixId,
-				watchUrl: "https://www.netflix.com/jp/title/80100172",
-				titleOnService: "ユーザーBの映画1",
-				createdAt: new Date("2026-03-10T00:00:00.000Z"),
-			},
-		]).returning({
-			id: listItemsTable.id,
-			publicId: listItemsTable.publicId,
-		});
+		const insertedListItems = await db
+			.insert(listItemsTable)
+			.values([
+				{
+					publicId: "get-user-movie-list-user-a-item-1",
+					listId: userAList.id,
+					streamingServiceId: netflixId,
+					watchUrl: "https://www.netflix.com/jp/title/60002360",
+					titleOnService: "ユーザーAの映画1",
+					createdAt: new Date("2026-03-12T00:00:00.000Z"),
+				},
+				{
+					publicId: "get-user-movie-list-user-a-item-2",
+					listId: userAList.id,
+					streamingServiceId: huluId,
+					watchUrl: "https://www.hulu.jp/watch/test-user-a",
+					titleOnService: "ユーザーAの映画2",
+					createdAt: new Date("2026-03-11T00:00:00.000Z"),
+				},
+				{
+					publicId: "get-user-movie-list-user-b-item-1",
+					listId: userBList.id,
+					streamingServiceId: netflixId,
+					watchUrl: "https://www.netflix.com/jp/title/80100172",
+					titleOnService: "ユーザーBの映画1",
+					createdAt: new Date("2026-03-10T00:00:00.000Z"),
+				},
+			])
+			.returning({
+				id: listItemsTable.id,
+				publicId: listItemsTable.publicId,
+			});
 
 		const watchedListItem = insertedListItems.find(
 			(item) => item.publicId === "get-user-movie-list-user-a-item-2",
@@ -130,7 +133,7 @@ describe("getUserMovieList", () => {
 	});
 
 	it("ユーザーは自身のリストアイテム全件を取得できる", async () => {
-		const result = await getUserMovieList(userAListPublicId, userAId);
+		const result = await getUserMovieList(userAPublicListId, userAId);
 
 		expect(result).toEqual({
 			success: true,
@@ -160,7 +163,7 @@ describe("getUserMovieList", () => {
 	});
 
 	it("ユーザーは他ユーザーのリストアイテムを取得できない", async () => {
-		const result = await getUserMovieList(userBListPublicId, userAId);
+		const result = await getUserMovieList(userBPublicListId, userAId);
 
 		expect(result).toEqual({
 			success: false,

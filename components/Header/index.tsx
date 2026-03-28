@@ -1,11 +1,24 @@
 import Logo from "../Logo";
+import DrawerMenu from "./DrawerMenu";
 
-export default function Header() {
+type Props = {
+	isLoggedIn: boolean;
+};
+
+export default function Header({ isLoggedIn }: Props) {
 	return (
-		<header className="h-(--header-height) flex justify-center items-center border-b border-background-light-1">
-			<a href="/" className="aspect-square w-10">
-				<Logo />
-			</a>
+		<header className="relative h-(--header-height) flex justify-center items-center border-b border-background-light-1">
+			<div className="w-full h-full max-w-2xl flex justify-center">
+				<div className="w-full h-full flex items-center py-4 pl-4">
+					<DrawerMenu isLoggedIn={isLoggedIn} />
+				</div>
+
+				<div className="h-full aspect-square flex justify-center items-center absolute">
+					<a href="/">
+						<Logo className="size-10" />
+					</a>
+				</div>
+			</div>
 		</header>
 	);
 }

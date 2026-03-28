@@ -55,11 +55,11 @@ export async function userListIdAndPublicListId(userId: number) {
 	return list ? list : null;
 }
 
-export async function findListIdByPublicId(listPublicId: string) {
+export async function findListIdByPublicId(publicListId: string) {
 	const [list] = await db
 		.select({ id: listsTable.id })
 		.from(listsTable)
-		.where(eq(listsTable.publicId, listPublicId));
+		.where(eq(listsTable.publicId, publicListId));
 
 	return list?.id ?? null;
 }

@@ -1,12 +1,12 @@
 "use server";
 
 import type { Result } from "@/features/shared/types/Result";
-import { getUserMovieListPublicIdService } from "../services/getUserListPublicIdService";
+import { getPublicListIdService } from "../services/getPublicListIdService";
 
-export async function getUserMovieListPublicId(
+export async function getPublicListId(
 	userId: number,
 ): Promise<Result<{ publicListId: string }>> {
-	const publicListId = await getUserMovieListPublicIdService(userId);
+	const publicListId = await getPublicListIdService(userId);
 
 	if (!publicListId) {
 		return {

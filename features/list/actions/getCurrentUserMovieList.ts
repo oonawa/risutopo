@@ -8,13 +8,13 @@ import { currentUserId } from "@/features/shared/actions/currentUserId";
 import { userListId } from "../repositories/server/listRepository";
 
 const getCurrentUserMovieListSchema = z.object({
-	listPublicId: z.uuid(),
+	publicListId: z.uuid(),
 });
 
 export async function getCurrentUserMovieList(
-	listPublicId: string,
+	publicListId: string,
 ): Promise<Result<ListItem[]>> {
-	const parsed = getCurrentUserMovieListSchema.safeParse({ listPublicId });
+	const parsed = getCurrentUserMovieListSchema.safeParse({ publicListId });
 
 	if (!parsed.success) {
 		return {
@@ -38,7 +38,7 @@ export async function getCurrentUserMovieList(
 		};
 	}
 
-	const listId = await userListId(result.data.userId, listPublicId);
+	const listId = await userListId(result.data.userId, publicListId);
 
 	if (!listId) {
 		return {

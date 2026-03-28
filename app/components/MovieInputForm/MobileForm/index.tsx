@@ -34,7 +34,7 @@ export default function MobileForm({ disabled, handleExtract }: Props) {
 			<div className="w-full flex flex-col">
 				<FormTextarea
 					className="min-h-[calc(6lh+(calc(var(--spacing)*4)))] md:min-h-[calc(4lh+(calc(var(--spacing)*4)))] break-all placeholder:break-all"
-					placeholder={`作品ページの共有リンクを入力\n\n「 ジュラシック・パーク 」 をNetflix で今 す ぐチ ェ ッ クhttps://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more`}
+					placeholder={`ここへ作品ページの共有リンクを入力\n\n例：\n「 ジュラシック・パーク 」 をNetflix で今 す ぐチ ェ ッ クhttps://www.netflix.com/jp/title/60002360?s=i&trkid=258593161&vlang=ja&trg=more`}
 					disabled={disabled}
 					{...valueField}
 					onChange={(event) => {
