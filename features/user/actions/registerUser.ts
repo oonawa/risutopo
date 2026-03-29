@@ -109,14 +109,10 @@ export async function registerUser({
 				email,
 			});
 
-			const normalizedPublicListId =
-				normalizedLocalList.listId.length > 0
-					? normalizedLocalList.listId
-					: crypto.randomUUID();
 			const [newList] = await tx
 				.insert(listsTable)
 				.values({
-					publicId: normalizedPublicListId,
+					publicId: crypto.randomUUID(),
 					userId: newUser.id,
 				})
 				.returning({

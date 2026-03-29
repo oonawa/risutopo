@@ -6,6 +6,22 @@ export const usersTable = sqliteTable("users_table", {
 	publicId: text().notNull().unique(),
 });
 
+export const deletedUsersTable = sqliteTable("deleted_users_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	publicId: text("public_id").notNull(),
+	deletedAt: int("deleted_at", { mode: "timestamp" }).notNull(),
+});
+
+export const deleteIntentTokensTable = sqliteTable("delete_intent_tokens_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	token: text("token").notNull().unique(),
+	userId: int("user_id")
+		.notNull()
+		.references(() => usersTable.id, { onDelete: "cascade" }),
+	expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+});
+
 export const userEmailsTable = sqliteTable("user_emails_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	userId: int("user_id")
@@ -79,7 +95,7 @@ export const listsTable = sqliteTable("lists_table", {
 	userId: int()
 		.notNull()
 		.unique()
-		.references(() => usersTable.id),
+		.references(() => usersTable.id, { onDelete: "cascade" }),
 });
 
 export const listItemsTable = sqliteTable(
@@ -89,7 +105,7 @@ export const listItemsTable = sqliteTable(
 		publicId: text().notNull().unique(),
 		listId: int()
 			.notNull()
-			.references(() => listsTable.id),
+			.references(() => listsTable.id, { onDelete: "cascade" }),
 		streamingServiceId: int()
 			.notNull()
 			.references(() => streamingServicesTable.id),
@@ -141,6 +157,7 @@ export const loginCodesTable = sqliteTable("login_codes_table", {
 });
 
 export const sessionTokensTable = sqliteTable("session_tokens_table", {
+	id: int().primaryKey({ autoIncrement: true }),
 	token: text("token").notNull().unique(),
 	email: text("email").notNull(),
 	userId: int("user_id")
@@ -153,16 +170,14 @@ export const sessionTokensTable = sqliteTable("session_tokens_table", {
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
 });
 
-export const tempSessionTokensTable = sqliteTable(
-	"temp_session_tokens_table",
-	{
-		token: text("token").notNull().unique(),
-		email: text("email").notNull(),
-		deviceId: text("device_id").notNull(),
-		expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
-		createdAt: int("created_at", { mode: "timestamp" }).notNull(),
-	},
-);
+export const tempSessionTokensTable = sqliteTable("temp_session_tokens_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	token: text("token").notNull().unique(),
+	email: text("email").notNull(),
+	deviceId: text("device_id").notNull(),
+	expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+});
 
 export const loginAttemptsTable = sqliteTable("login_attempts_table", {
 	id: int().primaryKey({ autoIncrement: true }),
