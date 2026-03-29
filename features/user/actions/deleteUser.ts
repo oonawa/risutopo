@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { verifySessionTokenService } from "@/features/auth/services/verifySessionTokenService";
-import { verifyDeleteIntentTokenService } from "@/features/auth/services/verifyDeleteIntentTokenService";
+import { verifyReauthTokenService } from "@/features/auth/services/verifyReauthTokenService";
 import type { Result } from "@/features/shared/types/Result";
 import { deleteUserService } from "../services/deleteUserService";
 
@@ -10,7 +10,7 @@ export async function deleteUser(): Promise<Result> {
 	const now = new Date();
 	const cookieStore = await cookies();
 	const sessionToken = cookieStore.get("session_token")?.value;
-	const deleteIntentToken = cookieStore.get("delete_intent_token")?.value;
+	const reauthToken = cookieStore.get("delete_account_reauth_token")?.value;
 
 	if (!sessionToken) {
 		return {
@@ -22,7 +22,7 @@ export async function deleteUser(): Promise<Result> {
 		};
 	}
 
-	if (!deleteIntentToken) {
+	if (!reauthToken) {
 		return {
 			success: false,
 			error: {
@@ -43,15 +43,15 @@ export async function deleteUser(): Promise<Result> {
 		};
 	}
 
-	const verifiedIntent = await verifyDeleteIntentTokenService({
-		token: deleteIntentToken,
+	const verifiedReauth = await verifyReauthTokenService({
+		token: reauthToken,
 		now,
 	});
-	if (!verifiedIntent.success) {
-		return verifiedIntent;
+	if (!verifiedReauth.success) {
+		return verifiedReauth;
 	}
 
-	if (verifiedSession.data.userId !== verifiedIntent.data.userId) {
+	if (verifiedSession.data.userId !== verifiedReauth.data.userId) {
 		return {
 			success: false,
 			error: {
@@ -71,7 +71,7 @@ export async function deleteUser(): Promise<Result> {
 	}
 
 	cookieStore.delete("session_token");
-	cookieStore.delete("delete_intent_token");
+	cookieStore.delete("delete_account_reauth_token");
 
 	return { success: true };
 }

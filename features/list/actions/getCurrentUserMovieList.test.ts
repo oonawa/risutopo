@@ -60,16 +60,13 @@ async function findStreamingServiceIdBySlug(slug: "netflix" | "hulu") {
 
 async function generateSessionToken({
 	userId,
-	email,
 	deviceId,
 }: {
 	userId: number;
-	email: string;
 	deviceId: string;
 }) {
 	return await new SignJWT({
 		userId: userId.toString(),
-		email,
 		deviceId,
 		type: "session_token",
 	})
@@ -81,22 +78,18 @@ async function generateSessionToken({
 
 async function loginAsUser({
 	userId,
-	email,
 	now,
 }: {
 	userId: number;
-	email: string;
 	now: Date;
 }) {
 	const sessionToken = await generateSessionToken({
 		userId,
-		email,
 		deviceId: "test-device-id",
 	});
 
 	await db.insert(sessionTokensTable).values({
 		token: sessionToken,
-		email,
 		userId,
 		deviceId: "test-device-id",
 		expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
@@ -216,7 +209,6 @@ describe("getCurrentUserMovieList", () => {
 	it("ログイン中ユーザーは自身のリストアイテム全件を取得できる", async () => {
 		await loginAsUser({
 			userId: userAId,
-			email: "get-current-user-movie-list-user-a@example.com",
 			now,
 		});
 
@@ -253,7 +245,6 @@ describe("getCurrentUserMovieList", () => {
 	it("ユーザーは他ユーザーのリストアイテムを取得できない", async () => {
 		await loginAsUser({
 			userId: userAId,
-			email: "get-current-user-movie-list-user-a@example.com",
 			now,
 		});
 
@@ -284,7 +275,6 @@ describe("getCurrentUserMovieList", () => {
 	it("ユーザーは存在しないリストからリストアイテムを取得できない", async () => {
 		await loginAsUser({
 			userId: userAId,
-			email: "get-current-user-movie-list-user-a@example.com",
 			now,
 		});
 

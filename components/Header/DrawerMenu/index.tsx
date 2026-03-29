@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "../../ui/button";
 import PersonIcon from "../../ui/Icons/PersonIcon";
+import ArrowCircleRightIcon from "@/components/ui/Icons/ArrowCircleRightIcon";
 
 type Props = {
 	isLoggedIn: boolean;
@@ -41,33 +42,63 @@ export default function DrawerMenu({ isLoggedIn }: Props) {
 			<DrawerContent className="data-[vaul-drawer-direction=bottom]:border-t-0 pb-16">
 				<DrawerHeader>
 					<DrawerTitle className="text-xl font-bold text-foreground-dark-2">
-						メニュー
+						設定
 					</DrawerTitle>
 				</DrawerHeader>
 
 				<div className="flex justify-center">
-					<div className="flex flex-col items-center gap-4 px-4 w-full sm:max-w-[40dvw]">
+					<div className="flex flex-col items-center gap-4 md:gap-6 p-4 w-full sm:max-w-[50dvw]">
 						{isLoggedIn ? (
 							<>
-								<Button
-									onClick={onLogout}
-									disabled={isPending}
-									variant={"outline"}
-									className="w-full rounded-full border-background-light-1 hover:bg-background-light-1"
-								>
-									ログアウト
-								</Button>
+								<div className="p-4 w-full border border-background-light-1 rounded-xl">
+									<div className="flex flex-col gap-2 pb-4">
+										<h3 className="text-lg font-bold text-foreground-dark-2">
+											メールアドレスの変更
+										</h3>
+										<p className="text-sm text-foreground-dark-1">
+											ログインにつかうメールアドレスの確認・変更
+										</p>
+									</div>
+									<DrawerClose asChild>
+										<Link
+											href={"/settings/change-email/verify"}
+											className="flex items-center justify-center py-2 px-4 w-full rounded-full border border-background-light-1 hover:bg-background-light-1 transition-colors"
+										>
+											<span className="flex items-center gap-4">
+												変更する
+												<ArrowCircleRightIcon className="text-foreground-dark-2 size-5" />
+											</span>
+										</Link>
+									</DrawerClose>
+								</div>
 
-								<DrawerClose asChild>
-									<Button
-										onClick={() => router.push("/account-delete/verify")}
-										disabled={isPending}
-										variant={"outline"}
-										className="w-full rounded-full border-red-light-2 hover:bg-red-light-1"
-									>
-										アカウント削除
-									</Button>
-								</DrawerClose>
+								<div className="p-4 w-full border border-background-light-1 rounded-xl">
+									<div className="pb-4">
+										<h3 className="text-lg font-bold text-foreground-dark-2">
+											アカウント
+										</h3>
+									</div>
+
+									<div className="flex flex-col gap-4">
+										<Button
+											onClick={onLogout}
+											disabled={isPending}
+											variant={"outline"}
+											className="w-full min-h-10.5 text-base rounded-full border-background-light-1 hover:bg-background-light-1"
+										>
+											ログアウト
+										</Button>
+
+										<DrawerClose asChild>
+											<Link
+												href={"/settings/account-delete/verify"}
+												className="w-full flex justify-center py-2 rounded-full border border-red-light-2 hover:bg-red-light-1"
+											>
+												アカウント削除
+											</Link>
+										</DrawerClose>
+									</div>
+								</div>
 							</>
 						) : (
 							<DrawerClose asChild>

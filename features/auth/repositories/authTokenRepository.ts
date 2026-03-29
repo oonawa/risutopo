@@ -1,7 +1,7 @@
 import type { Tx } from "@/db/client";
 import { db } from "@/db/client";
 import {
-	deleteIntentTokensTable,
+	reauthTokensTable,
 	loginCodesTable,
 	sessionTokensTable,
 	tempSessionTokensTable,
@@ -103,7 +103,6 @@ export async function insertSessionToken({
 	tx,
 	sessionToken,
 	deviceId,
-	email,
 	userId,
 	now,
 	expiresAt,
@@ -111,7 +110,6 @@ export async function insertSessionToken({
 	tx: Tx;
 	sessionToken: string;
 	deviceId: string;
-	email: string;
 	userId: number;
 	now: Date;
 	expiresAt: Date;
@@ -119,7 +117,6 @@ export async function insertSessionToken({
 	await tx.insert(sessionTokensTable).values({
 		token: sessionToken,
 		deviceId,
-		email,
 		userId,
 		createdAt: now,
 		expiresAt,
@@ -150,7 +147,7 @@ export async function insertTempToken({
 	});
 }
 
-export async function insertDeleteIntentToken({
+export async function insertReauthToken({
 	tx,
 	token,
 	userId,
@@ -163,7 +160,7 @@ export async function insertDeleteIntentToken({
 	expiresAt: Date;
 	createdAt: Date;
 }) {
-	await tx.insert(deleteIntentTokensTable).values({
+	await tx.insert(reauthTokensTable).values({
 		token,
 		userId,
 		expiresAt,
@@ -171,23 +168,37 @@ export async function insertDeleteIntentToken({
 	});
 }
 
-export async function searchDeleteIntentToken({
+export async function searchReauthToken({
+	tx,
 	token,
 	now,
 }: {
+	tx?: Tx;
 	token: string;
 	now: Date;
 }) {
-	const [record] = await db
-		.select({ userId: deleteIntentTokensTable.userId })
-		.from(deleteIntentTokensTable)
+	const executor = tx || db;
+	const [record] = await executor
+		.select({ userId: reauthTokensTable.userId })
+		.from(reauthTokensTable)
 		.where(
 			and(
-				eq(deleteIntentTokensTable.token, token),
-				gt(deleteIntentTokensTable.expiresAt, now),
+				eq(reauthTokensTable.token, token),
+				gt(reauthTokensTable.expiresAt, now),
 			),
 		);
 
 	return record ?? null;
+}
+
+export async function deleteReauthToken({
+	tx,
+	token,
+}: {
+	tx?: Tx;
+	token: string;
+}) {
+	const executor = tx || db;
+	await executor.delete(reauthTokensTable).where(eq(reauthTokensTable.token, token));
 }
 

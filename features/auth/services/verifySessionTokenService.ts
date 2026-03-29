@@ -29,13 +29,13 @@ export async function verifySessionTokenService({
 			};
 		}
 
-		const { userId, email, deviceId } = payload;
+		const { userId, deviceId } = payload;
 
 		const isString = (propName: unknown): propName is string => {
 			return typeof propName === "string";
 		};
 
-		if (!isString(userId) || !isString(email) || !isString(deviceId)) {
+		if (!isString(userId) || !isString(deviceId)) {
 			console.error("セッションの検証中に内部エラーが発生しました。");
 			console.error(JSON.stringify(payload));
 
@@ -67,7 +67,6 @@ export async function verifySessionTokenService({
 		const [record] = await db
 			.select({
 				userId: sessionTokensTable.userId,
-				email: sessionTokensTable.email,
 				deviceId: sessionTokensTable.deviceId,
 			})
 			.from(sessionTokensTable)
@@ -75,7 +74,6 @@ export async function verifySessionTokenService({
 				and(
 					eq(sessionTokensTable.token, sessionToken),
 					eq(sessionTokensTable.userId, parsedUserId),
-					eq(sessionTokensTable.email, email),
 					eq(sessionTokensTable.deviceId, deviceId),
 					gt(sessionTokensTable.expiresAt, now),
 				),

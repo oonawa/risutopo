@@ -1,0 +1,1 @@
+ALTER TABLE `session_tokens_table` DROP COLUMN `email`;

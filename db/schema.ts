@@ -12,7 +12,7 @@ export const deletedUsersTable = sqliteTable("deleted_users_table", {
 	deletedAt: int("deleted_at", { mode: "timestamp" }).notNull(),
 });
 
-export const deleteIntentTokensTable = sqliteTable("delete_intent_tokens_table", {
+export const reauthTokensTable = sqliteTable("reauth_tokens_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	token: text("token").notNull().unique(),
 	userId: int("user_id")
@@ -159,7 +159,6 @@ export const loginCodesTable = sqliteTable("login_codes_table", {
 export const sessionTokensTable = sqliteTable("session_tokens_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	token: text("token").notNull().unique(),
-	email: text("email").notNull(),
 	userId: int("user_id")
 		.notNull()
 		.references(() => usersTable.id, {

@@ -138,7 +138,6 @@ export async function registerUser({
 
 			const sessionToken = await generateSessionToken({
 				userId: newUser.id,
-				email,
 				deviceId,
 			});
 			const expiresAt = addDays(now, 30);
@@ -146,7 +145,6 @@ export async function registerUser({
 			await tx.insert(sessionTokensTable).values({
 				token: sessionToken,
 				deviceId,
-				email,
 				userId: newUser.id,
 				expiresAt: expiresAt,
 				createdAt: now,

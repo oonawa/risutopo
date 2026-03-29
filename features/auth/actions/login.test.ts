@@ -154,7 +154,7 @@ describe("login", () => {
 		const [savedSessionToken] = await db
 			.select()
 			.from(sessionTokensTable)
-			.where(eq(sessionTokensTable.email, email));
+			.where(eq(sessionTokensTable.token, cookieValue));
 
 		expect(savedSessionToken).toBeDefined();
 		if (!savedSessionToken) {

@@ -47,16 +47,13 @@ vi.mock("next/headers", () => ({
 
 async function generateSessionToken({
 	userId,
-	email,
 	deviceId,
 }: {
 	userId: number;
-	email: string;
 	deviceId: string;
 }) {
 	return await new SignJWT({
 		userId: userId.toString(),
-		email,
 		deviceId,
 		type: "session_token",
 	})
@@ -92,13 +89,11 @@ describe("logout", () => {
 		userId = user.id;
 		sessionToken = await generateSessionToken({
 			userId,
-			email,
 			deviceId,
 		});
 
 		await db.insert(sessionTokensTable).values({
 			token: sessionToken,
-			email,
 			userId,
 			deviceId,
 			expiresAt: new Date("2026-04-27T00:00:00.000Z"),
@@ -139,13 +134,11 @@ describe("logout", () => {
 		const otherDeviceId = "logout-test-other-device-id";
 		const otherSessionToken = await generateSessionToken({
 			userId,
-			email,
 			deviceId: otherDeviceId,
 		});
 
 		await db.insert(sessionTokensTable).values({
 			token: otherSessionToken,
-			email,
 			userId,
 			deviceId: otherDeviceId,
 			expiresAt: new Date("2026-04-27T00:00:00.000Z"),

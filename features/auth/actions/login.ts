@@ -48,7 +48,7 @@ export async function login(
 			success: false,
 			error: {
 				code: "VALIDATION_ERROR",
-				message: `試行回数が上限に達しました。${minutesUntilRetry}分後に再度お試しください。`,
+				message: `試行回数が上限に達しています。${minutesUntilRetry}分後に再度お試しください。`,
 			},
 		};
 	}

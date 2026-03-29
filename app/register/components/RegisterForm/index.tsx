@@ -3,12 +3,14 @@
 import type z from "zod";
 import { redirect } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import { userIdSchema } from "@/features/user/schemas/userIdSchema";
 import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
 import { registerUser } from "@/features/user/actions/registerUser";
+import Layout from "@/app/components/auth/VerifyForm/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -128,50 +130,49 @@ export default function RegisterForm({ email, token }: Props) {
 	};
 
 	return (
-		<div className="h-[calc(100dvh-var(--header-height)-var(--navigation-height))] w-dvw flex items-center justify-center">
-			<div className="flex flex-col items-center justify-center w-full max-w-150 px-4">
-				<div className="w-full h-full flex items-center">
-					<form
-						className="w-full flex flex-col gap-4"
-						onSubmit={handleSubmit(onSubmit)}
-					>
-						<label htmlFor="userId" className="flex flex-col gap-1">
-							<Input
-								className="border-background-light-2 focus-visible:ring-2 focus-visible:ring-background-light-2 px-2 transition-shadow duration-300"
-								placeholder="ユーザーIDを入力"
-								type="text"
-								id="userId"
-								onChange={(e) => {
-									setServerError("");
-									return onUserIdChange(e);
-								}}
-								disabled={isPendingRegister}
-								{...userIdRegisterRest}
-							/>
-							<div className="flex items-center text-xs text-foreground-dark-3">
-								{message() ??
-									"3〜20文字以内で半角の英字 / 数字 / アンダースコアが使えます。"}
-							</div>
-						</label>
+		<Layout title="ようこそ！">
+			<motion.form
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ duration: 0.3 }}
+				className="w-full flex flex-col gap-4"
+				onSubmit={handleSubmit(onSubmit)}
+			>
+				<label htmlFor="userId" className="flex flex-col gap-1">
+					<Input
+						className="border-background-light-2 focus-visible:ring-2 focus-visible:ring-background-light-2 px-2 transition-shadow duration-300"
+						placeholder="ユーザーIDを入力"
+						type="text"
+						id="userId"
+						onChange={(e) => {
+							setServerError("");
+							return onUserIdChange(e);
+						}}
+						disabled={isPendingRegister}
+						{...userIdRegisterRest}
+					/>
+					<div className="flex items-center text-xs text-foreground-dark-3">
+						{message() ??
+							"3〜20文字。半角の英字 / 数字 / アンダースコア記号が使えます。"}
+					</div>
+				</label>
 
-						<Button
-							type="submit"
-							disabled={
-								!debouncedValue || 
-								errors.userId !== undefined ||
-								isChecking ||
-								isDuplicate ||
-								serverError.length > 0 ||
-								isPendingRegister
-							}
-							className="cursor-pointer border-background-light-2 hover:bg-background-light-1 text-foreground-dark-2"
-							variant="outline"
-						>
-							登録
-						</Button>
-					</form>
-				</div>
-			</div>
-		</div>
+				<Button
+					type="submit"
+					disabled={
+						!debouncedValue ||
+						errors.userId !== undefined ||
+						isChecking ||
+						isDuplicate ||
+						serverError.length > 0 ||
+						isPendingRegister
+					}
+					className="cursor-pointer border-background-light-2 hover:bg-background-light-1 text-foreground-dark-2"
+					variant="outline"
+				>
+					登録
+				</Button>
+			</motion.form>
+		</Layout>
 	);
 }

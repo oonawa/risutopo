@@ -51,18 +51,15 @@ function getSecretKey(): Uint8Array {
 
 export async function generateSessionToken({
 	userId,
-	email,
 	deviceId,
 }: {
 	userId: number;
-	email: string;
 	deviceId: string;
 }) {
 	const secretKey = getSecretKey();
 
 	return await new SignJWT({
 		userId: userId.toString(),
-		email,
 		deviceId,
 		type: "session_token",
 	})
