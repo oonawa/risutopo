@@ -2,20 +2,14 @@
 
 import type z from "zod";
 import { redirect } from "next/navigation";
-import {
-	useEffect,
-	useState,
-	useCallback,
-	useDeferredValue,
-	useTransition,
-} from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import { userIdSchema } from "@/features/user/schemas/userIdSchema";
 import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
 import { registerUser } from "@/features/user/actions/registerUser";
 import { Input } from "@/components/ui/input";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 
 type UserIdFormData = z.infer<typeof userIdSchema>;
@@ -25,16 +19,16 @@ type Props = {
 	token: string;
 };
 
+const DEBOUNCE_MS = 500;
+
 export default function RegisterForm({ email, token }: Props) {
-	const [inputValue, setInputValue] = useState("");
-
-	const deferredInputValue = useDeferredValue(inputValue);
-
-	const [isPending, startTransition] = useTransition();
-
+	const [isPendingSearch, searchTransition] = useTransition();
+	const [isPendingRegister, registerTransition] = useTransition();
 	const [isDuplicate, setIsDuplicate] = useState(false);
+	const [serverError, setServerError] = useState("");
+	const [debouncedValue, setDebouncedValue] = useState("");
 
-	const [serverErrorMessage, setServerErrorMessage] = useState<string>("");
+	const [isSearching, setIsSearching] = useState(false);
 
 	const { parseLocalList, clearLocalList } = useListLocalStorageRepository();
 
@@ -48,99 +42,136 @@ export default function RegisterForm({ email, token }: Props) {
 		mode: "onChange",
 	});
 
-	const value = watch("userId");
-
-	const handleInput = useCallback((e: React.FormEvent<HTMLInputElement>) => {
-		const inputValue = e.currentTarget.value;
-		setInputValue(inputValue);
-	}, []);
+	const value = watch("userId") ?? "";
 
 	useEffect(() => {
-		const result = userIdSchema.safeParse({ userId: deferredInputValue });
+		if (!userIdSchema.safeParse({ userId: value }).success) return;
+
+		setIsSearching(true);
+		const timer = setTimeout(() => {
+			setDebouncedValue(value);
+		}, DEBOUNCE_MS);
+
+		return () => clearTimeout(timer);
+	}, [value]);
+
+	useEffect(() => {
+		const result = userIdSchema.safeParse({ userId: debouncedValue });
 		if (!result.success) {
 			setIsDuplicate(false);
+			setIsSearching(false);
 			return;
 		}
 
 		let cancelled = false;
 
-		startTransition(async () => {
-			const count = await searchDuplicateUserId(deferredInputValue);
+		searchTransition(async () => {
+			const count = await searchDuplicateUserId(debouncedValue);
 			if (!cancelled) {
 				setIsDuplicate(count > 0);
+				setIsSearching(false);
 			}
 		});
 
 		return () => {
 			cancelled = true;
 		};
-	}, [deferredInputValue]);
+	}, [debouncedValue]);
+
+	const isChecking = isSearching || isPendingSearch;
+
+	const { onChange: onUserIdChange, ...userIdRegisterRest } =
+		register("userId");
 
 	const onSubmit = async (data: UserIdFormData) => {
 		const localUserList = parseLocalList();
+		registerTransition(async () => {
+			const result = await registerUser({
+				userId: data.userId,
+				email,
+				tempToken: token,
+				localUserList,
+				now: new Date(),
+			});
 
-		const result = await registerUser({
-			userId: data.userId,
-			email,
-			tempToken: token,
-			localUserList,
-			now: new Date(),
+			if (result.success) {
+				clearLocalList();
+				return redirect("/");
+			}
+
+			setServerError(result.error.message);
 		});
+	};
 
-		if (result.success) {
-			clearLocalList();
-			return redirect("/");
+	const message = () => {
+		if (isChecking) {
+			return <p className="text-blue-500">確認中...</p>;
 		}
 
-		setServerErrorMessage(result.error.message);
+		if (!isChecking && errors.userId) {
+			return <p>{errors.userId.message}</p>;
+		}
+
+		if (!isChecking && isDuplicate) {
+			return <p className="text-red-500">このユーザーIDは使用できません。</p>;
+		}
+
+		if (!isChecking && !isDuplicate && debouncedValue && !errors.userId) {
+			return <p className="text-green-500">このユーザーIDは利用可能です。</p>;
+		}
+
+		if (serverError) {
+			return <p className="text-red-500">{serverError}</p>;
+		}
+
+		return;
 	};
 
 	return (
-		<form
-			className="w-full flex flex-col gap-4 pb-10"
-			onSubmit={handleSubmit(onSubmit)}
-		>
-			<label htmlFor={"userId"}>ユーザーIDを入力</label>
-			<div className="flex flex-col gap-1">
-				<Input
-					className="border-background-light-2 focus-visible:ring-2 focus-visible:ring-background-light-2 px-2 transition-shadow duration-300"
-					placeholder="理想の名前を考えましょう。"
-					type="text"
-					id="userId"
-					{...register("userId")}
-					onInput={handleInput}
-				/>
-				<div className="flex items-center text-xs text-foreground-dark-3 pl-1">
-					3〜20文字以内・半角の英字・数字・アンダースコア（
-					<span className="px-1 py-0.5 text-xs bg-background-light-1 rounded-xs">
-						_
-					</span>
-					）が使えます
-				</div>
-				{isPending && <p className="text-sm text-blue-500">確認中...</p>}
-				{isDuplicate && (
-					<p className="text-sm text-red-500">
-						このユーザーIDは使用できません。
-					</p>
-				)}
-				{!isPending && !isDuplicate && value && !errors.userId && (
-					<p className="text-sm text-green-500">
-						このユーザーIDは利用可能です。
-					</p>
-				)}
-				{serverErrorMessage && (
-					<p className="text-sm text-red-500">{serverErrorMessage}</p>
-				)}
-			</div>
+		<div className="h-[calc(100dvh-var(--header-height)-var(--navigation-height))] w-dvw flex items-center justify-center">
+			<div className="flex flex-col items-center justify-center w-full max-w-150 px-4">
+				<div className="w-full h-full flex items-center">
+					<form
+						className="w-full flex flex-col gap-4"
+						onSubmit={handleSubmit(onSubmit)}
+					>
+						<label htmlFor="userId" className="flex flex-col gap-1">
+							<Input
+								className="border-background-light-2 focus-visible:ring-2 focus-visible:ring-background-light-2 px-2 transition-shadow duration-300"
+								placeholder="ユーザーIDを入力"
+								type="text"
+								id="userId"
+								onChange={(e) => {
+									setServerError("");
+									return onUserIdChange(e);
+								}}
+								disabled={isPendingRegister}
+								{...userIdRegisterRest}
+							/>
+							<div className="flex items-center text-xs text-foreground-dark-3">
+								{message() ??
+									"3〜20文字以内で半角の英字 / 数字 / アンダースコアが使えます。"}
+							</div>
+						</label>
 
-			<Button
-				type="submit"
-				disabled={!value}
-				className="cursor-pointer border-background-light-2 hover:bg-background-light-1 text-foreground-dark-2"
-				variant={"outline"}
-			>
-				登録
-			</Button>
-		</form>
+						<Button
+							type="submit"
+							disabled={
+								!debouncedValue || 
+								errors.userId !== undefined ||
+								isChecking ||
+								isDuplicate ||
+								serverError.length > 0 ||
+								isPendingRegister
+							}
+							className="cursor-pointer border-background-light-2 hover:bg-background-light-1 text-foreground-dark-2"
+							variant="outline"
+						>
+							登録
+						</Button>
+					</form>
+				</div>
+			</div>
+		</div>
 	);
 }
