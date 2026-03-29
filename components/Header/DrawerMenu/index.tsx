@@ -1,11 +1,16 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { logout } from "@/features/auth/actions/logout";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerTrigger,
 	DrawerHeader,
 	DrawerTitle,
+	DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "../../ui/button";
 import PersonIcon from "../../ui/Icons/PersonIcon";
@@ -15,6 +20,16 @@ type Props = {
 };
 
 export default function DrawerMenu({ isLoggedIn }: Props) {
+	const router = useRouter();
+	const [isPending, startTransition] = useTransition();
+
+	const onLogout = () => {
+		startTransition(async () => {
+			await logout();
+			router.push("/?home=true");
+		});
+	};
+
 	return (
 		<Drawer>
 			<DrawerTrigger asChild>
@@ -35,25 +50,34 @@ export default function DrawerMenu({ isLoggedIn }: Props) {
 						{isLoggedIn ? (
 							<>
 								<Button
+									onClick={onLogout}
+									disabled={isPending}
 									variant={"outline"}
 									className="w-full rounded-full border-background-light-1 hover:bg-background-light-1"
 								>
 									ログアウト
 								</Button>
-								<Button
-									variant={"outline"}
-									className="w-full rounded-full border-red-light-2 hover:bg-red-light-1"
-								>
-									アカウント削除
-								</Button>
+
+								<DrawerClose asChild>
+									<Button
+										onClick={() => router.push("/account-delete/verify")}
+										disabled={isPending}
+										variant={"outline"}
+										className="w-full rounded-full border-red-light-2 hover:bg-red-light-1"
+									>
+										アカウント削除
+									</Button>
+								</DrawerClose>
 							</>
 						) : (
-							<Button
-								variant={"outline"}
-								className="w-full rounded-full border-background-light-1 hover:bg-background-light-1"
-							>
-								ログイン
-							</Button>
+							<DrawerClose asChild>
+								<Link
+									href={"/login"}
+									className="flex justify-center py-2 w-full rounded-full border border-background-light-1 hover:bg-background-light-1"
+								>
+									ログイン
+								</Link>
+							</DrawerClose>
 						)}
 					</div>
 				</div>

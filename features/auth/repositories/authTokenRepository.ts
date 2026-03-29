@@ -1,6 +1,7 @@
 import type { Tx } from "@/db/client";
 import { db } from "@/db/client";
 import {
+	deleteIntentTokensTable,
 	loginCodesTable,
 	sessionTokensTable,
 	tempSessionTokensTable,
@@ -85,6 +86,19 @@ export async function deleteSessionToken({
 		);
 }
 
+export async function deleteSessionTokenByToken({
+	tx,
+	sessionToken,
+}: {
+	tx?: Tx;
+	sessionToken: string;
+}) {
+	const executor = tx || db;
+	await executor
+		.delete(sessionTokensTable)
+		.where(eq(sessionTokensTable.token, sessionToken));
+}
+
 export async function insertSessionToken({
 	tx,
 	sessionToken,
@@ -135,3 +149,45 @@ export async function insertTempToken({
 		expiresAt,
 	});
 }
+
+export async function insertDeleteIntentToken({
+	tx,
+	token,
+	userId,
+	expiresAt,
+	createdAt,
+}: {
+	tx: Tx;
+	token: string;
+	userId: number;
+	expiresAt: Date;
+	createdAt: Date;
+}) {
+	await tx.insert(deleteIntentTokensTable).values({
+		token,
+		userId,
+		expiresAt,
+		createdAt,
+	});
+}
+
+export async function searchDeleteIntentToken({
+	token,
+	now,
+}: {
+	token: string;
+	now: Date;
+}) {
+	const [record] = await db
+		.select({ userId: deleteIntentTokensTable.userId })
+		.from(deleteIntentTokensTable)
+		.where(
+			and(
+				eq(deleteIntentTokensTable.token, token),
+				gt(deleteIntentTokensTable.expiresAt, now),
+			),
+		);
+
+	return record ?? null;
+}
+
