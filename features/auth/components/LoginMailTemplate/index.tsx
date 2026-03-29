@@ -5,7 +5,6 @@ import {
 	Container,
 	Heading,
 	Text,
-	Link,
 } from "@react-email/components";
 
 type Props = {
@@ -31,17 +30,18 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 				<Container
 					style={{
 						width: "100%",
-						height: "100%",
 						maxWidth: 500,
+						height: "100%",
 						marginLeft: "auto",
 						marginRight: "auto",
 						backgroundColor: "#fff",
 						borderRadius: 20,
+						padding: 20,
 					}}
 				>
 					<Container
 						style={{
-							width: "90%",
+							width: "100%",
 							marginLeft: "auto",
 							marginRight: "auto",
 							marginTop: 20,
@@ -75,8 +75,6 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 							style={{
 								width: "100%",
 								borderRadius: "8px",
-								paddingTop: "16px",
-								paddingBottom: "16px",
 								textAlign: "center",
 								background: "#c5dbd7",
 								marginLeft: "auto",
@@ -99,26 +97,11 @@ export default function LoginMailTemplate({ loginCode, url }: Props) {
 								marginTop: 10,
 							}}
 						>
-							<Text></Text>
-
 							<Text style={{ marginTop: 10, marginBottom: 0 }}>
 								コードは発行から<strong>10分間</strong>有効です。
 							</Text>
 							<Text style={{ marginTop: 0, marginBottom: 0 }}>
 								期限が切れてしまったら発行し直してください。
-							</Text>
-							<Text style={{ marginTop: 10, marginBottom: 0 }}>
-								<Link
-									href={url}
-									target="_blank"
-									rel="noopener nofollow"
-									style={{
-										color: "#7c8c88",
-										textDecoration: "underline",
-									}}
-								>
-									{url}/login
-								</Link>
 							</Text>
 						</Container>
 
