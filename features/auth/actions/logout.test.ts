@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 import {
 	sessionTokensTable,
 	userEmailsTable,
@@ -64,7 +65,8 @@ describe("logout", () => {
 
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email,
+			encryptedEmail: encrypt(email),
+			emailHmac: computeHmac(email),
 		});
 
 		userId = user.id;

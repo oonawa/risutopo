@@ -13,6 +13,7 @@ import {
 } from "@/db/schema";
 import { generateSessionToken } from "@/features/shared/lib/jwt";
 import { getCurrentUserMovieList } from "./getCurrentUserMovieList";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 
 const { mockCookies, mockSessionTokenStore } = vi.hoisted(() => {
 	let sessionToken: string | undefined;
@@ -104,7 +105,8 @@ describe("getCurrentUserMovieList", () => {
 			.returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: userA.id,
-			email: "get-current-user-movie-list-user-a@example.com",
+			encryptedEmail: encrypt("get-current-user-movie-list-user-a@example.com"),
+			emailHmac: computeHmac("get-current-user-movie-list-user-a@example.com"),
 		});
 
 		const [userB] = await db
@@ -115,7 +117,8 @@ describe("getCurrentUserMovieList", () => {
 			.returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: userB.id,
-			email: "get-current-user-movie-list-user-b@example.com",
+			encryptedEmail: encrypt("get-current-user-movie-list-user-b@example.com"),
+			emailHmac: computeHmac("get-current-user-movie-list-user-b@example.com"),
 		});
 
 		userAId = userA.id;

@@ -12,7 +12,7 @@ export async function getUserByEmailHmac(tx: Tx, emailHmac: string) {
 		.select({
 			id: usersTable.id,
 			publicId: usersTable.publicId,
-			email: userEmailsTable.email,
+			encryptedEmail: userEmailsTable.encryptedEmail,
 		})
 		.from(usersTable)
 		.innerJoin(userEmailsTable, eq(userEmailsTable.userId, usersTable.id))
@@ -22,7 +22,7 @@ export async function getUserByEmailHmac(tx: Tx, emailHmac: string) {
 	return {
 		id: user.id,
 		publicId: user.publicId,
-		email: decrypt(user.email),
+		email: decrypt(user.encryptedEmail),
 	};
 }
 

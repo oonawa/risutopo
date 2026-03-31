@@ -72,7 +72,7 @@ describe("deleteUser", () => {
 
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email: encrypt(email),
+			encryptedEmail: encrypt(email),
 			emailHmac: computeHmac(email),
 		});
 

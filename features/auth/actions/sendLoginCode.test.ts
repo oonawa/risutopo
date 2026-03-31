@@ -91,7 +91,7 @@ describe("sendLoginCode", () => {
 
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email: encrypt(existingUserEmail),
+			encryptedEmail: encrypt(existingUserEmail),
 			emailHmac: computeHmac(existingUserEmail),
 		});
 

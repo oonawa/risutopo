@@ -12,7 +12,6 @@ function getHmacSecret(): Buffer {
 	return Buffer.from(secret, "hex");
 }
 
-// iv(12B) + authTag(16B) + 暗号文 をBase64で保存
 export function encrypt(plaintext: string): string {
 	const iv = crypto.randomBytes(12);
 	const cipher = crypto.createCipheriv("aes-256-gcm", getKey(), iv);
@@ -34,7 +33,6 @@ export function decrypt(ciphertext: string): string {
 	return decipher.update(encrypted) + decipher.final("utf8");
 }
 
-// 検索用：同じ入力から常に同じ値を生成する決定的ハッシュ
 export function computeHmac(value: string): string {
 	return crypto
 		.createHmac("sha256", getHmacSecret())

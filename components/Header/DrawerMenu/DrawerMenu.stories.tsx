@@ -4,9 +4,6 @@ import DrawerMenu from "./index";
 
 const meta = {
 	component: DrawerMenu,
-	args: {
-		isLoggedIn: false,
-	},
 	parameters: {
 		layout: "centered",
 	},
@@ -18,10 +15,14 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const LoggedOut: Story = {};
+export const LoggedOut: Story = {
+	args: {
+		userEmail: null,
+	},
+};
 
 export const LoggedIn: Story = {
 	args: {
-		isLoggedIn: true,
+		userEmail: "risutopo@xxxxxxxxxx.com",
 	},
 };

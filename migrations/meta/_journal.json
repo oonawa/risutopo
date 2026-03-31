@@ -250,15 +250,22 @@
     {
       "idx": 35,
       "version": "6",
-      "when": 1743379200001,
-      "tag": "0035_add_encrypted_email_to_temp_tokens",
+      "when": 1775013690748,
+      "tag": "0035_youthful_siren",
       "breakpoints": true
     },
     {
       "idx": 36,
       "version": "6",
-      "when": 1743379200002,
-      "tag": "0036_revert_public_id_protect_ip",
+      "when": 1775018175656,
+      "tag": "0036_fixed_fantastic_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1775100000000,
+      "tag": "0037_fix_login_tables",
       "breakpoints": true
     }
   ]
