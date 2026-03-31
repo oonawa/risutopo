@@ -1,37 +1,33 @@
 "use server";
 
-import z from "zod";
 import { headers } from "next/headers";
 import type { Result } from "@/features/shared/types/Result";
+import { currentUserEmail } from "@/features/shared/actions/currentUserEmail";
 import { checkRateLimitService } from "../services/checkRateLimitService";
 import { sendLoginCodeService } from "../services/sendLoginCodeService";
 
-const sendLoginCodeSchema = z.object({
-	email: z.email(),
-	now: z.date(),
-});
+export async function sendCurrentUserLoginCode(): Promise<Result> {
+	const now = new Date();
 
-export async function sendLoginCode(email: string, now: Date): Promise<Result> {
-	const parsed = sendLoginCodeSchema.safeParse({ email, now });
-
-	if (!parsed.success) {
-		console.error(parsed.error.message);
+	const emailResult = await currentUserEmail();
+	if (!emailResult.success) {
 		return {
 			success: false,
 			error: {
-				code: "VALIDATION_ERROR",
-				message: "不正なリクエストです。",
+				code: "UNAUTHORIZED_ERROR",
+				message: "ログインしていません。",
 			},
 		};
 	}
 
 	const headersList = await headers();
+	const ipAddress =
+		headersList.get("x-forwarded-for")?.split(",")[0] ||
+		headersList.get("x-real-ip") ||
+		"unknown";
 
-	const { limit, ipAddress } = await checkRateLimitService({
-		ipAddress:
-			headersList.get("x-forwarded-for")?.split(",")[0] ||
-			headersList.get("x-real-ip") ||
-			"unknown",
+	const { limit } = await checkRateLimitService({
+		ipAddress,
 		attemptType: "code_send",
 		now,
 	});
@@ -40,7 +36,6 @@ export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 		const minutesUntilRetry = Math.ceil(
 			(limit.retryAfter.getTime() - now.getTime()) / 60000,
 		);
-
 		return {
 			success: false,
 			error: {
@@ -51,7 +46,7 @@ export async function sendLoginCode(email: string, now: Date): Promise<Result> {
 	}
 
 	return await sendLoginCodeService({
-		email: parsed.data.email,
+		email: emailResult.data.email,
 		ipAddress,
 		now,
 	});

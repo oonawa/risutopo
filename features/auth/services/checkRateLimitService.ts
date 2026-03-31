@@ -19,7 +19,7 @@ export async function checkRateLimitService({
 	const windowStart = new Date(now.getTime() - 15 * 60 * 1000); // 15分
 	const attempts = await getRecentAttempts(ipAddress, attemptType, windowStart);
 
-	const maxAttempts = attemptType === "code_verify" ? 3 : 3;
+	const maxAttempts = attemptType === "code_verify" ? 10 : 5;
 
 	if (attempts.length >= maxAttempts) {
 		const oldestAttempt = attempts.sort(

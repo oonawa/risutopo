@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
 import {
-	deleteIntentTokensTable,
+	reauthTokensTable,
 	deletedUsersTable,
 	listItemsTable,
 	listsTable,
@@ -49,16 +49,13 @@ vi.mock("next/headers", () => ({
 
 async function generateSessionToken({
 	userId,
-	email,
 	deviceId,
 }: {
 	userId: number;
-	email: string;
 	deviceId: string;
 }) {
 	return await new SignJWT({
 		userId: userId.toString(),
-		email,
 		deviceId,
 		type: "session_token",
 	})
@@ -132,13 +129,11 @@ describe("deleteUser", () => {
 		publicUserId = user.publicId;
 		sessionToken = await generateSessionToken({
 			userId,
-			email,
 			deviceId,
 		});
 
 		await db.insert(sessionTokensTable).values({
 			token: sessionToken,
-			email,
 			userId,
 			deviceId,
 			expiresAt: new Date("2026-04-27T00:00:00.000Z"),
@@ -146,7 +141,7 @@ describe("deleteUser", () => {
 		});
 
 		deleteIntentToken = crypto.randomBytes(32).toString("hex");
-		await db.insert(deleteIntentTokensTable).values({
+		await db.insert(reauthTokensTable).values({
 			token: deleteIntentToken,
 			userId,
 			expiresAt: new Date("2026-03-28T00:15:00.000Z"),
@@ -154,7 +149,7 @@ describe("deleteUser", () => {
 		});
 
 		mockCookieStore.set("session_token", sessionToken);
-		mockCookieStore.set("delete_intent_token", deleteIntentToken);
+		mockCookieStore.set("delete_account_reauth_token", deleteIntentToken);
 	});
 
 	afterEach(() => {
@@ -233,13 +228,11 @@ describe("deleteUser", () => {
 		const otherDeviceId = "delete-user-test-other-device-id";
 		const otherSessionToken = await generateSessionToken({
 			userId,
-			email,
 			deviceId: otherDeviceId,
 		});
 
 		await db.insert(sessionTokensTable).values({
 			token: otherSessionToken,
-			email,
 			userId,
 			deviceId: otherDeviceId,
 			expiresAt: new Date("2026-04-27T00:00:00.000Z"),
@@ -294,10 +287,10 @@ describe("deleteUser", () => {
 		expect(deletedUser).toBeUndefined();
 	});
 
-	it("delete_intent_token がない場合、認証エラーを返す", async () => {
+	it("delete_account_reauth_token がない場合、認証エラーを返す", async () => {
 		mockCookieStore.clear();
 		mockCookieStore.set("session_token", sessionToken);
-		// delete_intent_token はセットしない
+		// delete_account_reauth_token はセットしない
 
 		const result = await deleteUser();
 
@@ -317,15 +310,15 @@ describe("deleteUser", () => {
 		expect(deletedUser).toBeUndefined();
 	});
 
-	it("delete_intent_token が有効期限切れの場合、認証エラーを返す", async () => {
+	it("delete_account_reauth_token が有効期限切れの場合、認証エラーを返す", async () => {
 		const expiredToken = crypto.randomBytes(32).toString("hex");
-		await db.insert(deleteIntentTokensTable).values({
+		await db.insert(reauthTokensTable).values({
 			token: expiredToken,
 			userId,
 			expiresAt: new Date(now.getTime() - 1),
 			createdAt: now,
 		});
-		mockCookieStore.set("delete_intent_token", expiredToken);
+		mockCookieStore.set("delete_account_reauth_token", expiredToken);
 
 		const result = await deleteUser();
 
@@ -333,7 +326,7 @@ describe("deleteUser", () => {
 			success: false,
 			error: {
 				code: "UNAUTHORIZED_ERROR",
-				message: "アカウント削除の認証が無効です。もう一度お試しください。",
+				message: "再認証が無効です。もう一度お試しください。",
 			},
 		});
 
@@ -345,20 +338,20 @@ describe("deleteUser", () => {
 		expect(deletedUser).toBeUndefined();
 	});
 
-	it("session_token と delete_intent_token のユーザーが異なる場合、FORBIDDEN_ERROR を返す", async () => {
+	it("session_token と delete_account_reauth_token のユーザーが異なる場合、FORBIDDEN_ERROR を返す", async () => {
 		const [otherUser] = await db
 			.insert(usersTable)
 			.values({ publicId: "delete-user-test-other-user" })
 			.returning({ id: usersTable.id });
 
-		const otherDeleteIntentToken = crypto.randomBytes(32).toString("hex");
-		await db.insert(deleteIntentTokensTable).values({
-			token: otherDeleteIntentToken,
+		const otherReauthToken = crypto.randomBytes(32).toString("hex");
+		await db.insert(reauthTokensTable).values({
+			token: otherReauthToken,
 			userId: otherUser.id,
 			expiresAt: new Date("2026-03-28T00:15:00.000Z"),
 			createdAt: now,
 		});
-		mockCookieStore.set("delete_intent_token", otherDeleteIntentToken);
+		mockCookieStore.set("delete_account_reauth_token", otherReauthToken);
 
 		const result = await deleteUser();
 

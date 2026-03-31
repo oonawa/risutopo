@@ -144,18 +144,15 @@ function generateTempSessionToken() {
 
 async function generateSessionToken({
 	userId,
-	email,
 	deviceId,
 }: {
 	userId: number;
-	email: string;
 	deviceId: string;
 }) {
 	const secretKey = getSecretKey();
 
 	return await new SignJWT({
 		userId: userId.toString(),
-		email,
 		deviceId,
 		type: "session_token",
 	})
@@ -184,7 +181,6 @@ async function refreshSessionToken({
 
 	const sessionToken = await generateSessionToken({
 		userId: user.id,
-		email: user.email,
 		deviceId,
 	});
 
@@ -194,7 +190,6 @@ async function refreshSessionToken({
 		tx,
 		sessionToken,
 		deviceId,
-		email: user.email,
 		userId: user.id,
 		now,
 		expiresAt: expiresAt,
