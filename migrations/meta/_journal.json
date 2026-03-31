@@ -239,6 +239,27 @@
       "when": 1774925539357,
       "tag": "0033_polite_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1743379200000,
+      "tag": "0034_encrypt_user_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1743379200001,
+      "tag": "0035_add_encrypted_email_to_temp_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1743379200002,
+      "tag": "0036_revert_public_id_protect_ip",
+      "breakpoints": true
     }
   ]
 }
