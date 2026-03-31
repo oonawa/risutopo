@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { SignJWT } from "jose";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
@@ -12,7 +11,7 @@ import {
 	usersTable,
 	watchedItemsTable,
 } from "@/db/schema";
-import { getSecretKey } from "@/lib/jwt";
+import { generateSessionToken } from "@/features/shared/lib/jwt";
 import { getCurrentUserMovieList } from "./getCurrentUserMovieList";
 
 const { mockCookies, mockSessionTokenStore } = vi.hoisted(() => {
@@ -56,24 +55,6 @@ async function findStreamingServiceIdBySlug(slug: "netflix" | "hulu") {
 	}
 
 	return streamingService.id;
-}
-
-async function generateSessionToken({
-	userId,
-	deviceId,
-}: {
-	userId: number;
-	deviceId: string;
-}) {
-	return await new SignJWT({
-		userId: userId.toString(),
-		deviceId,
-		type: "session_token",
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setExpirationTime("30d")
-		.setIssuedAt()
-		.sign(getSecretKey());
 }
 
 async function loginAsUser({

@@ -1,8 +1,7 @@
-import { SignJWT } from "jose";
 import crypto from "node:crypto";
 import { db } from "@/db/client";
 import type { Tx } from "@/db/client";
-import { getSecretKey } from "@/lib/jwt";
+import { generateSessionToken, generateTempSessionToken } from "@/features/shared/lib/jwt";
 import type { Result } from "@/features/shared/types/Result";
 import { insertAttempt } from "../repositories/attemptRepository";
 import {
@@ -12,7 +11,8 @@ import {
 	insertSessionToken,
 	insertTempToken,
 } from "../repositories/authTokenRepository";
-import { getUserByEmail } from "@/features/user/repositories/userRepository";
+import { getUserByEmailHmac } from "@/features/user/repositories/userRepository";
+import { decrypt } from "@/features/shared/lib/encryption";
 
 export async function loginService({
 	loginCode,
@@ -57,7 +57,6 @@ export async function loginService({
 					await insertAttempt({
 						tx,
 						ipAddress,
-						email: null,
 						attemptType: "code_verify",
 						success: false,
 					});
@@ -75,13 +74,12 @@ export async function loginService({
 				await insertAttempt({
 					tx,
 					ipAddress,
-					email: founded.email,
 					attemptType: "code_verify",
 					success: true,
 				});
 
-				await deleteLoginCode({ tx, email: founded.email });
-				const user = await getUserByEmail(tx, founded.email);
+				await deleteLoginCode({ tx, emailHmac: founded.emailHmac });
+				const user = await getUserByEmailHmac(tx, founded.emailHmac);
 
 				if (user) {
 					const { sessionToken: newToken, expiresAt } =
@@ -110,7 +108,7 @@ export async function loginService({
 					tx,
 					tempToken,
 					expiresAt,
-					email: founded.email,
+					email: decrypt(founded.encryptedEmail),
 					deviceId,
 					createdAt: now,
 				});
@@ -119,7 +117,7 @@ export async function loginService({
 					success: true,
 					data: {
 						token: tempToken,
-						email: founded.email,
+						email: decrypt(founded.encryptedEmail),
 						isNewUser: true,
 						expiresAt,
 					},
@@ -136,30 +134,6 @@ export async function loginService({
 			},
 		};
 	}
-}
-
-function generateTempSessionToken() {
-	return crypto.randomBytes(32).toString("hex");
-}
-
-async function generateSessionToken({
-	userId,
-	deviceId,
-}: {
-	userId: number;
-	deviceId: string;
-}) {
-	const secretKey = getSecretKey();
-
-	return await new SignJWT({
-		userId: userId.toString(),
-		deviceId,
-		type: "session_token",
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setExpirationTime("30d")
-		.setIssuedAt()
-		.sign(secretKey);
 }
 
 async function refreshSessionToken({

@@ -9,6 +9,7 @@ import {
 } from "@/features/auth/repositories/authTokenRepository";
 import { insertAttempt } from "@/features/auth/repositories/attemptRepository";
 import { replaceUserEmail } from "../repositories/userEmailRepository";
+import { computeHmac } from "@/features/shared/lib/encryption";
 
 export async function changeEmailService({
 	newEmail,
@@ -43,12 +44,12 @@ export async function changeEmailService({
 				.update(loginCode)
 				.digest("hex");
 			const found = await searchLoginCode({ tx, loginCodeHash, now });
+			const newEmailHmac = computeHmac(newEmail);
 
-			if (!found || found.email !== newEmail) {
+			if (!found || found.emailHmac !== newEmailHmac) {
 				await insertAttempt({
 					tx,
 					ipAddress,
-					email: newEmail,
 					attemptType: "code_verify",
 					success: false,
 				});
@@ -64,11 +65,10 @@ export async function changeEmailService({
 			await insertAttempt({
 				tx,
 				ipAddress,
-				email: found.email,
 				attemptType: "code_verify",
 				success: true,
 			});
-			await deleteLoginCode({ tx, email: found.email });
+			await deleteLoginCode({ tx, emailHmac: found.emailHmac });
 			await deleteReauthToken({ tx, token: reauthToken });
 			await replaceUserEmail({ tx, userId, email: newEmail });
 

@@ -6,6 +6,7 @@ import { db } from "@/db/client";
 import { userEmailsTable } from "@/db/schema";
 import type { Result } from "../types/Result";
 import { currentUserId } from "./currentUserId";
+import { decrypt } from "@/features/shared/lib/encryption";
 
 export const currentUserEmail = cache(
 	async (): Promise<Result<{ email: string }>> => {
@@ -32,7 +33,7 @@ export const currentUserEmail = cache(
 
 		return {
 			success: true,
-			data: { email: record.email },
+			data: { email: decrypt(record.email) },
 		};
 	},
 );

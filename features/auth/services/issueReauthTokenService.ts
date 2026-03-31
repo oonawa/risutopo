@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { db } from "@/db/client";
 import type { Result } from "@/features/shared/types/Result";
-import { getUserByEmail } from "@/features/user/repositories/userRepository";
+import { getUserByEmailHmac } from "@/features/user/repositories/userRepository";
 import { insertAttempt } from "../repositories/attemptRepository";
 import {
 	deleteLoginCode,
@@ -36,7 +36,6 @@ export async function issueReauthTokenService({
 					await insertAttempt({
 						tx,
 						ipAddress,
-						email: null,
 						attemptType: "code_verify",
 						success: false,
 					});
@@ -51,12 +50,11 @@ export async function issueReauthTokenService({
 					};
 				}
 
-				const user = await getUserByEmail(tx, found.email);
+				const user = await getUserByEmailHmac(tx, found.emailHmac);
 				if (!user || user.id !== userId) {
 					await insertAttempt({
 						tx,
 						ipAddress,
-						email: found.email,
 						attemptType: "code_verify",
 						success: false,
 					});
@@ -73,12 +71,11 @@ export async function issueReauthTokenService({
 				await insertAttempt({
 					tx,
 					ipAddress,
-					email: found.email,
 					attemptType: "code_verify",
 					success: true,
 				});
 
-				await deleteLoginCode({ tx, email: found.email });
+				await deleteLoginCode({ tx, emailHmac: found.emailHmac });
 
 				const token = crypto.randomBytes(32).toString("hex");
 				const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);

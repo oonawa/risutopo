@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 import { db } from "@/db/client";
 import { sessionTokensTable } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
-import { getSecretKey } from "@/lib/jwt";
+import { getSecretKey } from "@/features/shared/lib/jwt";
 
 export async function verifySessionTokenService({
 	sessionToken,
