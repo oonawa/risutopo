@@ -24,7 +24,7 @@ export async function replaceUserEmail({
 	await tx.delete(userEmailsTable).where(eq(userEmailsTable.userId, userId));
 	await tx.insert(userEmailsTable).values({
 		userId,
-		email: encrypt(email),
+		encryptedEmail: encrypt(email),
 		emailHmac: computeHmac(email),
 	});
 }

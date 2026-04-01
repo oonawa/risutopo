@@ -17,7 +17,7 @@ export const currentUserEmail = cache(
 		}
 
 		const [record] = await db
-			.select({ email: userEmailsTable.email })
+			.select({ encryptedEmail: userEmailsTable.encryptedEmail })
 			.from(userEmailsTable)
 			.where(eq(userEmailsTable.userId, userIdResult.data.userId));
 
@@ -33,7 +33,7 @@ export const currentUserEmail = cache(
 
 		return {
 			success: true,
-			data: { email: decrypt(record.email) },
+			data: { email: decrypt(record.encryptedEmail) },
 		};
 	},
 );

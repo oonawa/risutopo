@@ -18,6 +18,7 @@ import {
 } from "@/db/schema";
 import type { ListItem } from "../types/ListItem";
 import { TMDB_IMAGE_BASE_URL } from "@/app/consts";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 import { storeListItem } from "./storeListItem";
 
 async function assertStoreMovieResult({
@@ -298,7 +299,8 @@ describe("storeMovie", () => {
 			.returning();
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email: "xxxxxxx@risutopo.com",
+			encryptedEmail: encrypt("xxxxxxx@risutopo.com"),
+			emailHmac: computeHmac("xxxxxxx@risutopo.com"),
 		});
 
 		const [list] = await db

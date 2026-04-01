@@ -29,8 +29,8 @@ export const userEmailsTable = sqliteTable("user_emails_table", {
 		.references(() => usersTable.id, {
 			onDelete: "cascade",
 		}),
-	email: text("email").notNull().unique(),
-	emailHmac: text("email_hmac").unique(),
+	encryptedEmail: text("encrypted_email").notNull(),
+	emailHmac: text("email_hmac").notNull().unique(),
 });
 
 export const streamingServicesTable = sqliteTable("streaming_services_table", {

@@ -11,6 +11,7 @@ import {
 	watchedItemsTable,
 } from "@/db/schema";
 import { getUserMovieList } from "./getUserMovieList";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 
 async function findStreamingServiceIdBySlug(slug: "netflix" | "hulu") {
 	const [streamingService] = await db
@@ -46,7 +47,8 @@ describe("getUserMovieList", () => {
 			.returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: userA.id,
-			email: "get-user-movie-list-user-a@example.com",
+			encryptedEmail: encrypt("get-user-movie-list-user-a@example.com"),
+			emailHmac: computeHmac("get-user-movie-list-user-a@example.com"),
 		});
 
 		const [userB] = await db
@@ -57,7 +59,8 @@ describe("getUserMovieList", () => {
 			.returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: userB.id,
-			email: "get-user-movie-list-user-b@example.com",
+			encryptedEmail: encrypt("get-user-movie-list-user-b@example.com"),
+			emailHmac: computeHmac("get-user-movie-list-user-b@example.com"),
 		});
 
 		userAId = userA.id;
