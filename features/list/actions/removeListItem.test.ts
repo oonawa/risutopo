@@ -9,6 +9,7 @@ import {
 	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 import { removeListItem } from "./removeListItem";
 
 describe("removeListItem", () => {
@@ -24,7 +25,8 @@ describe("removeListItem", () => {
 			.returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email: "remove-list-item-test@risutopo.com",
+			encryptedEmail: encrypt("remove-list-item-test@risutopo.com"),
+			emailHmac: computeHmac("remove-list-item-test@risutopo.com"),
 		});
 
 		const [list] = await db

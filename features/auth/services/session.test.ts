@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/client";
 import { tempSessionTokensTable, usersTable } from "@/db/schema";
-import {
-	generateTempSessionToken,
-	verifyTempSessionToken,
-} from "./session";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
+import { generateTempSessionToken } from "@/features/shared/lib/jwt";
+import { verifyTempSessionToken } from "./session";
 
 describe("auth token verification", () => {
 	const now = new Date("2026-02-16T00:00:00.000Z");
@@ -20,7 +19,8 @@ describe("auth token verification", () => {
 
 		await db.insert(tempSessionTokensTable).values({
 			token: tempToken,
-			email,
+			emailHmac: computeHmac(email),
+			encryptedEmail: encrypt(email),
 			deviceId: "verify-temp-session-token-device-id",
 			expiresAt: new Date(now.getTime() + 10 * 60 * 1000),
 			createdAt: now,
@@ -31,6 +31,6 @@ describe("auth token verification", () => {
 			now,
 		});
 
-		expect(result).toStrictEqual({ email });
+		expect(result).toStrictEqual({ email, emailHmac: computeHmac(email) });
 	});
 });

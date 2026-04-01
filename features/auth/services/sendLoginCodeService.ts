@@ -8,6 +8,7 @@ import {
 import { sendLoginMail } from "../repositories/sendLoginMailRepository";
 import { insertAttempt } from "../repositories/attemptRepository";
 import { getUserByEmail } from "@/features/user/repositories/userRepository";
+import { computeHmac } from "@/features/shared/lib/encryption";
 
 export async function sendLoginCodeService({
 	email,
@@ -30,11 +31,12 @@ export async function sendLoginCodeService({
 	}
 
 	const loginCode = crypto.randomInt(100000, 1000000).toString();
+	const emailHmac = computeHmac(email);
 
 	try {
 		await db.transaction(async (tx) => {
 			const user = await getUserByEmail(tx, email);
-			await deleteLoginCode({ tx, email });
+			await deleteLoginCode({ tx, emailHmac });
 			await insertLoginCode({
 				tx,
 				email,
@@ -54,10 +56,9 @@ export async function sendLoginCodeService({
 		});
 
 		if (response.error) {
-			await deleteLoginCode({ email });
+			await deleteLoginCode({ emailHmac });
 			await insertAttempt({
 				ipAddress,
-				email,
 				attemptType: "code_send",
 				success: false,
 			});
@@ -75,7 +76,6 @@ export async function sendLoginCodeService({
 
 		await insertAttempt({
 			ipAddress,
-			email,
 			attemptType: "code_send",
 			success: true,
 		});

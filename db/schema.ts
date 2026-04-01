@@ -29,7 +29,8 @@ export const userEmailsTable = sqliteTable("user_emails_table", {
 		.references(() => usersTable.id, {
 			onDelete: "cascade",
 		}),
-	email: text("email").notNull().unique(),
+	encryptedEmail: text("encrypted_email").notNull(),
+	emailHmac: text("email_hmac").notNull().unique(),
 });
 
 export const streamingServicesTable = sqliteTable("streaming_services_table", {
@@ -148,7 +149,8 @@ export const watchedItemsTable = sqliteTable("watched_items_table", {
 
 export const loginCodesTable = sqliteTable("login_codes_table", {
 	token: text("token").notNull().unique(),
-	email: text("email").notNull(),
+	emailHmac: text("email_hmac").notNull(),
+	encryptedEmail: text("encrypted_email").notNull(),
 	userId: int("user_id").references(() => usersTable.id, {
 		onDelete: "cascade",
 	}),
@@ -172,7 +174,8 @@ export const sessionTokensTable = sqliteTable("session_tokens_table", {
 export const tempSessionTokensTable = sqliteTable("temp_session_tokens_table", {
 	id: int().primaryKey({ autoIncrement: true }),
 	token: text("token").notNull().unique(),
-	email: text("email").notNull(),
+	emailHmac: text("email_hmac").notNull(),
+	encryptedEmail: text("encrypted_email").notNull(),
 	deviceId: text("device_id").notNull(),
 	expiresAt: int("expires_at", { mode: "timestamp" }).notNull(),
 	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
@@ -180,8 +183,7 @@ export const tempSessionTokensTable = sqliteTable("temp_session_tokens_table", {
 
 export const loginAttemptsTable = sqliteTable("login_attempts_table", {
 	id: int().primaryKey({ autoIncrement: true }),
-	ipAddress: text("ip_address").notNull(),
-	email: text("email"),
+	ipAddressHmac: text("ip_address_hmac").notNull(),
 	attemptType: text("attempt_type")
 		.$type<"code_verify" | "code_send">()
 		.notNull(),

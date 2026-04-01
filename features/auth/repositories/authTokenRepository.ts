@@ -7,6 +7,7 @@ import {
 	tempSessionTokensTable,
 } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 
 export async function searchLoginCode({
 	tx,
@@ -32,15 +33,15 @@ export async function searchLoginCode({
 
 export async function deleteLoginCode({
 	tx,
-	email,
+	emailHmac,
 }: {
 	tx?: Tx;
-	email: string;
+	emailHmac: string;
 }) {
 	const executor = tx || db;
 	await executor
 		.delete(loginCodesTable)
-		.where(eq(loginCodesTable.email, email));
+		.where(eq(loginCodesTable.emailHmac, emailHmac));
 }
 
 export async function insertLoginCode({
@@ -60,7 +61,8 @@ export async function insertLoginCode({
 }) {
 	await tx.insert(loginCodesTable).values({
 		token,
-		email,
+		emailHmac: computeHmac(email),
+		encryptedEmail: encrypt(email),
 		userId: userId ?? null,
 		expiresAt,
 		createdAt,
@@ -141,7 +143,8 @@ export async function insertTempToken({
 	await tx.insert(tempSessionTokensTable).values({
 		token: tempToken,
 		deviceId,
-		email,
+		emailHmac: computeHmac(email),
+		encryptedEmail: encrypt(email),
 		createdAt,
 		expiresAt,
 	});
@@ -201,4 +204,3 @@ export async function deleteReauthToken({
 	const executor = tx || db;
 	await executor.delete(reauthTokensTable).where(eq(reauthTokensTable.token, token));
 }
-

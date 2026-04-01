@@ -1,7 +1,7 @@
-import { SignJWT } from "jose";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 import {
 	sessionTokensTable,
 	userEmailsTable,
@@ -9,7 +9,7 @@ import {
 } from "@/db/schema";
 import { currentUserId } from "@/features/shared/actions/currentUserId";
 import { verifySessionTokenService } from "@/features/auth/services/verifySessionTokenService";
-import { getSecretKey } from "@/lib/jwt";
+import { generateSessionToken } from "@/features/shared/lib/jwt";
 import { logout } from "./logout";
 
 const { mockCookies, mockCookieStore } = vi.hoisted(() => {
@@ -45,24 +45,6 @@ vi.mock("next/headers", () => ({
 	cookies: mockCookies,
 }));
 
-async function generateSessionToken({
-	userId,
-	deviceId,
-}: {
-	userId: number;
-	deviceId: string;
-}) {
-	return await new SignJWT({
-		userId: userId.toString(),
-		deviceId,
-		type: "session_token",
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setExpirationTime("30d")
-		.setIssuedAt()
-		.sign(getSecretKey());
-}
-
 describe("logout", () => {
 	const now = new Date("2026-03-28T00:00:00.000Z");
 	const email = "logout-test@example.com";
@@ -83,7 +65,8 @@ describe("logout", () => {
 
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email,
+			encryptedEmail: encrypt(email),
+			emailHmac: computeHmac(email),
 		});
 
 		userId = user.id;

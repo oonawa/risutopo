@@ -1,8 +1,7 @@
-import { SignJWT } from "jose";
-import crypto from "node:crypto";
 import { db } from "@/db/client";
 import { tempSessionTokensTable } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
+import { decrypt } from "@/features/shared/lib/encryption";
 
 export async function verifyTempSessionToken({
 	tempToken,
@@ -12,6 +11,7 @@ export async function verifyTempSessionToken({
 	now: Date;
 }): Promise<{
 	email: string;
+	emailHmac: string;
 } | null> {
 	if (!tempToken) {
 		return null;
@@ -20,7 +20,8 @@ export async function verifyTempSessionToken({
 	try {
 		const [record] = await db
 			.select({
-				email: tempSessionTokensTable.email,
+				emailHmac: tempSessionTokensTable.emailHmac,
+				encryptedEmail: tempSessionTokensTable.encryptedEmail,
 			})
 			.from(tempSessionTokensTable)
 			.where(
@@ -34,45 +35,12 @@ export async function verifyTempSessionToken({
 			return null;
 		}
 
-		return { email: record.email };
+		return {
+			email: decrypt(record.encryptedEmail),
+			emailHmac: record.emailHmac,
+		};
 	} catch (error) {
 		console.error("Temp token verification failed:", error);
 		return null;
 	}
-}
-
-function getSecretKey(): Uint8Array {
-	const secret = process.env.JWT_SECRET;
-	if (!secret) {
-		throw new Error("JWT_SECRET is not defined");
-	}
-	return new TextEncoder().encode(secret);
-}
-
-export async function generateSessionToken({
-	userId,
-	deviceId,
-}: {
-	userId: number;
-	deviceId: string;
-}) {
-	const secretKey = getSecretKey();
-
-	return await new SignJWT({
-		userId: userId.toString(),
-		deviceId,
-		type: "session_token",
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setExpirationTime("30d")
-		.setIssuedAt()
-		.sign(secretKey);
-}
-
-export function generateTempSessionToken() {
-	return crypto.randomBytes(32).toString("hex");
-}
-
-export function addDays(date: Date, days: number) {
-	return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }

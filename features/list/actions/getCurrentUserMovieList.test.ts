@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { SignJWT } from "jose";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
@@ -12,8 +11,9 @@ import {
 	usersTable,
 	watchedItemsTable,
 } from "@/db/schema";
-import { getSecretKey } from "@/lib/jwt";
+import { generateSessionToken } from "@/features/shared/lib/jwt";
 import { getCurrentUserMovieList } from "./getCurrentUserMovieList";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 
 const { mockCookies, mockSessionTokenStore } = vi.hoisted(() => {
 	let sessionToken: string | undefined;
@@ -56,24 +56,6 @@ async function findStreamingServiceIdBySlug(slug: "netflix" | "hulu") {
 	}
 
 	return streamingService.id;
-}
-
-async function generateSessionToken({
-	userId,
-	deviceId,
-}: {
-	userId: number;
-	deviceId: string;
-}) {
-	return await new SignJWT({
-		userId: userId.toString(),
-		deviceId,
-		type: "session_token",
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setExpirationTime("30d")
-		.setIssuedAt()
-		.sign(getSecretKey());
 }
 
 async function loginAsUser({
@@ -123,7 +105,8 @@ describe("getCurrentUserMovieList", () => {
 			.returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: userA.id,
-			email: "get-current-user-movie-list-user-a@example.com",
+			encryptedEmail: encrypt("get-current-user-movie-list-user-a@example.com"),
+			emailHmac: computeHmac("get-current-user-movie-list-user-a@example.com"),
 		});
 
 		const [userB] = await db
@@ -134,7 +117,8 @@ describe("getCurrentUserMovieList", () => {
 			.returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: userB.id,
-			email: "get-current-user-movie-list-user-b@example.com",
+			encryptedEmail: encrypt("get-current-user-movie-list-user-b@example.com"),
+			emailHmac: computeHmac("get-current-user-movie-list-user-b@example.com"),
 		});
 
 		userAId = userA.id;

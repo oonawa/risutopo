@@ -8,6 +8,7 @@ import {
 	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 
 const originalResendApiKey = process.env.RESEND_API_KEY;
 const originalVercelUrl = process.env.VERCEL_URL;
@@ -81,9 +82,7 @@ describe("sendLoginCode", () => {
 	async function seedExistingUser() {
 		const [user] = await db
 			.insert(usersTable)
-			.values({
-				publicId: "send-login-code-test-user",
-			})
+			.values({ publicId: "send-login-code-test-user" })
 			.returning();
 
 		if (!user) {
@@ -92,7 +91,8 @@ describe("sendLoginCode", () => {
 
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email: existingUserEmail,
+			encryptedEmail: encrypt(existingUserEmail),
+			emailHmac: computeHmac(existingUserEmail),
 		});
 
 		return user;
@@ -146,7 +146,7 @@ describe("sendLoginCode", () => {
 		const [savedToken] = await db
 			.select()
 			.from(loginCodesTable)
-			.where(eq(loginCodesTable.email, existingUserEmail));
+			.where(eq(loginCodesTable.emailHmac, computeHmac(existingUserEmail)));
 
 		expect(savedToken).toBeDefined();
 		if (!savedToken) {
@@ -163,14 +163,13 @@ describe("sendLoginCode", () => {
 		const [attempt] = await db
 			.select()
 			.from(loginAttemptsTable)
-			.where(eq(loginAttemptsTable.email, existingUserEmail));
+			.where(eq(loginAttemptsTable.ipAddressHmac, computeHmac("127.0.0.1")));
 
 		expect(attempt).toBeDefined();
 		if (!attempt) {
 			throw new Error("送信試行が記録されていません");
 		}
 
-		expect(attempt.ipAddress).toBe("127.0.0.1");
 		expect(attempt.attemptType).toBe("code_send");
 		expect(attempt.success).toBe(true);
 	});
@@ -201,7 +200,7 @@ describe("sendLoginCode", () => {
 		const [savedToken] = await db
 			.select()
 			.from(loginCodesTable)
-			.where(eq(loginCodesTable.email, unregisteredUserEmail));
+			.where(eq(loginCodesTable.emailHmac, computeHmac(unregisteredUserEmail)));
 
 		expect(savedToken).toBeDefined();
 		if (!savedToken) {
@@ -218,14 +217,13 @@ describe("sendLoginCode", () => {
 		const [attempt] = await db
 			.select()
 			.from(loginAttemptsTable)
-			.where(eq(loginAttemptsTable.email, unregisteredUserEmail));
+			.where(eq(loginAttemptsTable.ipAddressHmac, computeHmac("127.0.0.1")));
 
 		expect(attempt).toBeDefined();
 		if (!attempt) {
 			throw new Error("送信試行が記録されていません");
 		}
 
-		expect(attempt.ipAddress).toBe("127.0.0.1");
 		expect(attempt.attemptType).toBe("code_send");
 		expect(attempt.success).toBe(true);
 	});
@@ -238,7 +236,8 @@ describe("sendLoginCode", () => {
 
 		await db.insert(loginCodesTable).values({
 			token: hashLoginCode(oldLoginCode),
-			email: existingUserEmail,
+			emailHmac: computeHmac(existingUserEmail),
+			encryptedEmail: encrypt(existingUserEmail),
 			userId: existingUser.id,
 			expiresAt: oldExpiresAt,
 			createdAt: new Date(now.getTime() - 60 * 1000),
@@ -249,7 +248,7 @@ describe("sendLoginCode", () => {
 		const savedTokens = await db
 			.select()
 			.from(loginCodesTable)
-			.where(eq(loginCodesTable.email, existingUserEmail));
+			.where(eq(loginCodesTable.emailHmac, computeHmac(existingUserEmail)));
 
 		expect(savedTokens).toHaveLength(1);
 

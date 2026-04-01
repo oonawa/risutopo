@@ -12,6 +12,7 @@ import {
 import { login } from "./login";
 import { createHash, randomInt } from "node:crypto";
 import { and, eq } from "drizzle-orm";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 
 const { mockSetCookie, mockCookies, mockHeaders } = vi.hoisted(() => {
 	const setCookie = vi.fn();
@@ -67,11 +68,12 @@ async function insertLoginCode({
 		.select({ id: usersTable.id })
 		.from(usersTable)
 		.innerJoin(userEmailsTable, eq(userEmailsTable.userId, usersTable.id))
-		.where(eq(userEmailsTable.email, email));
+		.where(eq(userEmailsTable.emailHmac, computeHmac(email)));
 
 	await tx.insert(loginCodesTable).values({
 		token,
-		email,
+		emailHmac: computeHmac(email),
+		encryptedEmail: encrypt(email),
 		userId: user?.id ?? null,
 		expiresAt,
 		createdAt,
@@ -96,7 +98,8 @@ describe("login", () => {
 		}).returning({ id: usersTable.id });
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email,
+			encryptedEmail: encrypt(email),
+			emailHmac: computeHmac(email),
 		});
 
 		loginCode = generateLoginCode();
@@ -147,7 +150,7 @@ describe("login", () => {
 		const [savedLoginCode] = await db
 			.select()
 			.from(loginCodesTable)
-			.where(eq(loginCodesTable.email, email));
+			.where(eq(loginCodesTable.emailHmac, computeHmac(email)));
 
 		expect(savedLoginCode).toBeUndefined();
 
@@ -172,7 +175,7 @@ describe("login", () => {
 			.from(loginAttemptsTable)
 			.where(
 				and(
-					eq(loginAttemptsTable.email, email),
+					eq(loginAttemptsTable.ipAddressHmac, computeHmac("127.0.0.1")),
 					eq(loginAttemptsTable.attemptType, "code_verify"),
 				),
 			);
@@ -182,7 +185,6 @@ describe("login", () => {
 			throw new Error("検証試行が記録されていません");
 		}
 
-		expect(attempt.ipAddress).toBe("127.0.0.1");
 		expect(attempt.success).toBe(true);
 	});
 
@@ -238,14 +240,14 @@ describe("login", () => {
 		const [savedLoginCode] = await db
 			.select()
 			.from(loginCodesTable)
-			.where(eq(loginCodesTable.email, newUserEmail));
+			.where(eq(loginCodesTable.emailHmac, computeHmac(newUserEmail)));
 
 		expect(savedLoginCode).toBeUndefined();
 
 		const [tempToken] = await db
 			.select()
 			.from(tempSessionTokensTable)
-			.where(eq(tempSessionTokensTable.email, newUserEmail));
+			.where(eq(tempSessionTokensTable.emailHmac, computeHmac(newUserEmail)));
 
 		expect(tempToken).toBeDefined();
 		if (!tempToken) {
@@ -262,7 +264,7 @@ describe("login", () => {
 			.from(loginAttemptsTable)
 			.where(
 				and(
-					eq(loginAttemptsTable.email, newUserEmail),
+					eq(loginAttemptsTable.ipAddressHmac, computeHmac("127.0.0.1")),
 					eq(loginAttemptsTable.attemptType, "code_verify"),
 				),
 			);
@@ -272,7 +274,6 @@ describe("login", () => {
 			throw new Error("検証試行が記録されていません");
 		}
 
-		expect(attempt.ipAddress).toBe("127.0.0.1");
 		expect(attempt.success).toBe(true);
 	});
 });

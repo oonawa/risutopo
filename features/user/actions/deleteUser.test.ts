@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { SignJWT } from "jose";
 import { eq, inArray } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/client";
@@ -15,8 +14,9 @@ import {
 } from "@/db/schema";
 import { verifySessionTokenService } from "@/features/auth/services/verifySessionTokenService";
 import { currentUserId } from "@/features/shared/actions/currentUserId";
-import { getSecretKey } from "@/lib/jwt";
+import { generateSessionToken } from "@/features/shared/lib/jwt";
 import { deleteUser } from "./deleteUser";
+import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 
 const { mockCookies, mockCookieStore } = vi.hoisted(() => {
 	const store = new Map<string, string>();
@@ -47,30 +47,12 @@ vi.mock("next/headers", () => ({
 	cookies: mockCookies,
 }));
 
-async function generateSessionToken({
-	userId,
-	deviceId,
-}: {
-	userId: number;
-	deviceId: string;
-}) {
-	return await new SignJWT({
-		userId: userId.toString(),
-		deviceId,
-		type: "session_token",
-	})
-		.setProtectedHeader({ alg: "HS256" })
-		.setExpirationTime("30d")
-		.setIssuedAt()
-		.sign(getSecretKey());
-}
-
 describe("deleteUser", () => {
 	const now = new Date("2026-03-28T00:00:00.000Z");
 	const email = "delete-user-test@example.com";
+	const publicUserId = "delete-user-test-user";
 	const deviceId = "delete-user-test-device-id";
 	let userId = 0;
-	let publicUserId = "";
 	let sessionToken = "";
 	let deleteIntentToken = "";
 	let listItemPublicId = "";
@@ -83,17 +65,15 @@ describe("deleteUser", () => {
 
 		const [user] = await db
 			.insert(usersTable)
-			.values({
-				publicId: "delete-user-test-user",
-			})
+			.values({ publicId: publicUserId })
 			.returning({
 				id: usersTable.id,
-				publicId: usersTable.publicId,
 			});
 
 		await db.insert(userEmailsTable).values({
 			userId: user.id,
-			email,
+			encryptedEmail: encrypt(email),
+			emailHmac: computeHmac(email),
 		});
 
 		const [list] = await db
@@ -126,7 +106,6 @@ describe("deleteUser", () => {
 		});
 
 		userId = user.id;
-		publicUserId = user.publicId;
 		sessionToken = await generateSessionToken({
 			userId,
 			deviceId,

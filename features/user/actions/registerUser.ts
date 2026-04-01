@@ -5,8 +5,6 @@ import { headers, cookies } from "next/headers";
 import { db } from "@/db/client";
 import { eq } from "drizzle-orm";
 import {
-	usersTable,
-	userEmailsTable,
 	listsTable,
 	sessionTokensTable,
 	tempSessionTokensTable,
@@ -15,13 +13,13 @@ import type { Result } from "@/features/shared/types/Result";
 import type { LocalList } from "@/features/user/schemas/localListSchema";
 import { localListSchema } from "@/features/user/schemas/localListSchema";
 import { userIdSchema } from "../schemas/userIdSchema";
-import {
-	verifyTempSessionToken,
-	generateSessionToken,
-	addDays,
-} from "@/features/auth/services/session";
+import { verifyTempSessionToken } from "@/features/auth/services/session";
+import { generateSessionToken } from "@/features/shared/lib/jwt";
 import { generateDeviceId } from "@/features/auth/services/devices";
 import { syncUserListService } from "@/features/list/services/syncUserListService";
+import { insertUser } from "../repositories/userRepository";
+import { replaceUserEmail } from "../repositories/userEmailRepository";
+import { computeHmac } from "@/features/shared/lib/encryption";
 
 const emptyLocalList: LocalList = {
 	listId: "",
@@ -53,7 +51,7 @@ export async function registerUser({
 		};
 	}
 
-	if (tempSession.email !== email) {
+	if (tempSession.emailHmac !== computeHmac(email)) {
 		return {
 			success: false,
 			error: {
@@ -86,7 +84,6 @@ export async function registerUser({
 
 	let transactionResult: {
 		id: number;
-		publicId: string;
 		publicListId: string;
 		sessionToken: string;
 		expiresAt: Date;
@@ -94,20 +91,13 @@ export async function registerUser({
 
 	try {
 		transactionResult = await db.transaction(async (tx) => {
-			const [newUser] = await tx
-				.insert(usersTable)
-				.values({
-					publicId: data.userId,
-				})
-				.returning({
-					id: usersTable.id,
-					publicId: usersTable.publicId,
-				});
+			const newUser = await insertUser({ tx, publicId: data.userId });
 
-			await tx.insert(userEmailsTable).values({
-				userId: newUser.id,
-				email,
-			});
+			if (!newUser) {
+				throw new Error("ユーザー作成に失敗しました");
+			}
+
+			await replaceUserEmail({ tx, userId: newUser.id, email });
 
 			const [newList] = await tx
 				.insert(listsTable)
@@ -128,19 +118,19 @@ export async function registerUser({
 			}
 
 			const cookieStore = await cookies();
-			const tempToken = cookieStore.get("temp_session_token")?.value;
+			const tempTokenCookie = cookieStore.get("temp_session_token")?.value;
 
-			if (tempToken) {
+			if (tempTokenCookie) {
 				await tx
 					.delete(tempSessionTokensTable)
-					.where(eq(tempSessionTokensTable.token, tempToken));
+					.where(eq(tempSessionTokensTable.token, tempTokenCookie));
 			}
 
 			const sessionToken = await generateSessionToken({
 				userId: newUser.id,
 				deviceId,
 			});
-			const expiresAt = addDays(now, 30);
+			const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
 			await tx.insert(sessionTokensTable).values({
 				token: sessionToken,
@@ -152,7 +142,6 @@ export async function registerUser({
 
 			return {
 				id: newUser.id,
-				publicId: newUser.publicId,
 				publicListId: newList.publicId,
 				sessionToken,
 				expiresAt,
@@ -180,7 +169,7 @@ export async function registerUser({
 	return {
 		success: true,
 		data: {
-			userId: transactionResult.publicId,
+			userId: data.userId,
 			publicListId: transactionResult.publicListId,
 		},
 	};

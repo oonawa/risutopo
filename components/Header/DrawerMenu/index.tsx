@@ -17,10 +17,10 @@ import PersonIcon from "../../ui/Icons/PersonIcon";
 import ArrowCircleRightIcon from "@/components/ui/Icons/ArrowCircleRightIcon";
 
 type Props = {
-	isLoggedIn: boolean;
+	userEmail: string | null;
 };
 
-export default function DrawerMenu({ isLoggedIn }: Props) {
+export default function DrawerMenu({ userEmail }: Props) {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 
@@ -48,15 +48,15 @@ export default function DrawerMenu({ isLoggedIn }: Props) {
 
 				<div className="flex justify-center">
 					<div className="flex flex-col items-center gap-4 md:gap-6 p-4 w-full sm:max-w-[50dvw]">
-						{isLoggedIn ? (
+						{userEmail ? (
 							<>
 								<div className="p-4 w-full border border-background-light-1 rounded-xl">
-									<div className="flex flex-col gap-2 pb-4">
+									<div className="flex flex-col gap-2 pb-4 break-all">
 										<h3 className="text-lg font-bold text-foreground-dark-2">
-											メールアドレスの変更
+											ログインに使うメールアドレス
 										</h3>
-										<p className="text-sm text-foreground-dark-1">
-											ログインにつかうメールアドレスの確認・変更
+										<p className="text-foreground-dark-1">
+											{userEmail}
 										</p>
 									</div>
 									<DrawerClose asChild>
