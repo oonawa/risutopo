@@ -93,7 +93,6 @@ export default function RegisterForm({ email, token }: Props) {
 				email,
 				tempToken: token,
 				localUserList,
-				now: new Date(),
 			});
 
 			if (result.success) {

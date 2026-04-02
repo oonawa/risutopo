@@ -31,14 +31,13 @@ export async function registerUser({
 	userId,
 	tempToken,
 	localUserList,
-	now,
 }: {
 	email: string;
 	userId: string;
 	tempToken: string;
 	localUserList: LocalList;
-	now: Date;
 }): Promise<Result<{ userId: string; publicListId: string }>> {
+	const now = new Date();
 	const tempSession = await verifyTempSessionToken({ tempToken, now });
 
 	if (!tempSession) {

@@ -33,7 +33,6 @@ async function assertStoreMovieResult({
 	const result = await storeListItem({
 		publicListId,
 		movie,
-		now: new Date(),
 	});
 
 	expect(result.success).toBe(true);
@@ -535,7 +534,6 @@ describe("storeMovie", () => {
 		const result = await storeListItem({
 			publicListId: testPublicListId,
 			movie: watchedMovie,
-			now: new Date("2026-03-21T00:00:00.000Z"),
 		});
 
 		expect(result.success).toBe(true);
@@ -564,7 +562,6 @@ describe("storeMovie", () => {
 		const firstResult = await storeListItem({
 			publicListId: testPublicListId,
 			movie: firstMovie,
-			now: new Date(),
 		});
 
 		expect(firstResult.success).toBe(true);
@@ -572,7 +569,6 @@ describe("storeMovie", () => {
 		const secondResult = await storeListItem({
 			publicListId: testPublicListId,
 			movie: secondMovie,
-			now: new Date(),
 		});
 
 		expect(secondResult.success).toBe(false);
@@ -610,7 +606,6 @@ describe("storeMovie", () => {
 		const result = await storeListItem({
 			publicListId: crypto.randomUUID(),
 			movie,
-			now: new Date(),
 		});
 
 		expect(result).toEqual({
@@ -646,7 +641,6 @@ describe("storeMovie", () => {
 		const result = await storeListItem({
 			publicListId: testPublicListId,
 			movie: invalidMovie,
-			now: new Date(),
 		});
 
 		expect(result).toEqual({

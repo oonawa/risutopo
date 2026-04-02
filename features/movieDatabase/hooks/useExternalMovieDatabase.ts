@@ -70,11 +70,9 @@ export const useExternalMovieDatabase = ({ movie }: Props) => {
 				return null;
 			}
 
-			const now = new Date();
-
 			const [officialMovieInfo, directorsInfo] = await Promise.all([
-				getMovieFromExternalMovieDatabase(externalApiMovieId, now),
-				getDirectorsFromExternalMovieDatabase(externalApiMovieId, now),
+				getMovieFromExternalMovieDatabase(externalApiMovieId),
+				getDirectorsFromExternalMovieDatabase(externalApiMovieId),
 			]);
 
 			if (!officialMovieInfo.success || !directorsInfo.success) {

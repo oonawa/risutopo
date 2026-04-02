@@ -9,24 +9,20 @@ import { storeListItemService } from "../services/storeListItemService";
 const storeListItemSchema = z.object({
 	publicListId: z.uuid(),
 	movie: listItemSchema,
-	now: z.date(),
 });
 
 type Args = {
 	publicListId: string;
 	movie: ListItem;
-	now: Date;
 };
 
 export async function storeListItem({
 	publicListId,
 	movie,
-	now,
 }: Args): Promise<Result<ListItem>> {
 	const parsed = storeListItemSchema.safeParse({
 		publicListId,
 		movie,
-		now,
 	});
 
 	if (!parsed.success) {
@@ -39,6 +35,8 @@ export async function storeListItem({
 			},
 		};
 	}
+
+	const now = new Date();
 
 	return await storeListItemService({
 		publicListId,

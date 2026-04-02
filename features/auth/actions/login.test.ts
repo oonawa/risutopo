@@ -81,10 +81,6 @@ async function insertLoginCode({
 }
 
 describe("login", () => {
-	const now = new Date("2026-02-16T00:00:00.000Z");
-	const loginCodeExpiresAt = new Date("2026-02-16T00:10:00.000Z");
-	const sessionTokenExpiresAt = new Date("2026-03-18T00:00:00.000Z");
-	const tempSessionTokenExpiresAt = new Date("2026-02-16T00:15:00.000Z");
 	const expectedDeviceId = "c5232d93874ea7f5";
 	const email = "verify-login-code-test@example.com";
 	let loginCode = "";
@@ -104,19 +100,22 @@ describe("login", () => {
 
 		loginCode = generateLoginCode();
 
+		const loginCodeCreatedAt = new Date();
+		const loginCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
 		await db.transaction(async (tx) => {
 			await insertLoginCode({
 				tx,
 				email,
 				token: hashLoginCode(loginCode),
 				expiresAt: loginCodeExpiresAt,
-				createdAt: now,
+				createdAt: loginCodeCreatedAt,
 			});
 		});
 	});
 
 	it("ユーザーが入力した認証コードが有効であれば、30日間有効のトークンを新規に発行して認証済みの状態にする", async () => {
-		const result = await login(loginCode, now);
+		const result = await login(loginCode);
 
 		expect(result.success).toBe(true);
 		if (!result.success) {
@@ -143,7 +142,7 @@ describe("login", () => {
 				httpOnly: true,
 				sameSite: "lax",
 				secure: true,
-				expires: sessionTokenExpiresAt,
+				expires: expect.any(Date),
 			}),
 		);
 
@@ -167,8 +166,8 @@ describe("login", () => {
 		expect(savedSessionToken.token).toBe(cookieValue);
 		expect(savedSessionToken.userId).not.toBeNull();
 		expect(savedSessionToken.deviceId).toBe(expectedDeviceId);
-		expect(savedSessionToken.createdAt).toEqual(now);
-		expect(savedSessionToken.expiresAt).toEqual(sessionTokenExpiresAt);
+		expect(savedSessionToken.createdAt).toBeInstanceOf(Date);
+		expect(savedSessionToken.expiresAt.getTime() - savedSessionToken.createdAt.getTime()).toBe(30 * 24 * 60 * 60 * 1000);
 
 		const [attempt] = await db
 			.select()
@@ -191,18 +190,20 @@ describe("login", () => {
 	it("メールアドレスが未登録だった場合は新規ユーザーとし、15分有効な仮認証トークンを発行する", async () => {
 		const newUserEmail = "verify-login-code-new-user@example.com";
 		const newUserLoginCode = generateLoginCode();
+		const newUserLoginCodeCreatedAt = new Date();
+		const newUserLoginCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
 		await db.transaction(async (tx) => {
 			await insertLoginCode({
 				tx,
 				email: newUserEmail,
 				token: hashLoginCode(newUserLoginCode),
-				expiresAt: loginCodeExpiresAt,
-				createdAt: now,
+				expiresAt: newUserLoginCodeExpiresAt,
+				createdAt: newUserLoginCodeCreatedAt,
 			});
 		});
 
-		const result = await login(newUserLoginCode, now);
+		const result = await login(newUserLoginCode);
 
 		expect(result.success).toBe(true);
 		if (!result.success) {
@@ -221,7 +222,7 @@ describe("login", () => {
 				httpOnly: true,
 				sameSite: "lax",
 				secure: true,
-				expires: tempSessionTokenExpiresAt,
+				expires: expect.any(Date),
 			}),
 		);
 		const [[tempCookieKey, tempCookieValue, tempCookieOptions]] =
@@ -233,7 +234,7 @@ describe("login", () => {
 				httpOnly: true,
 				sameSite: "lax",
 				secure: true,
-				expires: tempSessionTokenExpiresAt,
+				expires: expect.any(Date),
 			}),
 		);
 
@@ -256,8 +257,8 @@ describe("login", () => {
 
 		expect(tempToken.token).toBe(tempCookieValue);
 		expect(tempToken.deviceId).toBe(expectedDeviceId);
-		expect(tempToken.createdAt).toEqual(now);
-		expect(tempToken.expiresAt).toEqual(tempSessionTokenExpiresAt);
+		expect(tempToken.createdAt).toBeInstanceOf(Date);
+		expect(tempToken.expiresAt.getTime() - tempToken.createdAt.getTime()).toBe(15 * 60 * 1000);
 
 		const [attempt] = await db
 			.select()

@@ -21,8 +21,8 @@ type Credits = {
 
 export async function getDirectorsFromExternalMovieDatabase(
 	externalApiMovieId: number,
-	now: Date,
 ): Promise<Result<string[]>> {
+	const now = new Date();
 	const externalDatabaseMovieId = externalApiMovieId.toString();
 	const cacheThreshold = new Date(now);
 	cacheThreshold.setMonth(cacheThreshold.getMonth() - 6);
