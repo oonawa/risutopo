@@ -1,8 +1,6 @@
-import dayjs from "dayjs";
-
 export default function Footer() {
 	return (
-		<footer className="pb-[calc(var(--navigation-bottom)+var(--navigation-height)+1rem)] pt-8 bg-background-dark-1 text-foreground-dark-1">
+		<footer className="pb-[calc(var(--navigation-height)+var(--navigation-bottom)+1rem)] pt-8 bg-background-dark-1 text-foreground-dark-1">
 			<div className="w-full sm:max-w-4xl mx-auto px-4">
 				<div className="flex flex-col md:flex-row md:justify-between gap-8 pb-10">
 					<div className="flex flex-col gap-2">
@@ -37,16 +35,14 @@ export default function Footer() {
 						</li>
 					</ul>
 				</div>
-				<div className="text-foreground-dark-2 text-xs pb-4">
-					This website uses TMDB and the TMDB APIs but is not endorsed,
-					certified, or otherwise approved by TMDB.
-				</div>
-				<div className="flex">
-					<p className="text-xs text-foreground-dark-2">
-						<span>©</span>
-						<span>{dayjs().year()}</span>
-						<span className="pl-2">oonawa</span>
-					</p>
+				<div className="w-full pt-10 text-foreground-dark-3 pb-4 border-t border-background-light-1">
+					<div className="text-xs flex items-center gap-2">
+						<div className="flex items-center min-w-16 p-2 bg-[#0d253f] rounded-lg">
+							<img src="/tmdb.svg" alt="" />
+						</div>
+						This website uses TMDB and the TMDB APIs but is not endorsed,
+						certified, or otherwise approved by TMDB.
+					</div>
 				</div>
 			</div>
 		</footer>
