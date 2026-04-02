@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import LoginMailTemplate from "../components/LoginMailTemplate";
+import LoginMailTemplate from "@/emails/email";
 
 export async function sendLoginMail({
 	email,

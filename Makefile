@@ -18,3 +18,6 @@ test:
 
 story:
 	npm run storybook
+
+mail:
+	npm run email:dev
