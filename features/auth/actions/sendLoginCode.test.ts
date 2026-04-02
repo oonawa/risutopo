@@ -75,7 +75,6 @@ function hashLoginCode(loginCode: string) {
 }
 
 describe("sendLoginCode", () => {
-	const now = new Date("2026-02-16T00:00:00.000Z");
 	const existingUserEmail = "send-login-code-test@example.com";
 	const unregisteredUserEmail = "send-login-code-unregistered@example.com";
 
@@ -121,7 +120,7 @@ describe("sendLoginCode", () => {
 	it("【既存ユーザー】10分間有効な数字6桁の認証コードを発行し、入力されたメールアドレスへ送信する", async () => {
 		const existingUser = await seedExistingUser();
 
-		const result = await sendLoginCode(existingUserEmail, now);
+		const result = await sendLoginCode(existingUserEmail);
 
 		expect(result).toEqual({ success: true });
 
@@ -154,10 +153,8 @@ describe("sendLoginCode", () => {
 		}
 
 		expect(savedToken.userId).toBe(existingUser.id);
-		expect(savedToken.createdAt).toEqual(now);
-		expect(savedToken.expiresAt).toEqual(
-			new Date(now.getTime() + 10 * 60 * 1000),
-		);
+		expect(savedToken.createdAt).toBeInstanceOf(Date);
+		expect(savedToken.expiresAt.getTime() - savedToken.createdAt.getTime()).toBe(10 * 60 * 1000);
 		expect(savedToken.token).toBe(hashLoginCode(templateArg.loginCode));
 
 		const [attempt] = await db
@@ -175,7 +172,7 @@ describe("sendLoginCode", () => {
 	});
 
 	it("【未登録ユーザー】10分間有効な数字6桁の認証コードを発行し、入力されたメールアドレスへ送信する", async () => {
-		const result = await sendLoginCode(unregisteredUserEmail, now);
+		const result = await sendLoginCode(unregisteredUserEmail);
 
 		expect(result).toEqual({ success: true });
 
@@ -208,10 +205,8 @@ describe("sendLoginCode", () => {
 		}
 
 		expect(savedToken.userId).toBeNull();
-		expect(savedToken.createdAt).toEqual(now);
-		expect(savedToken.expiresAt).toEqual(
-			new Date(now.getTime() + 10 * 60 * 1000),
-		);
+		expect(savedToken.createdAt).toBeInstanceOf(Date);
+		expect(savedToken.expiresAt.getTime() - savedToken.createdAt.getTime()).toBe(10 * 60 * 1000);
 		expect(savedToken.token).toBe(hashLoginCode(templateArg.loginCode));
 
 		const [attempt] = await db
@@ -232,7 +227,8 @@ describe("sendLoginCode", () => {
 		const existingUser = await seedExistingUser();
 
 		const oldLoginCode = "123456";
-		const oldExpiresAt = new Date(now.getTime() + 5 * 60 * 1000);
+		const setupTime = new Date();
+		const oldExpiresAt = new Date(setupTime.getTime() + 5 * 60 * 1000);
 
 		await db.insert(loginCodesTable).values({
 			token: hashLoginCode(oldLoginCode),
@@ -240,10 +236,10 @@ describe("sendLoginCode", () => {
 			encryptedEmail: encrypt(existingUserEmail),
 			userId: existingUser.id,
 			expiresAt: oldExpiresAt,
-			createdAt: new Date(now.getTime() - 60 * 1000),
+			createdAt: new Date(setupTime.getTime() - 60 * 1000),
 		});
 
-		await sendLoginCode(existingUserEmail, now);
+		await sendLoginCode(existingUserEmail);
 
 		const savedTokens = await db
 			.select()
@@ -261,9 +257,7 @@ describe("sendLoginCode", () => {
 		const [templateArg] = mockLoginMailTemplate.mock.calls[0];
 		expect(savedToken.token).toBe(hashLoginCode(templateArg.loginCode));
 		expect(savedToken.token).not.toBe(hashLoginCode(oldLoginCode));
-		expect(savedToken.createdAt).toEqual(now);
-		expect(savedToken.expiresAt).toEqual(
-			new Date(now.getTime() + 10 * 60 * 1000),
-		);
+		expect(savedToken.createdAt).toBeInstanceOf(Date);
+		expect(savedToken.expiresAt.getTime() - savedToken.createdAt.getTime()).toBe(10 * 60 * 1000);
 	});
 });

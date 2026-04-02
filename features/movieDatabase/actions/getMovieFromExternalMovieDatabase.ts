@@ -13,8 +13,8 @@ type OfficialMovieInfo = TmdbMovieResponse & {
 
 export async function getMovieFromExternalMovieDatabase(
 	externalApiMovieId: number,
-	now: Date,
 ): Promise<Result<OfficialMovieInfo>> {
+	const now = new Date();
 	const externalDatabaseMovieId = externalApiMovieId.toString();
 	const cacheThreshold = new Date(now);
 	cacheThreshold.setMonth(cacheThreshold.getMonth() - 6);

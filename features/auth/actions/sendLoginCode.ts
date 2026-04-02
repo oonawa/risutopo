@@ -8,11 +8,11 @@ import { sendLoginCodeService } from "../services/sendLoginCodeService";
 
 const sendLoginCodeSchema = z.object({
 	email: z.email(),
-	now: z.date(),
 });
 
-export async function sendLoginCode(email: string, now: Date): Promise<Result> {
-	const parsed = sendLoginCodeSchema.safeParse({ email, now });
+export async function sendLoginCode(email: string): Promise<Result> {
+	const now = new Date();
+	const parsed = sendLoginCodeSchema.safeParse({ email });
 
 	if (!parsed.success) {
 		console.error(parsed.error.message);

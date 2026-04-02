@@ -9,13 +9,13 @@ import { loginService } from "../services/loginService";
 
 export async function login(
 	loginCode: string,
-	now: Date,
 ): Promise<
 	Result<{
 		email: string;
 		isNewUser: boolean;
 	}>
 > {
+	const now = new Date();
 	const parsed = loginCodeSchema.safeParse({ value: loginCode });
 
 	if (!parsed.success) {

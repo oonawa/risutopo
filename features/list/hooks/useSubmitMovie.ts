@@ -34,7 +34,6 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 			const result = await storeListItem({
 				publicListId,
 				movie,
-				now: new Date(),
 			});
 
 			setSuccess(result.success);

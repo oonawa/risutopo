@@ -51,9 +51,9 @@ export default function LoginForm() {
 	return (
 		<Layout>
 			<VerifyForm
-				sendAction={() => sendLoginCode(emailRef.current, new Date())}
+				sendAction={() => sendLoginCode(emailRef.current)}
 				verifyAction={async (code): Promise<Result> => {
-					const result = await login(code, new Date());
+					const result = await login(code);
 					if (result.success) {
 						loginDataRef.current = result.data;
 						return { success: true };
