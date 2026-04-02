@@ -37,7 +37,10 @@ export default function Footer() {
 						</li>
 					</ul>
 				</div>
-
+				<div className="text-foreground-dark-2 text-xs pb-4">
+					This website uses TMDB and the TMDB APIs but is not endorsed,
+					certified, or otherwise approved by TMDB.
+				</div>
 				<div className="flex">
 					<p className="text-xs text-foreground-dark-2">
 						<span>©</span>
