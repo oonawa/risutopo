@@ -32,35 +32,15 @@ export default function HomeTutorial({ ItemRegisterForm, Roulette }: Props) {
 			<Section>
 				<SectionTitle>Make a List</SectionTitle>
 				<div className="pb-4">
-					<h3 className="text-[14px]">
-						配信サービスの観たい作品をリスト登録。
-					</h3>
+					<h3>配信サービスの観たい作品をリスト登録。</h3>
 				</div>
 				<SectionContent>{ItemRegisterForm}</SectionContent>
-				<div className="pt-2 flex flex-col items-center gap-2">
-					<p className="text-[14px] text-foreground-dark-1">
-						以下のサービスから追加できます。
-					</p>
-					<div className="w-full font-bold text-foreground-dark-1 flex flex-col items-center bg-background-dark-1 rounded-md py-4">
-						<div className="flex">
-							<span className="inline-block px-4">Netflix</span>/
-							<span className="inline-block px-4">U-NEXT</span>
-						</div>
-						<div className="flex">
-							<span className="inline-block px-4">Prime Video</span>/
-							<span className="inline-block px-4">Hulu</span>/
-							<span className="inline-block px-4">Disney+</span>
-						</div>
-					</div>
-				</div>
 			</Section>
 
 			<Section>
 				<SectionTitle>Roulette</SectionTitle>
 				<div className="pb-4">
-					<h3 className="text-[14px]">
-						「今日、なに観ようかな」はルーレットへおまかせ。
-					</h3>
+					<h3>「今日、なに観ようかな」はルーレットへおまかせ。</h3>
 				</div>
 				<SectionContent>{Roulette}</SectionContent>
 			</Section>
@@ -70,10 +50,8 @@ export default function HomeTutorial({ ItemRegisterForm, Roulette }: Props) {
 					Sign Up,
 					<span className="inline-block pl-2">Sync List</span>
 				</SectionTitle>
-				<div className="pt-2 pb-4">
-					<h3 className="text-[14px]">
-						ログインすると、ほかのデバイスでも同じリストを使えます。
-					</h3>
+				<div className="py-4">
+					<h3>ログインすると、ほかのデバイスでも同じリストを使えます。</h3>
 				</div>
 				<SectionContent>
 					<div className="pt-6">

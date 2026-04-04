@@ -1,5 +1,6 @@
 import { useState, useTransition } from "react";
 import type { ListItem } from "@/features/list/types/ListItem";
+import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
 import { storeListItem } from "@/features/list/actions/storeListItem";
 import { removeListItem } from "@/features/list/actions/removeListItem";
 import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
@@ -19,12 +20,15 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 
 	const submit = ({
 		movie,
-		publicListId,
 	}: {
 		movie: ListItem;
-		publicListId: string | null;
 	}) => {
 		startSubmitTransition(async () => {
+			const publicListIdResult = await currentUserPublicListId();
+			const publicListId = publicListIdResult.success
+				? publicListIdResult.data.publicListId
+				: null;
+
 			if (!publicListId) {
 				storeLocalListItem(movie);
 				setSuccess(true);
@@ -47,13 +51,16 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 	};
 
 	const remove = ({
-		publicListId,
 		listItemId,
 	}: {
-		publicListId: string | null;
 		listItemId: string;
 	}) => {
 		startRemoveTransition(async () => {
+			const publicListIdResult = await currentUserPublicListId();
+			const publicListId = publicListIdResult.success
+				? publicListIdResult.data.publicListId
+				: null;
+
 			if (!publicListId) {
 				removeLocalListItem(listItemId);
 				setSuccess(true);

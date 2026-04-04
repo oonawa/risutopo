@@ -6,8 +6,8 @@ export type AppError =
 	| { code: "INTERNAL_ERROR"; message: string }
 	| { code: "TOO_MANY_REQUESTS_ERROR"; message: string };
 
-export type Result<T = void> =
-	| (T extends void ? { success: true } : { success: true; data: T })
+export type Result<T = undefined> =
+	| ([T] extends [undefined] ? { success: true } : { success: true; data: T })
 	| {
 			success: false;
 			error: AppError;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
 import { useActiveTab } from "@/features/list/hooks/useActiveTab";
@@ -10,30 +11,30 @@ import { Button } from "@/components/ui/button";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
 import CrossIcon from "@/components/ui/Icons/CrossIcon";
+import Loading from "@/components/Loading";
 import Tab from "./Tab";
-import PcForm from "./PcForm";
 import MobileForm from "./MobileForm";
-import ExistingListItemDetail from "./ExistingItem/Detail";
-import SelectButtons from "./SelectButtons";
-import ListItemCard from "../ListItem";
+
+const PcForm = dynamic(() => import("./PcForm"), {
+	ssr: false,
+	loading: Loading,
+});
+const DraftNewItem = dynamic(() => import("./DraftNewItem"), {
+	ssr: false,
+	loading: Loading,
+});
+const PossibleDuplicateItems = dynamic(
+	() => import("./PossibleDuplicateItems"),
+	{ ssr: false, loading: Loading },
+);
 
 type Props = {
-	initialIsMobile: boolean;
-	userAgent: string;
 	items?: ListItem[];
-	publicListId: string | null;
+	isLoggedIn?: boolean;
 };
 
-export default function MovieInputForm({
-	initialIsMobile,
-	userAgent,
-	items,
-	publicListId,
-}: Props) {
-	const { activeTab, setActiveTab } = useActiveTab({
-		initialIsMobile,
-		userAgent,
-	});
+export default function MovieInputForm({ items, isLoggedIn = false }: Props) {
+	const { activeTab, setActiveTab } = useActiveTab();
 
 	const [extractedMovie, setExtractedMovie] = useState<DraftListItem | null>(
 		null,
@@ -133,62 +134,19 @@ export default function MovieInputForm({
 									)}
 
 									{possibleDuplicateMovies && (
-										<>
-											<motion.div
-												key="existing-item"
-												initial={{ opacity: 0, y: 4 }}
-												animate={{ opacity: 1, y: 0 }}
-												exit={{ opacity: 0, y: -4 }}
-												transition={{ duration: 0.2, ease: "easeOut" }}
-											>
-												<div className="pt-6 px-4">
-													{sameMovie ? (
-														<div className="py-2 text-center text-xl font-bold">
-															すでにリスト登録されています。
-															<ExistingListItemDetail movie={sameMovie} />
-														</div>
-													) : (
-														<div className="py-2 flex flex-col items-center">
-															<h2 className="text-xl font-bold pb-2 text-center">
-																すでに以下の作品が登録済みです。
-															</h2>
-															<div className="w-full max-w-120 pt-4">
-																<ul className="w-full pb-64">
-																	{possibleDuplicateMovies.map((item) => (
-																		<li key={item.listItemId} className="pb-4">
-																			<ExistingListItemDetail movie={item} />
-																		</li>
-																	))}
-																</ul>
-															</div>
-														</div>
-													)}
-												</div>
-											</motion.div>
-											{!sameMovie && (
-												<SelectButtons
-													onCancel={handleCloseResult}
-													onContinue={handleRegisterContinue}
-												/>
-											)}
-										</>
+										<PossibleDuplicateItems
+											possibleDuplicateMovies={possibleDuplicateMovies}
+											sameMovie={sameMovie}
+											handleCloseResult={handleCloseResult}
+											handleRegisterContinue={handleRegisterContinue}
+										/>
 									)}
 
 									{!possibleDuplicateMovies && (
-										<motion.div
-											key="extracted-movie"
-											initial={{ opacity: 0, y: 4 }}
-											animate={{ opacity: 1, y: 0 }}
-											exit={{ opacity: 0, y: -4 }}
-											transition={{ duration: 0.2, ease: "easeOut" }}
-											className="pt-4 px-4"
-										>
-											<ListItemCard
-												mode="extracted"
-												publicListId={publicListId}
-												movie={extractedMovie}
-											/>
-										</motion.div>
+										<DraftNewItem
+											isLoggedIn={isLoggedIn}
+											draft={extractedMovie}
+										/>
 									)}
 								</AnimatePresence>
 							</div>

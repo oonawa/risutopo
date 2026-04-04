@@ -17,9 +17,8 @@ export const getUserListService = async (
 		.filter((id) => id !== null);
 
 	const directors = await findMovieDirectorNames(movieIds);
-	const movies: ListItem[] = mapListItems(
-		userListItems,
-		mapMovieDirector(directors),
+	const movies: ListItem[] = userListItems.map((row) =>
+		mapListItemRow(row, buildMovieDirectorMap(directors)),
 	);
 
 	return {
@@ -28,84 +27,67 @@ export const getUserListService = async (
 	};
 };
 
-const mapMovieDirector = (
-	directors: {
-		movieId: number;
-		directorName: string;
-	}[],
-) => {
-	const movieDirectors = new Map<number, string[]>();
-
+export const buildMovieDirectorMap = (
+	directors: { movieId: number; directorName: string }[],
+): Map<number, string[]> => {
+	const map = new Map<number, string[]>();
 	for (const director of directors) {
-		const current = movieDirectors.get(director.movieId);
+		const current = map.get(director.movieId);
 		if (current) {
 			current.push(director.directorName);
-			continue;
+		} else {
+			map.set(director.movieId, [director.directorName]);
 		}
-
-		movieDirectors.set(director.movieId, [director.directorName]);
 	}
-	return movieDirectors;
+	return map;
 };
 
-const mapListItems = (
-	rows: ListItemRow[],
+export const mapListItemRow = (
+	row: ListItemRow,
 	movieDirectors: Map<number, string[]>,
-) => {
-	return rows.map((row) => {
-		const watchedState =
-			row.watchedAt === null
-				? {
-						isWatched: false as const,
-						watchedAt: null,
-					}
-				: {
-						isWatched: true as const,
-						watchedAt: row.watchedAt,
-					};
+): ListItem => {
+	const watchedState =
+		row.watchedAt === null
+			? { isWatched: false as const, watchedAt: null }
+			: { isWatched: true as const, watchedAt: row.watchedAt };
 
-		if (
-			row.movieId === null ||
-			row.officialTitle === null ||
-			row.backgroundImage === null ||
-			row.posterImage === null ||
-			row.runningMinutes === null ||
-			row.releaseDate === null ||
-			row.overview === null ||
-			row.externalDatabaseMovieId === null
-		) {
-			return {
-				listItemId: row.listItemId,
-				title: row.title,
-				url: row.url,
-				createdAt: row.createdAt,
-				serviceSlug: row.serviceSlug,
-				serviceName: row.serviceName,
-				...watchedState,
-			};
-		}
+	const base = {
+		listItemId: row.listItemId,
+		title: row.title,
+		url: row.url,
+		createdAt: row.createdAt,
+		serviceSlug: row.serviceSlug,
+		serviceName: row.serviceName,
+		...watchedState,
+	};
 
-		return {
-			listItemId: row.listItemId,
-			title: row.title,
-			url: row.url,
-			createdAt: row.createdAt,
-			serviceSlug: row.serviceSlug,
-			serviceName: row.serviceName,
-			...watchedState,
-			details: {
-				movieId: row.movieId,
-				officialTitle: row.officialTitle,
-				backgroundImage: row.backgroundImage,
-				posterImage: row.posterImage,
-				director: movieDirectors.get(row.movieId) ?? [],
-				runningMinutes: row.runningMinutes,
-				releaseYear: getReleaseYear(row.releaseDate),
-				externalDatabaseMovieId: Number(row.externalDatabaseMovieId),
-				overview: row.overview,
-			},
-		};
-	});
+	if (
+		row.movieId === null ||
+		row.officialTitle === null ||
+		row.backgroundImage === null ||
+		row.posterImage === null ||
+		row.runningMinutes === null ||
+		row.releaseDate === null ||
+		row.overview === null ||
+		row.externalDatabaseMovieId === null
+	) {
+		return base;
+	}
+
+	return {
+		...base,
+		details: {
+			movieId: row.movieId,
+			officialTitle: row.officialTitle,
+			backgroundImage: row.backgroundImage,
+			posterImage: row.posterImage,
+			director: movieDirectors.get(row.movieId) ?? [],
+			runningMinutes: row.runningMinutes,
+			releaseYear: getReleaseYear(row.releaseDate),
+			externalDatabaseMovieId: Number(row.externalDatabaseMovieId),
+			overview: row.overview,
+		},
+	};
 };
 
 const getReleaseYear = (releaseDate: string) => {

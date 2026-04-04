@@ -341,6 +341,66 @@ export async function findMovieDirectorNames(movieIds: number[]) {
 		.where(inArray(movieDirectorsTable.movieId, movieIds));
 }
 
+export async function listItemPublicIdsByListId(
+	listId: number,
+	userId: number,
+): Promise<string[]> {
+	const rows = await db
+		.select({ listItemId: listItemsTable.publicId })
+		.from(listItemsTable)
+		.innerJoin(listsTable, eq(listItemsTable.listId, listsTable.id))
+		.where(and(eq(listsTable.id, listId), eq(listsTable.userId, userId)));
+
+	return rows.map((row) => row.listItemId);
+}
+
+export async function findListItemRowByPublicId(
+	listItemPublicId: string,
+	userId: number,
+): Promise<ListItemRow | null> {
+	const [row] = await db
+		.select({
+			listItemId: listItemsTable.publicId,
+			title: listItemsTable.titleOnService,
+			url: listItemsTable.watchUrl,
+			createdAt: listItemsTable.createdAt,
+			serviceSlug: streamingServicesTable.slug,
+			serviceName: streamingServicesTable.name,
+			watchedAt: watchedItemsTable.watchedAt,
+			movieId: listItemMovieMatchTable.movieId,
+			officialTitle: moviesTable.title,
+			backgroundImage: moviesTable.backgroundImage,
+			posterImage: moviesTable.posterImage,
+			runningMinutes: moviesTable.runningMinutes,
+			releaseDate: moviesTable.releaseDate,
+			overview: moviesTable.overview,
+			externalDatabaseMovieId: moviesTable.externalDatabaseMovieId,
+		})
+		.from(listItemsTable)
+		.innerJoin(
+			streamingServicesTable,
+			eq(listItemsTable.streamingServiceId, streamingServicesTable.id),
+		)
+		.innerJoin(listsTable, eq(listItemsTable.listId, listsTable.id))
+		.leftJoin(
+			listItemMovieMatchTable,
+			eq(listItemMovieMatchTable.listItemId, listItemsTable.id),
+		)
+		.leftJoin(moviesTable, eq(listItemMovieMatchTable.movieId, moviesTable.id))
+		.leftJoin(
+			watchedItemsTable,
+			eq(watchedItemsTable.listItemId, listItemsTable.id),
+		)
+		.where(
+			and(
+				eq(listItemsTable.publicId, listItemPublicId),
+				eq(listsTable.userId, userId),
+			),
+		);
+
+	return row ?? null;
+}
+
 export async function findSameListItems({
 	listId,
 	watchUrls,
