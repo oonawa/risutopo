@@ -70,10 +70,12 @@ export default function HomeTutorial({ ItemRegisterForm, Roulette }: Props) {
 					Sign Up,
 					<span className="inline-block pl-2">Sync List</span>
 				</SectionTitle>
-				<SectionContent>
+				<div className="pt-2 pb-4">
 					<h3 className="text-[14px]">
 						ログインすると、ほかのデバイスでも同じリストを使えます。
 					</h3>
+				</div>
+				<SectionContent>
 					<div className="pt-6">
 						<Link
 							href="/login"

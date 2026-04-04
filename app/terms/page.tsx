@@ -4,12 +4,13 @@ import Section from "../components/Section";
 import SectionTitle from "../components/Section/Title";
 import SectionContent from "../components/Section/Content";
 
-export default async function PrivacyPage() {
-	const { frontmatter, contentHtml } = await parseMarkdownFile("privacy.md");
+export default async function TermsPage() {
+	const { frontmatter, contentHtml } = await parseMarkdownFile("terms.md");
 
 	return (
 		<Section>
-			<SectionTitle>Privacy Policy</SectionTitle>
+			<SectionTitle>Terms of Service</SectionTitle>
+
 			<SectionContent>
 				{parse(contentHtml, { replace: replaceWithClass })}
 
