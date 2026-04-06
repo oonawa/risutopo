@@ -1,139 +1,18 @@
-"use client";
+import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
+import { getRouletteListItemIds } from "@/features/list/actions/getRouletteListItemIds";
+import RouletteContent from "./Content";
 
-import { useState } from "react";
-import { AnimatePresence, motion, useAnimate } from "motion/react";
-import type { ListItem } from "@/features/list/types/ListItem";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
-import RisuPot from "@/components/RisuPot";
-import { Button } from "@/components/ui/button";
-import ListItemCard from "../ListItem";
+export default async function Roulette() {
+	const publicListIdResult = await currentUserPublicListId();
+	const publicListId = publicListIdResult.success
+		? publicListIdResult.data.publicListId
+		: null;
 
-type Props = {
-	items?: ListItem[];
-};
+	const listItemIds = publicListId
+		? await getRouletteListItemIds(publicListId).then((r) =>
+				r.success ? r.data : undefined,
+			)
+		: undefined;
 
-export default function Roulette({ items }: Props) {
-	const { getListItems } = useListLocalStorageRepository();
-
-	const [isLacking, setIsLacking] = useState(false);
-	const [isDisabled, setIsDisabled] = useState(false);
-	const [selectedItem, setSelectedItem] = useState<ListItem | null>(null);
-	const [isAnimating, setIsAnimating] = useState(false);
-	const [potScope, animatePot] = useAnimate();
-
-	const list = items ?? getListItems();
-
-	const getRandomItem = async () => {
-		if (isAnimating) {
-			return;
-		}
-
-		if (list.length < 2) {
-			return setIsLacking(true);
-		}
-
-		setIsAnimating(true);
-		await animatePot(
-			potScope.current,
-			{ rotate: [0, -16, 16, -13, 13, -10, 10, 0] },
-			{ duration: 1, ease: "easeInOut" },
-		);
-		await animatePot(
-			potScope.current,
-			{ rotate: [0, 160] },
-			{ duration: 0.35, ease: "easeInOut" },
-		);
-		await animatePot(
-			potScope.current,
-			{ y: [0, -10, 10, -10, 10, 0] },
-			{ duration: 0.5, ease: "easeInOut" },
-		);
-
-		const selected = list[Math.floor(Math.random() * list.length)];
-		setSelectedItem(selected);
-
-		await animatePot(
-			potScope.current,
-			{ rotate: 0, y: 0 },
-			{ duration: 0.2, ease: "easeOut" },
-		);
-
-		setTimeout(() => {
-			setIsAnimating(false);
-			setIsDisabled(true);
-		}, 300);
-	};
-
-	return (
-		<div className="flex flex-col items-center justify-center rounded-2xl">
-			<Button
-				onClick={getRandomItem}
-				disabled={isDisabled || isLacking}
-				className="cursor-pointer w-full h-full border border-background-light-3 rounded-2xl text-foreground-dark-2 hover:bg-background-light-1 hover:text-foreground"
-			>
-				<div className="flex flex-col items-center pb-2">
-					<motion.div ref={potScope} className="origin-center">
-						<RisuPot className="size-20 text-foreground-dark-1" />
-					</motion.div>
-					<h3 className="font-bold">ランダムに選ぶ！</h3>
-				</div>
-			</Button>
-
-			<AnimatePresence initial={false}>
-				{isLacking && (
-					<motion.div
-						key="is-lacking"
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.2, ease: "easeInOut" }}
-						className="w-full overflow-hidden py-4 text-center"
-					>
-						<Button
-							onClick={() => {
-								setIsLacking(false);
-							}}
-							className="w-full gap-2 bg-background-dark-2 rounded-2xl py-10 cursor-pointer"
-						>
-							<h3 className="font-bold">
-								あと
-								<span className="text-xl px-1">{2 - list.length}本</span>
-								リスト登録してください！
-							</h3>
-						</Button>
-					</motion.div>
-				)}
-
-				{selectedItem && (
-					<motion.div
-						key="selected-item"
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.3, ease: "easeInOut" }}
-						className="w-full max-w-lg overflow-hidden"
-					>
-						<div className="pt-6 pb-4 w-full">
-							<ListItemCard
-								mode="drawing"
-								movie={selectedItem}
-								publicListId={null}
-							/>
-						</div>
-						<div className="border-t border-background-light-2 pt-10 pb-6">
-							<Button
-								onClick={() => {
-									setSelectedItem(null);
-									setIsDisabled(false);
-								}}
-								className="w-full cursor-pointer border border-background-light-1 text-foreground-dark-1 bg-background-light-1 hover:bg-background-light-2 hover:text-foreground transition-colors"
-							>
-								<span className="font-bold">もういちど</span>
-							</Button>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
-		</div>
-	);
+	return <RouletteContent listItemIds={listItemIds} />;
 }

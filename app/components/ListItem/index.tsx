@@ -1,14 +1,16 @@
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
 import { useExternalMovieDatabase } from "@/features/movieDatabase/hooks/useExternalMovieDatabase";
 import { useSubmitMovie } from "@/features/list/hooks/useSubmitMovie";
 import NewListItem from "./New";
-import PreviewListItem from "./Preview";
-import EditingListItem from "./Editing";
-import WatchListItem from "./Watch";
-import DrawnListItem from "./Drawn";
-import SearchResult from "../SearchResult";
 import { useMovieAtom } from "@/features/list/state/useMovieAtom";
+
+const PreviewListItem = dynamic(() => import("./Preview"), { ssr: false });
+const EditingListItem = dynamic(() => import("./Editing"), { ssr: false });
+const WatchListItem = dynamic(() => import("./Watch"), { ssr: false });
+const DrawnListItem = dynamic(() => import("./Drawn"), { ssr: false });
+const SearchResult = dynamic(() => import("../SearchResult"), { ssr: false });
 
 type Mode =
 	| "extracted"
@@ -22,14 +24,14 @@ type Mode =
 type Props = {
 	mode?: Mode;
 	movie: DraftListItem | ListItem;
-	publicListId: string | null;
+	isLoggedIn?: boolean;
 	refresh?: () => void;
 };
 
 export default function ListItemCard({
 	mode,
 	movie,
-	publicListId,
+	isLoggedIn = false,
 	refresh,
 }: Props) {
 	const [currentMode, setCurrentMode] = useState<Mode | undefined>(undefined);
@@ -59,8 +61,6 @@ export default function ListItemCard({
 		onSuccess: refresh,
 	});
 
-	const isLoggedIn = publicListId !== null;
-
 	const hasListItemId = (item: DraftListItem | ListItem): item is ListItem => {
 		return "listItemId" in item;
 	};
@@ -75,7 +75,7 @@ export default function ListItemCard({
 					listItemId: window.crypto.randomUUID(),
 				};
 
-		submit({ movie: itemToStore, publicListId });
+		submit({ movie: itemToStore });
 	};
 
 	const handleSelectResult = (externalMovieId: number) => {
@@ -102,7 +102,6 @@ export default function ListItemCard({
 		const { listItemId } = targetMovie;
 
 		remove({
-			publicListId,
 			listItemId,
 		});
 

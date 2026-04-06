@@ -7,11 +7,7 @@ import ListContainer from "../List/Container";
 import ListItemDetail from "../List/Item/Detail";
 import Item from "../List/Item";
 
-type Props = {
-	publicListId: string;
-};
-
-export default function LocalList({ publicListId }: Props) {
+export default function LocalList() {
 	const { getListItems } = useListLocalStorageRepository();
 
 	const items = useSyncExternalStore(
@@ -39,7 +35,7 @@ export default function LocalList({ publicListId }: Props) {
 					);
 				})}
 			</ListContainer>
-			<ListItemDetail publicListId={publicListId} />
+			<ListItemDetail />
 		</>
 	);
 }

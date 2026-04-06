@@ -16,7 +16,7 @@ export default async function ListPage({ params }: Props) {
 	const result = await currentUserId();
 
 	if (!result.success) {
-		return <LocalList publicListId={publicListId} />;
+		return <LocalList />;
 	}
 
 	const moviesResult = await getUserMovieList(publicListId, result.data.userId);
@@ -34,5 +34,5 @@ export default async function ListPage({ params }: Props) {
 
 	const items = moviesResult.data;
 
-	return <List publicListId={publicListId} items={items} />;
+	return <List items={items} />;
 }

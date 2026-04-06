@@ -7,11 +7,7 @@ import { Button } from "@/components/ui/button";
 import CrossIcon from "@/components/ui/Icons/CrossIcon";
 import ListItemCard from "@/app/components/ListItem";
 
-type Props = {
-	publicListId: string;
-};
-
-export default function ListItemDetail({ publicListId }: Props) {
+export default function ListItemDetail() {
 	const { movie, setMovie } = useMovieAtom();
 	const router = useRouter();
 
@@ -41,7 +37,7 @@ export default function ListItemDetail({ publicListId }: Props) {
 						<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto pt-4 px-4">
 							<ListItemCard
 								movie={movie}
-								publicListId={publicListId}
+								isLoggedIn={true}
 								refresh={() => {
 									router.refresh();
 								}}

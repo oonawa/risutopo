@@ -1,6 +1,5 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
-import { currentUserEmail } from "@/features/shared/actions/currentUserEmail";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Menu from "@/components/Menu";
@@ -16,25 +15,22 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const result = await currentUserPublicListId();
-	const publicListId = result.success ? result.data.publicListId : null;
-
-	const email = result.success ? await currentUserEmail() : null;
-	const emailValue = email?.success ? email.data.email : null;
-
 	return (
 		<html lang="ja">
 			<body className={`antialiased`}>
-				<Header userEmail={emailValue} />
+				<Header />
 
 				<main className="min-h-[calc(100dvh-var(--header-height))] pb-20">
 					{children}
 				</main>
 
-				<Menu publicListId={publicListId} isLoggedIn={result.success} />
-
 				<Footer />
+
+				<Suspense fallback={null}>
+					<Menu />
+				</Suspense>
 			</body>
+			
 		</html>
 	);
 }

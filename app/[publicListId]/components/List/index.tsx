@@ -4,11 +4,10 @@ import ListItemDetail from "./Item/Detail";
 import ListItemCard from "./Item";
 
 type Props = {
-	publicListId: string;
 	items: ListItem[];
 };
 
-export default async function List({ publicListId, items }: Props) {
+export default async function List({ items }: Props) {
 	return (
 		<>
 			<ListContainer>
@@ -16,7 +15,7 @@ export default async function List({ publicListId, items }: Props) {
 					return <ListItemCard key={movie.listItemId} movie={movie} />;
 				})}
 			</ListContainer>
-			<ListItemDetail publicListId={publicListId} />
+			<ListItemDetail />
 		</>
 	);
 }
