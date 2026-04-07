@@ -52,11 +52,11 @@ Next.js / Turso / Vercel のフルスタックな構成になっています。
 
 1. リポジトリをクローン（`git clone https://github.com/oonawa/risutopo.git`）
 2. 依存関係をインストール（`npm install`）
-4. ルートへ`local.db`を作成
-5. 環境変数をセット
-6. 開発サーバーを起動（`npm run dev` or `make dev`）
-7. データベースをマイグレーション（`npm run db:migrate` or `make migrate`）
-8. マスタテーブルへレコードを登録（`npm run db:seed` or `make seed`）
+3. ルートへ`local.db`を作成
+4. 環境変数をセット
+5. 開発サーバーを起動（`npm run dev` or `make dev`）
+6. データベースをマイグレーション（`npm run db:migrate` or `make migrate`）
+7. マスタテーブルへレコードを登録（`npm run db:seed` or `make seed`）
 8. `https://localhost:3000`をブラウザで開く
 
 <br>
@@ -65,17 +65,10 @@ Next.js / Turso / Vercel のフルスタックな構成になっています。
 
 ## AIの利用ポリシー
 
-このプロジェクトでは開発にCodex CLIを使用しています。
+このプロジェクトでは開発にClaude Codeを使用しています。
 しかし設計（再設計）・リファクタリングの多くは開発者自身で行なっています。
 
 生成されたコードは、基本的に開発者によるレビュー / リファクタリングを受けます。
-
-Codex CLIには、主に以下の作業を依頼しています。
-
-- 設計相談
-- 既存機能への仕様追加
-- ローカルでのコードレビュー
-- 軽微な修正 / 単調な作業
 
 ## 開発フロー
 
@@ -99,50 +92,12 @@ Codex CLIには、主に以下の作業を依頼しています。
 
 ## 設計ポリシー
 
-`/features`へ機能のカテゴリ別にディレクトリを作成します。
-ディレクトリ内では責務ごとに層を分けます。
+`/features` へ機能のカテゴリ別にディレクトリを作成します。ディレクトリ内では責務ごとに層を分けます。actions → services → repositories の順でバックエンド処理が流れ、全層で共通の `Result` 型（`success: boolean`）を返します。
 
-| 層 | 概要 | 責務 | 
-| --- | --- | --- |
-| /actions | Reactのサーバーアクション。バックエンドのエントリポイント。 | 認証チェック<br>引数のバリデーション<br>Serviceの呼び出し |
-| /services | バックエンドのビジネスロジックを記述する。 | DBのレコード / 外部APIの戻り値等の加工・整形<br>認可チェック<br>Repositoryの呼び出し |
-| /repositories | データのCRUDを行う。 | データベース操作<br>外部APIの呼び出し |
-| /hooks | フロントエンドのビジネスロジックをカスタムフックとして記述する。 | ステートやLocalStorageの操作<br>入力値の加工 / 操作
-| /types | 型定義を記述する。| 機能全体で共有するデータのモデリング |
-| /schemas | Zodのスキーマを記述する。 | バリデーション |
-
-Action層・Service層は共通の`Resullt`型を返し、`success: boolean`で成功 / 失敗を表現します。
-
-### フロントエンド
-
-コンポーネントを分類し、種類別に配置します。
-
-| コンポーネントの種類 | 配置箇所 |
-| --- | --- |
-| 機能に紐づかない汎用コンポーネント | ルートの`/components` |
-| 機能に紐づく汎用コンポーネント | `/app/components` |
-| 特定のページ内でのみ使用するコンポーネント | `/page.tsx`と同階層の`/components` |
+詳細は [docs/architecture.md](docs/architecture.md) を参照してください。
 
 ## 自動テストのポリシー
 
-### 分類
+「テストサイズ」を用いて分類し、Medium テストを中心に実装します。Action 層を起点に DB まで一気通貫でテストします。
 
-**「テストサイズ」**を用います。
-
-| サイズ | 定義 |
-| --- | --- |
-| Small | 単一のプロセス内で実行可能なテスト。 |
-| Medium | 単一のマシン内で実行可能なテスト。 |
-| Large | アプリケーション外部も含めて実物を使用するテスト。 |
-
-### 実装
-
-当面、`Medium`テストを中心に実装します。
-
-- Action層に対して実装し、Service / Repository / テスト用DBまで一気通貫でテストする。
-- Actionの`.ts`ファイルのすぐ隣へ実装する。（例：`getCurrentUserMovieList.ts` / `getCurrentUserMovieList.test.ts`）
-- テストケースは日本語で記述する。（例：`ログイン中ユーザーは自身のリストアイテム全件を取得できる`）
-- 1ケース＝1仕様とし、戻り値 / データベースの状態など期待する処理結果を網羅的に検証する。
-- Cookieなど、副作用的に参照 / 更新される領域はモックしてテストする。
-
-> ※UIコンポーネントのテスト方針は未定
+詳細は [docs/testing.md](docs/testing.md) を参照してください。
