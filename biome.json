@@ -18,6 +18,12 @@
 			"recommended": true,
 			"performance": {
 				"noImgElement": "off"
+			},
+			"suspicious": {
+				"noExplicitAny": "error"
+			},
+			"style": {
+				"noNonNullAssertion": "error"
 			}
 		}
 	},
@@ -35,7 +41,21 @@
 		"enabled": true,
 		"actions": {
 			"source": {
-				"organizeImports": "off"
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							":NODE:",
+							":PACKAGE:",
+							":BLANK_LINE:",
+							"@/features/*/actions/**",
+							"@/features/*/hooks/**",
+							["@/components/**", "@/app/components/**"],
+							"@/**",
+							":PATH:"
+						]
+					}
+				}
 			}
 		}
 	}
