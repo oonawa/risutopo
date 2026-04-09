@@ -44,6 +44,11 @@ next-env.d.ts
 local.db
 local.test.db
 
+# playwright
+test-results/
+playwright-report/
+blob-report/
+
 *storybook.log
 storybook-static
 
