@@ -74,7 +74,7 @@ test.describe("MovieInputForm - 機能テスト", () => {
 			"このテストは mobile-webkit プロジェクトのみ対象",
 		);
 		const userAgent = await page.evaluate(() => navigator.userAgent);
-		await setupAuthenticatedUser(context, userAgent, "http://localhost:3000");
+		await setupAuthenticatedUser(context, userAgent, testInfo.project.use.baseURL ?? "");
 		await page.goto("/");
 		await fillMobileFormAndVerify(page);
 	});
@@ -101,7 +101,7 @@ test.describe("MovieInputForm - 機能テスト", () => {
 			"このテストは desktop-chromium プロジェクトのみ対象",
 		);
 		const userAgent = await page.evaluate(() => navigator.userAgent);
-		await setupAuthenticatedUser(context, userAgent, "http://localhost:3000");
+		await setupAuthenticatedUser(context, userAgent, testInfo.project.use.baseURL ?? "");
 		await page.goto("/");
 		await fillPcFormAndVerify(page);
 	});
@@ -126,7 +126,7 @@ test.describe("MovieInputForm - 機能テスト", () => {
 			"このテストは desktop-firefox プロジェクトのみ対象",
 		);
 		const userAgent = await page.evaluate(() => navigator.userAgent);
-		await setupAuthenticatedUser(context, userAgent, "http://localhost:3000");
+		await setupAuthenticatedUser(context, userAgent, testInfo.project.use.baseURL ?? "");
 		await page.goto("/");
 		await fillPcFormAndVerify(page);
 	});
@@ -151,7 +151,7 @@ test.describe("MovieInputForm - 機能テスト", () => {
 			"このテストは desktop-webkit プロジェクトのみ対象",
 		);
 		const userAgent = await page.evaluate(() => navigator.userAgent);
-		await setupAuthenticatedUser(context, userAgent, "http://localhost:3000");
+		await setupAuthenticatedUser(context, userAgent, testInfo.project.use.baseURL ?? "");
 		await page.goto("/");
 		await fillPcFormAndVerify(page);
 	});

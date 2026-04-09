@@ -12,7 +12,7 @@ export default function SearchButton({ isSearchPending, onSearch }: Props) {
 			onClick={() => {
 				onSearch();
 			}}
-			className="cursor-pointer border border-background text-foreground-dark-2 hover:border-background-light-1 hover:text-foreground-2 hover:bg-background"
+			className="cursor-pointer border border-background-light-1 text-foreground-dark-2 hover:border-background-light-2 hover:text-foreground-2 hover:bg-background-light-1"
 		>
 			ポスターをさがす
 		</Button>

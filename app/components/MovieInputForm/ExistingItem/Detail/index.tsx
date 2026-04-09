@@ -10,7 +10,7 @@ export default function ExistingListItemDetail({ movie }: Props) {
 		<div className="flex flex-col items-center pt-4">
 			{movie.details ? (
 				<div className="relative w-full aspect-video rounded-xl">
-					<div className="absolute top-0 left-0 flex justify-center w-full h-full aspect-video rounded-xl bg-background-dark-4/85">
+					<div className="absolute top-0 left-0 flex justify-center w-full h-full aspect-video rounded-xl bg-background-dark-1/85">
 						<div className="flex justify-center h-full aspect-square py-2">
 							<img
 								className="object-contain h-full rounded-sm"
@@ -28,14 +28,14 @@ export default function ExistingListItemDetail({ movie }: Props) {
 					</div>
 				</div>
 			) : (
-				<div className="w-full aspect-video rounded-xl bg-background-dark-3">
+				<div className="w-full aspect-video rounded-xl bg-background-dark-1">
 					<div className="h-full flex justify-center items-center text-foreground-dark-3 font-bold">
 						ポスター画像なし
 					</div>
 				</div>
 			)}
 			<div className="flex gap-4 pt-4 w-full">
-				<div className="h-fit p-2 bg-background-dark-4 rounded-md text-foreground-dark-1 font-bold whitespace-nowrap">
+				<div className="h-fit p-2 bg-background-dark-1 rounded-md text-foreground-dark-1 font-bold whitespace-nowrap">
 					{movie.serviceName}
 				</div>
 				<div className="flex flex-col items-start gap-1">

@@ -90,7 +90,7 @@ export default function DrawerMenuContent({ email }: Props) {
 										<DrawerClose asChild>
 											<Link
 												href={"/settings/account-delete/verify"}
-												className="w-full flex justify-center py-2 rounded-full border border-red-light-2 hover:bg-red-light-1"
+												className="w-full flex justify-center py-2 hover:bg-red-light-1 text-red"
 											>
 												アカウント削除
 											</Link>
