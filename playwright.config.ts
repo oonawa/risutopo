@@ -12,14 +12,14 @@ export default defineConfig({
 	globalSetup: "./tests/e2e/globalSetup.ts",
 
 	use: {
-		baseURL: "http://localhost:3000",
+		baseURL: "http://localhost:3001",
 	},
 
 	webServer: {
 		command: process.env.CI
-			? "npm run build && dotenv-cli -e .env.test -- npm run start"
-			: "dotenv-cli -e .env.test -- npm run start",
-		url: "http://localhost:3000",
+			? "npm run build && dotenv-cli -e .env.test -- npm run start -- -p 3001"
+			: "dotenv-cli -e .env.test -- npm run start -- -p 3001",
+		url: "http://localhost:3001",
 		reuseExistingServer: !process.env.CI,
 		timeout: 180_000,
 	},

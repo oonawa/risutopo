@@ -18,7 +18,7 @@ export default function Lacking({ handleClick, itemsNeeded }: Props) {
 		>
 			<Button
 				onClick={handleClick}
-				className="w-full gap-2 bg-background-dark-2 rounded-2xl py-10 cursor-pointer"
+				className="w-full gap-2 bg-background-dark-1 rounded-2xl py-10 cursor-pointer"
 			>
 				<h3 className="font-bold">
 					あと

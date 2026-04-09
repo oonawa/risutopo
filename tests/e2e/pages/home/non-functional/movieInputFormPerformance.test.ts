@@ -50,7 +50,7 @@ const DESKTOP_CHROME_UA = devices["Desktop Chrome"].userAgent ?? "";
 async function testDisplaySpeed(context: BrowserContext, page: Page) {
 	const cdpSession = await context.newCDPSession(page);
 	await cdpSession.send("Network.emulateNetworkConditions", THROTTLING_3G);
-	await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+	await page.goto("/", { waitUntil: "domcontentloaded" });
 	await expect(page.locator("textarea")).toBeVisible({ timeout: 2000 });
 }
 
@@ -66,7 +66,7 @@ const IMMEDIATE_RESPONSE_TIMEOUT_MS = 500;
 async function testMobileReactivity(context: BrowserContext, page: Page) {
 	const cdpSession = await context.newCDPSession(page);
 	await cdpSession.send("Network.emulateNetworkConditions", THROTTLING_3G);
-	await page.goto("http://localhost:3000");
+	await page.goto("/");
 	await expect(page.locator("textarea")).toBeVisible();
 	await page.locator("textarea").fill(UNEXT_SHARE_LINK);
 	await expect(page.getByRole("status")).toBeVisible({
@@ -78,7 +78,7 @@ async function testMobileReactivity(context: BrowserContext, page: Page) {
 async function testPcReactivity(context: BrowserContext, page: Page) {
 	const cdpSession = await context.newCDPSession(page);
 	await cdpSession.send("Network.emulateNetworkConditions", THROTTLING_3G);
-	await page.goto("http://localhost:3000");
+	await page.goto("/");
 	await expect(page.locator("#title")).toBeVisible();
 	await page.locator("#title").fill(MOVIE_TITLE);
 	await page.locator("#watch-url").fill(UNEXT_URL);
@@ -93,17 +93,19 @@ async function testPcReactivity(context: BrowserContext, page: Page) {
 test.describe("MovieInputForm - 非機能テスト（認証済み × iPhone × Chromium）", () => {
 	let context: BrowserContext;
 	let page: Page;
+	let baseURL: string;
 
-	test.beforeEach(async ({ browser, browserName }) => {
+	test.beforeEach(async ({ browser, browserName }, testInfo) => {
 		test.skip(
 			browserName !== "chromium",
 			"このテストは Chromium のみ対象（CDP 使用）",
 		);
+		baseURL = testInfo.project.use.baseURL ?? "";
 		await resetDatabase();
 		await seedDatabase();
-		context = await browser.newContext(IPHONE14_OPTIONS);
+		context = await browser.newContext({ ...IPHONE14_OPTIONS, baseURL });
 		page = await context.newPage();
-		await setupAuthenticatedUser(context, IPHONE14_UA, "http://localhost:3000");
+		await setupAuthenticatedUser(context, IPHONE14_UA, baseURL);
 	});
 
 	test.afterEach(async ({ browserName }) => {
@@ -125,15 +127,17 @@ test.describe("MovieInputForm - 非機能テスト（認証済み × iPhone × C
 test.describe("MovieInputForm - 非機能テスト（未認証 × Pixel 7 × Chromium）", () => {
 	let context: BrowserContext;
 	let page: Page;
+	let baseURL: string;
 
-	test.beforeEach(async ({ browser, browserName }) => {
+	test.beforeEach(async ({ browser, browserName }, testInfo) => {
 		test.skip(
 			browserName !== "chromium",
 			"このテストは Chromium のみ対象（CDP 使用）",
 		);
+		baseURL = testInfo.project.use.baseURL ?? "";
 		await resetDatabase();
 		await seedDatabase();
-		context = await browser.newContext(PIXEL7_OPTIONS);
+		context = await browser.newContext({ ...PIXEL7_OPTIONS, baseURL });
 		page = await context.newPage();
 	});
 
@@ -156,15 +160,17 @@ test.describe("MovieInputForm - 非機能テスト（未認証 × Pixel 7 × Chr
 test.describe("MovieInputForm - 非機能テスト（未認証 × PC × Chromium）", () => {
 	let context: BrowserContext;
 	let page: Page;
+	let baseURL: string;
 
-	test.beforeEach(async ({ browser, browserName }) => {
+	test.beforeEach(async ({ browser, browserName }, testInfo) => {
 		test.skip(
 			browserName !== "chromium",
 			"このテストは Chromium のみ対象（CDP 使用）",
 		);
+		baseURL = testInfo.project.use.baseURL ?? "";
 		await resetDatabase();
 		await seedDatabase();
-		context = await browser.newContext(DESKTOP_CHROME_OPTIONS);
+		context = await browser.newContext({ ...DESKTOP_CHROME_OPTIONS, baseURL });
 		page = await context.newPage();
 	});
 
@@ -187,21 +193,19 @@ test.describe("MovieInputForm - 非機能テスト（未認証 × PC × Chromium
 test.describe("MovieInputForm - 非機能テスト（認証済み × PC × Chromium）", () => {
 	let context: BrowserContext;
 	let page: Page;
+	let baseURL: string;
 
-	test.beforeEach(async ({ browser, browserName }) => {
+	test.beforeEach(async ({ browser, browserName }, testInfo) => {
 		test.skip(
 			browserName !== "chromium",
 			"このテストは Chromium のみ対象（CDP 使用）",
 		);
+		baseURL = testInfo.project.use.baseURL ?? "";
 		await resetDatabase();
 		await seedDatabase();
-		context = await browser.newContext(DESKTOP_CHROME_OPTIONS);
+		context = await browser.newContext({ ...DESKTOP_CHROME_OPTIONS, baseURL });
 		page = await context.newPage();
-		await setupAuthenticatedUser(
-			context,
-			DESKTOP_CHROME_UA,
-			"http://localhost:3000",
-		);
+		await setupAuthenticatedUser(context, DESKTOP_CHROME_UA, baseURL);
 	});
 
 	test.afterEach(async ({ browserName }) => {

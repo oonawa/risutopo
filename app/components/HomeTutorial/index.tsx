@@ -13,7 +13,7 @@ type Props = {
 export default function HomeTutorial({ ItemRegisterForm, Roulette }: Props) {
 	return (
 		<>
-			<div className="bg-background-dark-3 py-12 mb-4">
+			<div className="bg-background-dark-1 py-12 mb-4">
 				<section className="max-w-2xl mx-auto px-4 py-8 pt-12  md:pb-12 md:pt-16">
 					<h2 className="w-fit text-5xl sm:text-6xl font-title text-foreground-dark-1 leading-14">
 						<HomeTutorialTtle>Collect Movie,&nbsp;</HomeTutorialTtle>

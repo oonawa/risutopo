@@ -50,9 +50,9 @@ export default function SearchResult({
 							{searchResult.results.map((result) => (
 								<li
 									key={String(result.id)}
-									className="w-full aspect-video bg-background-dark-2 rounded-md"
+									className="w-full aspect-video bg-background-dark-1 rounded-md"
 								>
-									<div className="absolute w-full grid grid-cols-7 rounded-md aspect-video bg-background-dark-4/90 p-4">
+									<div className="absolute w-full grid grid-cols-7 rounded-md aspect-video bg-background-dark-1/90 p-4">
 										<div className="col-start-1 col-end-3 w-full flex items-center">
 											<img
 												className="rounded-md"
@@ -104,7 +104,7 @@ export default function SearchResult({
 						{searchResult.page < searchResult.total_pages ? (
 							<div className="w-full aspect-3/1 flex items-center justify-center py-4">
 								<Button
-									className="hover:bg-background-dark-2 w-full h-full text-foreground-dark-1"
+									className="hover:bg-background-dark-1 w-full h-full text-foreground-dark-1"
 									disabled={
 										isSearchPending ||
 										searchResult.page === searchResult.total_pages ||

@@ -11,8 +11,8 @@ export default function Item({ movie }: Props) {
 	return (
 		<div className="relative mx-2 py-2 h-full w-full sm:w-[calc(calc(100%-16px*2)/2-16px)] md:w-[calc(calc(100%-16px*2)/3-16px)] flex flex-col first">
 			<div className="w-full h-full rounded-xl p-2 transition-colors hover:bg-background-light-1">
-				<div className="relative aspect-video bg-background-dark-2 rounded-xl">
-					<div className="w-full h-full aspect-video absolute top-0 bg-background-dark-4/85 rounded-xl">
+				<div className="relative aspect-video bg-background-dark-1 rounded-xl overflow-hidden">
+					<div className="w-full h-full aspect-video absolute top-0 bg-background-dark-1/85">
 						{movie.details ? (
 							<SearchButton
 								movie={movie}
@@ -35,14 +35,14 @@ export default function Item({ movie }: Props) {
 					</div>
 
 					<img
-						className="w-full h-full object-cover rounded-xl"
+						className="w-full h-full object-cover"
 						src={movie.details?.backgroundImage}
 						alt=""
 					/>
 				</div>
 				<div className="flex gap-2 w-full rounded-b-2x pt-4 sm:pt-2">
 					<div>
-						<span className="p-2 bg-background-dark-4 rounded-md font-bold text-foreground-dark-1 text-xs whitespace-nowrap">
+						<span className="p-2 bg-background-dark-1 rounded-md font-bold text-foreground-dark-1 text-xs whitespace-nowrap">
 							{movie.serviceName}
 						</span>
 					</div>
