@@ -6,6 +6,7 @@ on:
   push:
     branches-ignore:
       - main
+      - dependabot/**
 jobs:
   Migrate-Preview:
     uses: ./.github/workflows/wf-migration.yaml
