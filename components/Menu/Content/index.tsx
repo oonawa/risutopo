@@ -38,7 +38,7 @@ export default function MenuContent({ publicListId }: Props) {
 		<nav className="h-(--navigation-height) fixed bottom-(--navigation-bottom) w-full flex justify-center gap-2">
 			<ul className="grid grid-cols-2 gap-2 h-full p-2 rounded-full border border-background-light-3 bg-background">
 				<MenuItem isCurrentPage={pathname === "/"}>
-					<MenuLink href={"/"}>
+					<MenuLink href={"/"} prefetch={true}>
 						<HomeIcon className="size-6" />
 					</MenuLink>
 				</MenuItem>

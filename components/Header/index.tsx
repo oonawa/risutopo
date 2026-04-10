@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Logo from "../Logo";
 import DrawerMenu from "./DrawerMenu";
 
@@ -10,9 +11,9 @@ export default function Header() {
 				</div>
 
 				<div className="h-full aspect-square flex justify-center items-center absolute">
-					<a href="/">
+					<Link href="/" prefetch={true}>
 						<Logo className="size-10" />
-					</a>
+					</Link>
 				</div>
 			</div>
 		</header>
