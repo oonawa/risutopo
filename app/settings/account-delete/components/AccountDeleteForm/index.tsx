@@ -1,18 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { deleteUser } from "@/features/user/actions/deleteUser";
+import { useServerAction } from "@/features/shared/hooks/useServerAction";
 import Layout from "@/app/components/auth/VerifyForm/Layout";
 import { Button } from "@/components/ui/button";
 
 export default function AccountDeleteForm() {
 	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
+	const { execute, isPending, networkError } = useServerAction();
 	const [error, setError] = useState<string | null>(null);
 
 	const onDelete = () => {
-		startTransition(async () => {
+		execute(async () => {
 			const result = await deleteUser();
 			if (!result.success) {
 				setError(result.error.message);
@@ -33,7 +34,9 @@ export default function AccountDeleteForm() {
 					</p>
 				</div>
 
-				{error && <p className="text-sm text-red-500">{error}</p>}
+				{(error ?? networkError) && (
+					<p className="text-sm text-red-500">{error ?? networkError}</p>
+				)}
 
 				<div className="flex flex-col gap-4">
 					<Button

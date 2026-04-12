@@ -2,7 +2,9 @@ import type { BrowserContext } from "@playwright/test";
 import crypto from "node:crypto";
 import {
 	listsTable,
+	reauthTokensTable,
 	sessionTokensTable,
+	tempSessionTokensTable,
 	userEmailsTable,
 	usersTable,
 } from "@/db/schema";
@@ -52,6 +54,62 @@ export async function setupAuthenticatedUser(
 		{
 			name: "session_token",
 			value: sessionToken,
+			url: baseUrl,
+			httpOnly: true,
+		},
+	]);
+
+	return { userId: user.id, sessionToken };
+}
+
+export async function setupReauthToken(
+	context: BrowserContext,
+	userId: number,
+	baseUrl: string,
+) {
+	const token = crypto.randomBytes(32).toString("hex");
+	const now = new Date();
+	const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+
+	await db.insert(reauthTokensTable).values({
+		token,
+		userId,
+		createdAt: now,
+		expiresAt,
+	});
+
+	await context.addCookies([
+		{
+			name: "delete_account_reauth_token",
+			value: token,
+			url: baseUrl,
+			httpOnly: true,
+		},
+	]);
+}
+
+export async function setupTempSessionToken(
+	context: BrowserContext,
+	baseUrl: string,
+	email = "newuser@example.com",
+) {
+	const token = crypto.randomBytes(32).toString("hex");
+	const now = new Date();
+	const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
+
+	await db.insert(tempSessionTokensTable).values({
+		token,
+		emailHmac: computeHmac(email),
+		encryptedEmail: encrypt(email),
+		deviceId: "test-device",
+		createdAt: now,
+		expiresAt,
+	});
+
+	await context.addCookies([
+		{
+			name: "temp_session_token",
+			value: token,
 			url: baseUrl,
 			httpOnly: true,
 		},

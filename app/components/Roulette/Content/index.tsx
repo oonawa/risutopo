@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, useAnimate } from "motion/react";
 import type { ListItem } from "@/features/list/types/ListItem";
 import { getListItemById } from "@/features/list/actions/getListItemById";
+import { useServerAction } from "@/features/shared/hooks/useServerAction";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
 import RisuPot from "@/components/RisuPot";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ type Props = {
 
 export default function RouletteContent({ listItemIds }: Props) {
 	const { getListItems } = useListLocalStorageRepository();
+	const { execute, networkError } = useServerAction();
 
 	const [isLacking, setIsLacking] = useState(false);
 	const [isDisabled, setIsDisabled] = useState(false);
@@ -30,7 +32,7 @@ export default function RouletteContent({ listItemIds }: Props) {
 
 	const MIN_ITEMS_REQUIRED = 2 as const;
 
-	const getRandomItem = async () => {
+	const getRandomItem = () => {
 		if (isAnimating) {
 			return;
 		}
@@ -43,41 +45,43 @@ export default function RouletteContent({ listItemIds }: Props) {
 
 		const randomId = ids[Math.floor(Math.random() * ids.length)];
 
-		const itemPromise: Promise<ListItem | null> = listItemIds
-			? getListItemById(randomId).then((r) => (r.success ? r.data : null))
-			: Promise.resolve(
-					localItems.find((i) => i.listItemId === randomId) ?? null,
-				);
+		execute(async () => {
+			const itemPromise: Promise<ListItem | null> = listItemIds
+				? getListItemById(randomId).then((r) => (r.success ? r.data : null))
+				: Promise.resolve(
+						localItems.find((i) => i.listItemId === randomId) ?? null,
+					);
 
-		await animatePot(
-			potScope.current,
-			{ rotate: [0, -16, 16, -13, 13, -10, 10, 0] },
-			{ duration: 1, ease: "easeInOut" },
-		);
-		await animatePot(
-			potScope.current,
-			{ rotate: [0, 160] },
-			{ duration: 0.35, ease: "easeInOut" },
-		);
-		await animatePot(
-			potScope.current,
-			{ y: [0, -10, 10, -10, 10, 0] },
-			{ duration: 0.5, ease: "easeInOut" },
-		);
+			await animatePot(
+				potScope.current,
+				{ rotate: [0, -16, 16, -13, 13, -10, 10, 0] },
+				{ duration: 1, ease: "easeInOut" },
+			);
+			await animatePot(
+				potScope.current,
+				{ rotate: [0, 160] },
+				{ duration: 0.35, ease: "easeInOut" },
+			);
+			await animatePot(
+				potScope.current,
+				{ y: [0, -10, 10, -10, 10, 0] },
+				{ duration: 0.5, ease: "easeInOut" },
+			);
 
-		const selected = await itemPromise;
-		setSelectedItem(selected);
+			const selected = await itemPromise;
+			setSelectedItem(selected);
 
-		await animatePot(
-			potScope.current,
-			{ rotate: 0, y: 0 },
-			{ duration: 0.2, ease: "easeOut" },
-		);
+			await animatePot(
+				potScope.current,
+				{ rotate: 0, y: 0 },
+				{ duration: 0.2, ease: "easeOut" },
+			);
 
-		setTimeout(() => {
-			setIsAnimating(false);
-			setIsDisabled(true);
-		}, 300);
+			setTimeout(() => {
+				setIsAnimating(false);
+				setIsDisabled(true);
+			}, 300);
+		});
 	};
 
 	return (
@@ -94,6 +98,10 @@ export default function RouletteContent({ listItemIds }: Props) {
 					<h3 className="font-bold">ランダムに選ぶ！</h3>
 				</div>
 			</Button>
+
+			{networkError && (
+				<p className="mt-2 text-sm text-red-500">{networkError}</p>
+			)}
 
 			<AnimatePresence initial={false}>
 				{isLacking && (

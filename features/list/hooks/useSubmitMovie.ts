@@ -1,8 +1,9 @@
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { ListItem } from "@/features/list/types/ListItem";
 import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
 import { storeListItem } from "@/features/list/actions/storeListItem";
 import { removeListItem } from "@/features/list/actions/removeListItem";
+import { useServerAction } from "@/features/shared/hooks/useServerAction";
 import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
 
 export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
@@ -10,8 +11,16 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 	const [errorMessage, setErrorMessage] = useState<string | undefined>(
 		undefined,
 	);
-	const [isSubmitPending, startSubmitTransition] = useTransition();
-	const [isRemovePending, startRemoveTransition] = useTransition();
+	const {
+		execute: executeSubmit,
+		isPending: isSubmitPending,
+		networkError: submitNetworkError,
+	} = useServerAction();
+	const {
+		execute: executeRemove,
+		isPending: isRemovePending,
+		networkError: removeNetworkError,
+	} = useServerAction();
 
 	const {
 		storeListItem: storeLocalListItem,
@@ -23,7 +32,7 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 	}: {
 		movie: ListItem;
 	}) => {
-		startSubmitTransition(async () => {
+		executeSubmit(async () => {
 			const publicListIdResult = await currentUserPublicListId();
 			const publicListId = publicListIdResult.success
 				? publicListIdResult.data.publicListId
@@ -55,7 +64,7 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 	}: {
 		listItemId: string;
 	}) => {
-		startRemoveTransition(async () => {
+		executeRemove(async () => {
 			const publicListIdResult = await currentUserPublicListId();
 			const publicListId = publicListIdResult.success
 				? publicListIdResult.data.publicListId
@@ -84,5 +93,7 @@ export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 		remove,
 		success,
 		errorMessage,
+		submitNetworkError,
+		removeNetworkError,
 	};
 };
