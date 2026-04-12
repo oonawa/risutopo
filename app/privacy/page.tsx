@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import parse from "html-react-parser";
 import { parseMarkdownFile, replaceWithClass } from "@/lib/markdown";
 import Section from "../components/Section";
 import SectionTitle from "../components/Section/Title";
 import SectionContent from "../components/Section/Content";
+
+export const metadata: Metadata = {
+	title: "プライバシーポリシー",
+	openGraph: {
+		title: "プライバシーポリシー｜りすとぽっと",
+	},
+};
 
 export default async function PrivacyPage() {
 	const { frontmatter, contentHtml } = await parseMarkdownFile("privacy.md");

@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import parse from "html-react-parser";
 import { parseMarkdownFile, replaceWithClass } from "@/lib/markdown";
 import Section from "../components/Section";
 import SectionTitle from "../components/Section/Title";
 import SectionContent from "../components/Section/Content";
+
+export const metadata: Metadata = {
+	title: "利用規約",
+	openGraph: {
+		title: "利用規約｜りすとぽっと",
+	},
+};
 
 export default async function TermsPage() {
 	const { frontmatter, contentHtml } = await parseMarkdownFile("terms.md");

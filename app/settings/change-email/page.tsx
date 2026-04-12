@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { currentUserId } from "@/features/shared/actions/currentUserId";
 import { currentUserEmail } from "@/features/shared/actions/currentUserEmail";
 import ChangeEmailForm from "./components/ChangeEmailForm";
+
+export const metadata: Metadata = {
+	title: "メールアドレス変更",
+	openGraph: {
+		title: "メールアドレス変更｜りすとぽっと",
+	},
+};
 
 export default async function ChangeEmailPage() {
 	const userIdResult = await currentUserId();
