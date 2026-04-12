@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { currentUserId } from "@/features/shared/actions/currentUserId";
 import { getUserMovieList } from "@/features/list/actions/getUserMovieList";
 import LocalList from "./components/LocalList";
 import List from "./components/List";
+
+export const metadata: Metadata = {
+	title: "マイリスト",
+	openGraph: {
+		title: "マイリスト｜りすとぽっと",
+	},
+};
 
 type Props = {
 	params: Promise<{
