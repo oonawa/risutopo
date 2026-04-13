@@ -1,9 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logout } from "@/features/auth/actions/logout";
+import { useServerAction } from "@/features/shared/hooks/useServerAction";
 import {
 	Drawer,
 	DrawerContent,
@@ -22,10 +22,10 @@ type Props = {
 
 export default function DrawerMenuContent({ email }: Props) {
 	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
+	const { execute, isPending, networkError } = useServerAction();
 
 	const onLogout = () => {
-		startTransition(async () => {
+		execute(async () => {
 			await logout();
 			router.push("/?home=true");
 		});
@@ -86,6 +86,10 @@ export default function DrawerMenuContent({ email }: Props) {
 										>
 											ログアウト
 										</Button>
+
+										{networkError && (
+											<p className="text-sm text-red-500">{networkError}</p>
+										)}
 
 										<DrawerClose asChild>
 											<Link

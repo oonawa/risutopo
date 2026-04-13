@@ -2,7 +2,7 @@
 
 import type z from "zod";
 import { redirect } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { useListLocalStorageRepository } from "@/features/list/repositories/clie
 import { userIdSchema } from "@/features/user/schemas/userIdSchema";
 import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
 import { registerUser } from "@/features/user/actions/registerUser";
+import { useServerAction } from "@/features/shared/hooks/useServerAction";
 import Layout from "@/app/components/auth/VerifyForm/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,16 @@ type Props = {
 const DEBOUNCE_MS = 500;
 
 export default function RegisterForm({ email, token }: Props) {
-	const [isPendingSearch, searchTransition] = useTransition();
-	const [isPendingRegister, registerTransition] = useTransition();
+	const {
+		execute: executeSearch,
+		isPending: isPendingSearch,
+	} = useServerAction();
+	const {
+		execute: executeRegister,
+		isPending: isPendingRegister,
+		networkError,
+		clearNetworkError,
+	} = useServerAction();
 	const [isDuplicate, setIsDuplicate] = useState(false);
 	const [serverError, setServerError] = useState("");
 	const [debouncedValue, setDebouncedValue] = useState("");
@@ -67,7 +76,7 @@ export default function RegisterForm({ email, token }: Props) {
 
 		let cancelled = false;
 
-		searchTransition(async () => {
+		executeSearch(async () => {
 			const count = await searchDuplicateUserId(debouncedValue);
 			if (!cancelled) {
 				setIsDuplicate(count > 0);
@@ -78,7 +87,7 @@ export default function RegisterForm({ email, token }: Props) {
 		return () => {
 			cancelled = true;
 		};
-	}, [debouncedValue]);
+	}, [debouncedValue, executeSearch]);
 
 	const isChecking = isSearching || isPendingSearch;
 
@@ -87,7 +96,7 @@ export default function RegisterForm({ email, token }: Props) {
 
 	const onSubmit = async (data: UserIdFormData) => {
 		const localUserList = parseLocalList();
-		registerTransition(async () => {
+		executeRegister(async () => {
 			const result = await registerUser({
 				userId: data.userId,
 				email,
@@ -104,6 +113,8 @@ export default function RegisterForm({ email, token }: Props) {
 		});
 	};
 
+	const displayError = networkError ?? serverError;
+
 	const message = () => {
 		if (isChecking) {
 			return <p className="text-blue-500">確認中...</p>;
@@ -117,12 +128,12 @@ export default function RegisterForm({ email, token }: Props) {
 			return <p className="text-red-500">このユーザーIDは使用できません。</p>;
 		}
 
-		if (!isChecking && !isDuplicate && debouncedValue && !errors.userId) {
-			return <p className="text-green-500">このユーザーIDは利用可能です。</p>;
+		if (displayError) {
+			return <p className="text-red-500">{displayError}</p>;
 		}
 
-		if (serverError) {
-			return <p className="text-red-500">{serverError}</p>;
+		if (!isChecking && !isDuplicate && debouncedValue && !errors.userId) {
+			return <p className="text-green-500">このユーザーIDは利用可能です。</p>;
 		}
 
 		return;
@@ -145,6 +156,7 @@ export default function RegisterForm({ email, token }: Props) {
 						id="userId"
 						onChange={(e) => {
 							setServerError("");
+							clearNetworkError();
 							return onUserIdChange(e);
 						}}
 						disabled={isPendingRegister}
@@ -163,7 +175,7 @@ export default function RegisterForm({ email, token }: Props) {
 						errors.userId !== undefined ||
 						isChecking ||
 						isDuplicate ||
-						serverError.length > 0 ||
+						displayError.length > 0 ||
 						isPendingRegister
 					}
 					className="cursor-pointer border-background-light-2 hover:bg-background-light-1 text-foreground-dark-2"

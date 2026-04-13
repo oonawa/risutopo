@@ -32,32 +32,38 @@ export default function VerifyForm({
 	sendErrorTitle = "エラーが発生しました。",
 	verifyErrorTitle = "エラーが発生しました。",
 }: Props) {
-	const { isPending, status, errorPhase, errorMessage, handleSendCode, handleVerifyCode, reset } =
+	const { isPending, networkError, status, errorPhase, errorMessage, handleSendCode, handleVerifyCode, reset } =
 		useCodeVerificationFlow({ sendAction, verifyAction, onSuccess });
 
 	const errorTitle = errorPhase === "send" ? sendErrorTitle : verifyErrorTitle;
 
 	return (
 		<AnimatePresence mode="wait">
-			{status === "initial" && (
+			{networkError && (
+				<motion.div key="networkError" {...motionProps} className="w-full">
+					<ErrorPanel title="通信エラーが発生しました。" message={networkError} onRetry={reset} />
+				</motion.div>
+			)}
+
+			{!networkError && status === "initial" && (
 				<motion.div key="initial" {...motionProps} className="w-full">
 					{initialSlot({ onSendCode: handleSendCode, isPending })}
 				</motion.div>
 			)}
 
-			{status === "loading" && (
+			{!networkError && status === "loading" && (
 				<motion.div key="loading" {...motionProps} className="w-full flex justify-center">
 					<Loading />
 				</motion.div>
 			)}
 
-			{status === "sent" && (
+			{!networkError && status === "sent" && (
 				<motion.div key="sent" {...motionProps} className="w-full">
 					<CodeInput onSubmit={handleVerifyCode} disabled={isPending} />
 				</motion.div>
 			)}
 
-			{status === "error" && (
+			{!networkError && status === "error" && (
 				<motion.div key="error" {...motionProps} className="w-full">
 					<ErrorPanel title={errorTitle} message={errorMessage} onRetry={reset} />
 				</motion.div>

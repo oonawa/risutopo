@@ -6,6 +6,7 @@ import { sendLoginCode } from "@/features/auth/actions/sendLoginCode";
 import { login } from "@/features/auth/actions/login";
 import { syncUserList } from "@/features/list/actions/syncUserList";
 import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useServerAction } from "@/features/shared/hooks/useServerAction";
 import type { Result } from "@/features/shared/types/Result";
 import VerifyForm from "@/app/components/auth/VerifyForm";
 import Layout from "@/app/components/auth/VerifyForm/Layout";
@@ -20,24 +21,29 @@ export default function LoginForm() {
 	const loginDataRef = useRef<LoginData | null>(null);
 	const [syncError, setSyncError] = useState<string | null>(null);
 	const { parseLocalList, clearLocalList } = useListLocalStorageRepository();
+	const { execute: executeSync, networkError: syncNetworkError } = useServerAction();
 
-	const doSync = async () => {
-		const localList = parseLocalList();
-		const result = await syncUserList({ localUserListItems: localList.items });
-		if (!result.success) {
-			setSyncError(result.error.message);
-			return;
-		}
-		clearLocalList();
-		router.push(`/${result.data.publicListId}`);
+	const doSync = () => {
+		executeSync(async () => {
+			const localList = parseLocalList();
+			const result = await syncUserList({ localUserListItems: localList.items });
+			if (!result.success) {
+				setSyncError(result.error.message);
+				return;
+			}
+			clearLocalList();
+			router.push(`/${result.data.publicListId}`);
+		});
 	};
 
-	if (syncError !== null) {
+	const displaySyncError = syncNetworkError ?? syncError;
+
+	if (displaySyncError !== null) {
 		return (
 			<Layout>
 				<ErrorPanel
 					title="リストの同期に失敗しました。"
-					message={syncError}
+					message={displaySyncError}
 					onRetry={() => {
 						setSyncError(null);
 						doSync();
@@ -68,7 +74,7 @@ export default function LoginForm() {
 						router.push("/register");
 						return;
 					}
-					await doSync();
+					doSync();
 				}}
 				initialSlot={({ onSendCode, isPending }) => (
 					<EmailInputStep

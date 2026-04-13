@@ -1,5 +1,6 @@
+import { useState } from "react";
 import type { Result } from "@/features/shared/types/Result";
-import { useState, useTransition } from "react";
+import { useServerAction } from "@/features/shared/hooks/useServerAction";
 
 type Options = {
 	sendAction: () => Promise<Result>;
@@ -12,7 +13,8 @@ export const useCodeVerificationFlow = ({
 	verifyAction,
 	onSuccess,
 }: Options) => {
-	const [isPending, startTransition] = useTransition();
+	const { execute, isPending, networkError, clearNetworkError } =
+		useServerAction();
 	const [status, setStatus] = useState<
 		"initial" | "loading" | "sent" | "error"
 	>("initial");
@@ -20,7 +22,7 @@ export const useCodeVerificationFlow = ({
 	const [errorMessage, setErrorMessage] = useState("");
 
 	const handleSendCode = () =>
-		startTransition(async () => {
+		execute(async () => {
 			setStatus("loading");
 			const result = await sendAction();
 			if (!result.success) {
@@ -32,7 +34,7 @@ export const useCodeVerificationFlow = ({
 		});
 
 	const handleVerifyCode = (code: string) =>
-		startTransition(async () => {
+		execute(async () => {
 			setStatus("loading");
 			const result = await verifyAction(code);
 			if (!result.success) {
@@ -44,6 +46,7 @@ export const useCodeVerificationFlow = ({
 		});
 
 	const reset = () => {
+		clearNetworkError();
 		setErrorPhase(null);
 		setErrorMessage("");
 		setStatus("initial");
@@ -51,6 +54,7 @@ export const useCodeVerificationFlow = ({
 
 	return {
 		isPending,
+		networkError,
 		status,
 		errorPhase,
 		errorMessage,

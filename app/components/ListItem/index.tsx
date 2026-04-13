@@ -45,7 +45,7 @@ export default function ListItemCard({
 		handleSearch,
 		handleSelect,
 		handleSearchCancel,
-		handleSelectCnacel,
+		handleSelectCancel,
 		isSearchExternalMovieDatabasePending,
 		isFetchExternalMovieDatabasePending,
 	} = useExternalMovieDatabase({ movie });
@@ -57,9 +57,15 @@ export default function ListItemCard({
 		remove,
 		success,
 		errorMessage,
+		submitNetworkError,
+		removeNetworkError,
 	} = useSubmitMovie({
 		onSuccess: refresh,
 	});
+
+	const displayErrorMessage =
+		submitNetworkError ?? removeNetworkError ?? errorMessage;
+	const displaySuccess = displayErrorMessage !== undefined ? false : success;
 
 	const hasListItemId = (item: DraftListItem | ListItem): item is ListItem => {
 		return "listItemId" in item;
@@ -118,9 +124,9 @@ export default function ListItemCard({
 				handleSearch={handleSearchDetail}
 				handleSubmit={handleSubmit}
 				handleRemove={handleRemove}
-				handleCancel={handleSelectCnacel}
-				storeSuccess={success}
-				errorMessage={errorMessage}
+				handleCancel={handleSelectCancel}
+				storeSuccess={displaySuccess}
+				errorMessage={displayErrorMessage}
 				isLoggedIn={isLoggedIn}
 			/>
 		);
@@ -135,11 +141,11 @@ export default function ListItemCard({
 				handleSearch={handleSearch}
 				handleSubmit={handleSubmit}
 				handleCancel={() => {
-					handleSelectCnacel();
+					handleSelectCancel();
 					setCurrentMode("searchDetail");
 				}}
-				storeSuccess={success}
-				errorMessage={errorMessage}
+				storeSuccess={displaySuccess}
+				errorMessage={displayErrorMessage}
 				isLoggedIn={isLoggedIn}
 			/>
 		);
@@ -170,8 +176,8 @@ export default function ListItemCard({
 				isSubmitPending={isSubmitPending}
 				handleSearch={handleSearchDetail}
 				handleSubmit={handleSubmit}
-				storeSuccess={success}
-				errorMessage={errorMessage}
+				storeSuccess={displaySuccess}
+				errorMessage={displayErrorMessage}
 				isLoggedIn={isLoggedIn}
 			/>
 		);
