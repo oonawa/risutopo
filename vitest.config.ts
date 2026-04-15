@@ -9,5 +9,6 @@ export default defineConfig({
 		env: dotenv.config({ path: ".env.test" }).parsed,
 		setupFiles: ["./tests/helpers/setup.ts"],
 		maxWorkers: 1,
+		exclude: ["tests/e2e/**", "node_modules/**"],
 	},
 });
