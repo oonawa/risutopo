@@ -64,7 +64,7 @@ vi.mock("resend", () => ({
 	Resend: mockResendConstructor,
 }));
 
-vi.mock("../components/LoginMailTemplate", () => ({
+vi.mock("@/emails/email", () => ({
 	default: mockLoginMailTemplate,
 }));
 

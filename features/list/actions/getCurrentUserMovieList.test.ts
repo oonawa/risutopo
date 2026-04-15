@@ -86,7 +86,7 @@ describe("getCurrentUserMovieList", () => {
 	let userBId = 0;
 	let userAPublicListId = "";
 	let userBPublicListId = "";
-	const now = new Date("2026-03-12T00:00:00.000Z");
+	const now = new Date();
 
 	beforeEach(async () => {
 		mockCookies.mockClear();
