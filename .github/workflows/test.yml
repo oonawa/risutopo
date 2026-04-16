@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: "npm"
@@ -25,7 +25,7 @@ jobs:
         run: npm run test -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml
 
       - name: テスト結果をPRに掲載
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Vitest
