@@ -1,14 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
-import {
-	Comment,
-	Element,
-	ProcessingInstruction,
-	Text,
-	type DOMNode,
-	domToReact,
-} from "html-react-parser";
+import { type DOMNode, domToReact } from "html-react-parser";
 import { remark } from "remark";
 import html from "remark-html";
 import { z } from "zod";
@@ -17,6 +10,7 @@ import Paragraph from "@/app/components/Section/Paragraph";
 import UnorderedList from "@/app/components/Section/UnorderedList";
 import ListItem from "@/app/components/Section/ListItem";
 import ExternalLink from "@/app/components/Section/ExternalLink";
+import Img from "@/app/components/Section/Img";
 
 export const documentFrontmatterSchema = z.object({
 	lastUpdatedAt: z.string(),
@@ -24,17 +18,25 @@ export const documentFrontmatterSchema = z.object({
 
 export type DocumentFrontmatter = z.infer<typeof documentFrontmatterSchema>;
 
+function hasStringType(
+	node: object,
+): node is object & { type: string } {
+	return "type" in node && typeof node.type === "string";
+}
+
 export function isDOMNode(node: unknown): node is DOMNode {
+	if (typeof node !== "object" || node === null) return false;
+	if (!hasStringType(node)) return false;
 	return (
-		node instanceof Element ||
-		node instanceof Text ||
-		node instanceof Comment ||
-		node instanceof ProcessingInstruction
+		node.type === "tag" ||
+		node.type === "text" ||
+		node.type === "comment" ||
+		node.type === "directive"
 	);
 }
 
 export function replaceWithClass(node: DOMNode) {
-	if (!(node instanceof Element)) return;
+	if (node.type !== "tag") return;
 	const children = domToReact(node.children.filter(isDOMNode), {
 		replace: replaceWithClass,
 	});
@@ -44,6 +46,8 @@ export function replaceWithClass(node: DOMNode) {
 	if (node.name === "li") return <ListItem>{children}</ListItem>;
 	if (node.name === "a" && node.attribs.href)
 		return <ExternalLink href={node.attribs.href}>{children}</ExternalLink>;
+	if (node.name === "img" && node.attribs.src)
+		return <Img src={node.attribs.src} alt={node.attribs.alt ?? ""} />;
 }
 
 async function toHtml(content: string): Promise<string> {
