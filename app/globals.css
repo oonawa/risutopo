@@ -26,6 +26,8 @@
 	--color-red: var(--red);
 	--color-red-light-1: var(--red-light-1);
 	--color-red-light-2: var(--red-light-2);
+	--color-red-dark-1: var(--red-dark-1);
+	--color-red-dark-2: var(--red-dark-2);
 
 	--color-green: var(--green);
 	--color-green-light-1: var(--green-light-1);
@@ -54,13 +56,13 @@ body {
 :root {
 	--radius: 0.625rem;
 
-	--background: #15151E;
+	--background: #15151e;
 	--background-light-1: #282637;
 	--background-light-2: #4a4353;
 	--background-light-3: #7f7280;
 	--background-light-4: #b4a0ae;
 
-	--background-dark-1: #01010C;
+	--background-dark-1: #01010c;
 
 	--foreground: #f2f2f3;
 	--foreground-dark-1: #d4d4d7;
@@ -70,6 +72,8 @@ body {
 	--red: #ca6686;
 	--red-light-1: #e087a3;
 	--red-light-2: #f0b9ca;
+	--red-dark-1: #9d4a65;
+	--red-dark-2: #74364a;
 
 	--green: #6dcc8f;
 	--green-light-1: #99e5b4;
