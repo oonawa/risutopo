@@ -12,6 +12,7 @@ import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";
 import MobileDeviceIcon from "@/components/ui/Icons/MobileDeviceIcon";
 import CrossIcon from "@/components/ui/Icons/CrossIcon";
 import Loading from "@/components/Loading";
+import BottomSheetContent from "@/app/components/BottomSheetContent";
 import Tab from "./Tab";
 import MobileForm from "./MobileForm";
 
@@ -122,7 +123,7 @@ export default function MovieInputForm({ items, isLoggedIn = false }: Props) {
 									<CrossIcon />
 								</Button>
 							</div>
-							<div className="grow bg-background-dark-1 rounded-t-4xl overflow-y-auto">
+							<BottomSheetContent>
 								<AnimatePresence mode="wait">
 									{searchExistingMoviePending && (
 										<motion.div
@@ -149,7 +150,7 @@ export default function MovieInputForm({ items, isLoggedIn = false }: Props) {
 										/>
 									)}
 								</AnimatePresence>
-							</div>
+							</BottomSheetContent>
 						</div>
 					</motion.div>
 				)}

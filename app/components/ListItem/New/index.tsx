@@ -6,6 +6,7 @@ import SubmitButton from "../Content/SubmitButton";
 import StoreSuccess from "../Content/Result/Success";
 import StoreFailed from "../Content/Result/Failed";
 import FadeIn from "../Content/FadeIn";
+import WatchToggleButton from "../Content/WatchToggleButton";
 
 type Props = {
 	movie: DraftListItem;
@@ -13,6 +14,8 @@ type Props = {
 	isSubmitPending: boolean;
 	handleSearch: () => void;
 	handleSubmit: () => void;
+	onWatchToggle?: () => void;
+	isWatchTogglePending?: boolean;
 	storeSuccess?: boolean;
 	isLoggedIn: boolean;
 	errorMessage?: string;
@@ -24,6 +27,8 @@ export default function NewListItem({
 	isSubmitPending,
 	handleSearch,
 	handleSubmit,
+	onWatchToggle,
+	isWatchTogglePending,
 	storeSuccess,
 	isLoggedIn,
 	errorMessage,
@@ -48,14 +53,23 @@ export default function NewListItem({
 			)}
 
 			{storeSuccess === undefined && (
-				<Menu
-					Button={
-						<SubmitButton
-							isDisabled={isSubmitPending}
-							onSubmit={handleSubmit}
+				<>
+					<Menu
+						Button={
+							<SubmitButton
+								isDisabled={isSubmitPending}
+								onSubmit={handleSubmit}
+							/>
+						}
+					/>
+					{onWatchToggle && (
+						<WatchToggleButton
+							isWatched={movie.isWatched}
+							onToggle={onWatchToggle}
+							isPending={isWatchTogglePending}
 						/>
-					}
-				/>
+					)}
+				</>
 			)}
 		</Content>
 	);

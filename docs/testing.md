@@ -20,7 +20,16 @@
 - 1 ケース = 1 仕様とし、戻り値・DB の状態など期待する処理結果を網羅的に検証する。
 - Cookie など副作用的に参照・更新される領域はモックしてテストする。
 
-> ※ UI コンポーネントのテスト方針は未定。
+## UI コンポーネントのテスト方針
+
+jsdom 環境では `useOptimistic` / `useTransition` の非同期スケジューリングを正確に再現できないため、フロントエンドのコンポーネントテストは **Playwright（E2E）で実施する**。
+
+- テストファイルは `tests/e2e/pages/<ページ名>/functional/` に置く。
+  - 例: `tests/e2e/pages/home/functional/watchToggle.test.ts`
+- デバイスカバレッジは `playwright.config.ts` の 5 プロジェクト（iPhone / Pixel 7 / Desktop Chrome / Firefox / Safari）に対応し、各テストは `test.skip` で対象プロジェクトを絞る。
+- `beforeEach` で `resetDatabase()` + `seedDatabase()`、`afterEach` で `resetDatabase()` を呼ぶ。
+- 認証が必要なテストは `setupAuthenticatedUser()` を使う。
+- テスト実行は `npx playwright test`（全テスト）または `npx playwright test <ファイル>` で行う。
 
 ## セットアップ
 
