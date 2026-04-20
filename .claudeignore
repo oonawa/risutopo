@@ -1,0 +1,36 @@
+# Auto-generated directories
+node_modules/
+.next/
+storybook-static/
+dist/
+out/
+build/
+
+# Test & Report outputs
+playwright-report/
+test-results/
+blob-report/
+coverage/
+
+# Cache files
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Local development databases
+local.db
+local.test.db
+dump.sql
+
+# Editor & IDE settings
+.vscode/
+
+# Development certificates
+certificates/
+
+# Deployment & environment configs
+.vercel/
+.claude/
+
+# Build/Storybook logs
+*.log
+*.storybook.log

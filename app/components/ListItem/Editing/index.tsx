@@ -11,6 +11,7 @@ import StoreSuccess from "../Content/Result/Success";
 import StoreFailed from "../Content/Result/Failed";
 import FadeIn from "../Content/FadeIn";
 import Loading from "../Content/Loading";
+import WatchToggleButton from "../Content/WatchToggleButton";
 
 type Props = {
 	movie: DraftListItem | ListItem | null;
@@ -21,6 +22,8 @@ type Props = {
 	handleSubmit: () => void;
 	handleRemove: () => void;
 	handleCancel: () => void;
+	handleToggleWatch?: () => void;
+	isTogglePending?: boolean;
 	storeSuccess?: boolean;
 	isLoggedIn: boolean;
 	errorMessage?: string;
@@ -35,6 +38,8 @@ export default function EditingListItem({
 	handleSubmit,
 	handleRemove,
 	handleCancel,
+	handleToggleWatch,
+	isTogglePending,
 	storeSuccess,
 	isLoggedIn,
 	errorMessage,
@@ -85,6 +90,13 @@ export default function EditingListItem({
 										/>
 									}
 								/>
+								{handleToggleWatch && (
+									<WatchToggleButton
+										isWatched={movie.isWatched}
+										onToggle={handleToggleWatch}
+										isPending={isTogglePending}
+									/>
+								)}
 								{movie.details && (
 									<Overview overview={movie.details.overview} />
 								)}

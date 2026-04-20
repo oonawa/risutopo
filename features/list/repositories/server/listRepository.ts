@@ -426,3 +426,38 @@ export async function findSameListItems({
 			),
 		);
 }
+
+export async function findIntListItemIdByPublicId(listItemPublicId: string) {
+	const [listItem] = await db
+		.select({ id: listItemsTable.id })
+		.from(listItemsTable)
+		.where(eq(listItemsTable.publicId, listItemPublicId));
+
+	return listItem?.id ?? null;
+}
+
+export async function insertWatchedItem(
+	listItemId: number,
+	watchedAt: Date,
+): Promise<void> {
+	const existing = await db
+		.select()
+		.from(watchedItemsTable)
+		.where(eq(watchedItemsTable.listItemId, listItemId));
+
+	if (existing.length === 0) {
+		await db.insert(watchedItemsTable).values({
+			listItemId,
+			watchedAt,
+		});
+	}
+}
+
+export async function deleteWatchedItem(listItemId: number): Promise<boolean> {
+	const [deleted] = await db
+		.delete(watchedItemsTable)
+		.where(eq(watchedItemsTable.listItemId, listItemId))
+		.returning({ id: watchedItemsTable.listItemId });
+
+	return deleted !== undefined;
+}

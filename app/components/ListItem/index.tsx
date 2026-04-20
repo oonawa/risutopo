@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
 import { useExternalMovieDatabase } from "@/features/movieDatabase/hooks/useExternalMovieDatabase";
 import { useSubmitMovie } from "@/features/list/hooks/useSubmitMovie";
+import { useToggleWatchStatus } from "@/features/list/hooks/useToggleWatchStatus";
 import NewListItem from "./New";
 import { useMovieAtom } from "@/features/list/state/useMovieAtom";
 
@@ -38,6 +39,10 @@ export default function ListItemCard({
 
 	const { setMovie } = useMovieAtom();
 
+	const hasListItemId = (item: DraftListItem | ListItem): item is ListItem => {
+		return "listItemId" in item;
+	};
+
 	const {
 		selectedMovie,
 		searchResult,
@@ -63,13 +68,19 @@ export default function ListItemCard({
 		onSuccess: refresh,
 	});
 
-	const displayErrorMessage =
-		submitNetworkError ?? removeNetworkError ?? errorMessage;
-	const displaySuccess = displayErrorMessage !== undefined ? false : success;
+	const {
+		toggle: handleToggleWatch,
+		isPending: isTogglePending,
+		optimisticIsWatched,
+		networkError: toggleNetworkError,
+	} = useToggleWatchStatus({
+		onSuccess: refresh,
+		initialIsWatched: hasListItemId(movie) ? movie.isWatched : false,
+	});
 
-	const hasListItemId = (item: DraftListItem | ListItem): item is ListItem => {
-		return "listItemId" in item;
-	};
+	const displayErrorMessage =
+		submitNetworkError ?? removeNetworkError ?? toggleNetworkError ?? errorMessage;
+	const displaySuccess = displayErrorMessage !== undefined ? false : success;
 
 	const handleSubmit = () => {
 		const newItem = selectedMovie ?? movie;
@@ -79,6 +90,21 @@ export default function ListItemCard({
 			: {
 					...newItem,
 					listItemId: window.crypto.randomUUID(),
+				};
+
+		submit({ movie: itemToStore });
+	};
+
+	const handleSubmitAsWatched = () => {
+		const newItem = selectedMovie ?? movie;
+
+		const itemToStore = hasListItemId(newItem)
+			? { ...newItem, isWatched: true as const, watchedAt: new Date() }
+			: {
+					...newItem,
+					listItemId: window.crypto.randomUUID(),
+					isWatched: true as const,
+					watchedAt: new Date(),
 				};
 
 		submit({ movie: itemToStore });
@@ -115,9 +141,21 @@ export default function ListItemCard({
 	};
 
 	if (currentMode === "edit") {
+		const editingMovie = selectedMovie;
+		const editingHandleToggleWatch =
+			editingMovie && hasListItemId(editingMovie)
+				? () => {
+						handleToggleWatch({
+							listItemId: editingMovie.listItemId,
+							currentIsWatched: editingMovie.isWatched,
+							currentListItem: editingMovie,
+						});
+					}
+				: undefined;
+
 		return (
 			<EditingListItem
-				movie={selectedMovie}
+				movie={editingMovie}
 				isSearchPending={isSearchExternalMovieDatabasePending}
 				isSubmitPending={isSubmitPending}
 				isRemovePending={isRemovePending}
@@ -125,6 +163,8 @@ export default function ListItemCard({
 				handleSubmit={handleSubmit}
 				handleRemove={handleRemove}
 				handleCancel={handleSelectCancel}
+				handleToggleWatch={editingHandleToggleWatch}
+				isTogglePending={isTogglePending}
 				storeSuccess={displaySuccess}
 				errorMessage={displayErrorMessage}
 				isLoggedIn={isLoggedIn}
@@ -133,9 +173,21 @@ export default function ListItemCard({
 	}
 
 	if (currentMode === "preview") {
+		const previewMovie = selectedMovie;
+		const previewHandleToggleWatch =
+			previewMovie && hasListItemId(previewMovie)
+				? () => {
+						handleToggleWatch({
+							listItemId: previewMovie.listItemId,
+							currentIsWatched: previewMovie.isWatched,
+							currentListItem: previewMovie,
+						});
+					}
+				: undefined;
+
 		return (
 			<PreviewListItem
-				movie={selectedMovie}
+				movie={previewMovie}
 				isSearchPending={isSearchExternalMovieDatabasePending}
 				isSubmitPending={isSubmitPending}
 				handleSearch={handleSearch}
@@ -144,6 +196,8 @@ export default function ListItemCard({
 					handleSelectCancel();
 					setCurrentMode("searchDetail");
 				}}
+				handleToggleWatch={previewHandleToggleWatch}
+				isTogglePending={isTogglePending}
 				storeSuccess={displaySuccess}
 				errorMessage={displayErrorMessage}
 				isLoggedIn={isLoggedIn}
@@ -176,6 +230,8 @@ export default function ListItemCard({
 				isSubmitPending={isSubmitPending}
 				handleSearch={handleSearchDetail}
 				handleSubmit={handleSubmit}
+				onWatchToggle={handleSubmitAsWatched}
+				isWatchTogglePending={isSubmitPending}
 				storeSuccess={displaySuccess}
 				errorMessage={displayErrorMessage}
 				isLoggedIn={isLoggedIn}
@@ -198,6 +254,19 @@ export default function ListItemCard({
 			handleRemove={handleRemove}
 			isRemovePending={isRemovePending}
 			isSearchPending={isSearchExternalMovieDatabasePending}
+			isTogglePending={isTogglePending}
+			optimisticIsWatched={optimisticIsWatched}
+			handleToggleWatch={
+				hasListItemId(movie)
+					? () => {
+							handleToggleWatch({
+								listItemId: movie.listItemId,
+								currentIsWatched: optimisticIsWatched,
+								currentListItem: movie,
+							});
+						}
+					: undefined
+			}
 		/>
 	);
 }

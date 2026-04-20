@@ -5,21 +5,28 @@ import Menu from "../Content/Menu";
 import SubMenu from "../Content/SubMenu";
 import WatchButton from "../Content/WatchButton";
 import Overview from "../Content/Overview";
+import WatchToggleButton from "../Content/WatchToggleButton";
 
 type Props = {
 	movie: DraftListItem | ListItem;
 	isSearchPending: boolean;
 	isRemovePending: boolean;
+	isTogglePending?: boolean;
+	optimisticIsWatched?: boolean;
 	handleSearch: () => void;
 	handleRemove: () => void;
+	handleToggleWatch?: () => void;
 };
 
 export default function WatchListItem({
 	movie,
 	isSearchPending,
 	isRemovePending,
+	isTogglePending,
+	optimisticIsWatched,
 	handleSearch,
 	handleRemove,
+	handleToggleWatch,
 }: Props) {
 	return (
 		<Content
@@ -41,6 +48,13 @@ export default function WatchListItem({
 				}
 			/>
 			{movie.details && <Overview overview={movie.details.overview} />}
+			{handleToggleWatch && (
+				<WatchToggleButton
+					isWatched={optimisticIsWatched ?? movie.isWatched}
+					onToggle={handleToggleWatch}
+					isPending={isTogglePending}
+				/>
+			)}
 		</Content>
 	);
 }

@@ -37,6 +37,23 @@ export default function MovieCard({ title }: Props) {
 }
 ```
 
+## CSS スタイリング
+
+Tailwind で表現不可能なスタイル（カスタムアニメーション、CSS Variables を用いた動的スタイルなど）は `style` 属性・`<style>` タグを使用せず、コンポーネントと同階層に `index.module.css` を作成してインポートする。
+
+## アニメーション
+
+UI の開発・改修にあたっては、スプリングアニメーションの実装を検討すること。
+
+CSS の `linear()` 関数でスプリング曲線を表現する。参考: [CSSのlinear()によるスプリングアニメーション活用術](https://ics.media/entry/260402/)
+
+```css
+/* linear() でスプリング曲線を定義する例 */
+.element {
+  transition: transform 0.5s linear(/* ここにスプリング曲線の値 */);
+}
+```
+
 ## import の順序
 
 `biome.json` の `organizeImports` 設定で自動整列される。グループの意味論的な順序は以下の通り:
