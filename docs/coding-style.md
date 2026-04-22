@@ -41,6 +41,37 @@ export default function MovieCard({ title }: Props) {
 
 Tailwind で表現不可能なスタイル（カスタムアニメーション、CSS Variables を用いた動的スタイルなど）は `style` 属性・`<style>` タグを使用せず、コンポーネントと同階層に `index.module.css` を作成してインポートする。
 
+## アイコン
+
+アイコンは `components/ui/Icons/` のコンポーネントを使用する。
+
+### アイコンコンポーネントの作成
+
+新しいアイコンを追加する場合は `components/ui/Icons/XxxIcon.tsx` を作成する。
+
+- シグネチャ: `export default function XxxIcon(props: React.SVGProps<SVGSVGElement>)`
+- 色は `fill="currentColor"` を使用し、ハードコードしない（呼び出し元で `className` や `style` で制御する）
+- `{...props}` でスプレッドし、サイズ・クラス等を上書き可能にする
+- `<title>` タグでスクリーンリーダー向けのアクセシビリティ対応を行う
+
+```tsx
+import React from "react";
+
+export default function StarIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      {...props}
+    >
+      <title>スター</title>
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  );
+}
+```
+
 ## アニメーション
 
 UI の開発・改修にあたっては、スプリングアニメーションの実装を検討すること。

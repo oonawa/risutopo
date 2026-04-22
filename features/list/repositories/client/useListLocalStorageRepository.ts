@@ -1,8 +1,9 @@
 "use client";
 
 import { useSetAtom, useStore } from "jotai";
-import { localListAtom, risutopottoAtom } from "@/features/shared/store";
+
 import type { ListItem } from "@/features/list/types/ListItem";
+import { localListAtom, risutopottoAtom } from "@/features/shared/store";
 import { localListSchema } from "@/features/user/schemas/localListSchema";
 
 export function useListLocalStorageRepository() {
@@ -21,6 +22,7 @@ export function useListLocalStorageRepository() {
 	const replaceListItems = (listItems: ListItem[], listId?: string) => {
 		const current = store.get(risutopottoAtom);
 		setRisutopotto({
+			...current,
 			list: {
 				listId: listId ?? current.list.listId,
 				items: listItems,
@@ -29,7 +31,8 @@ export function useListLocalStorageRepository() {
 	};
 
 	const storeListItem = (newItem: ListItem) => {
-		const { items, listId } = store.get(risutopottoAtom).list;
+		const current = store.get(risutopottoAtom);
+		const { items, listId } = current.list;
 
 		const existingItemIndex = items.findIndex(
 			(item) => item.listItemId === newItem.listItemId,
@@ -42,6 +45,7 @@ export function useListLocalStorageRepository() {
 					);
 
 		setRisutopotto({
+			...current,
 			list: {
 				listId,
 				items: nextItems,
@@ -52,10 +56,12 @@ export function useListLocalStorageRepository() {
 	};
 
 	const removeListItem = (listItemId: string) => {
-		const { items, listId } = store.get(risutopottoAtom).list;
+		const current = store.get(risutopottoAtom);
+		const { items, listId } = current.list;
 		const removed = items.filter((item) => item.listItemId !== listItemId);
 
 		setRisutopotto({
+			...current,
 			list: {
 				listId,
 				items: removed,
@@ -64,7 +70,9 @@ export function useListLocalStorageRepository() {
 	};
 
 	const initializeEmptyList = () => {
+		const current = store.get(risutopottoAtom);
 		setRisutopotto({
+			...current,
 			list: {
 				listId: crypto.randomUUID(),
 				items: [],
@@ -73,27 +81,98 @@ export function useListLocalStorageRepository() {
 	};
 
 	const clearLocalList = () => {
-		const listId = getListId();
-
+		const current = store.get(risutopottoAtom);
 		setRisutopotto({
+			...current,
 			list: {
-				listId,
+				listId: current.list.listId,
 				items: [],
 			},
 		});
 	};
 
 	const parseLocalList = () => {
-		const parsedLocalList = localListSchema.safeParse(
-			store.get(risutopottoAtom).list,
-		);
+		const current = store.get(risutopottoAtom);
+		const parsedLocalList = localListSchema.safeParse({
+			...current.list,
+			subLists: current.subLists,
+		});
 
 		return parsedLocalList.success
 			? parsedLocalList.data
 			: {
 					listId: "",
 					items: [],
+					subLists: [],
 				};
+	};
+
+	const getSubLists = (): {
+		subListId: string;
+		name: string;
+		listItemIds: string[];
+	}[] => {
+		return store.get(risutopottoAtom).subLists;
+	};
+
+	const createSubList = (name: string): string => {
+		const current = store.get(risutopottoAtom);
+		const subListId = crypto.randomUUID();
+		setRisutopotto({
+			...current,
+			subLists: [...current.subLists, { subListId, name, listItemIds: [] }],
+		});
+		return subListId;
+	};
+
+	const addSubListItem = (subListId: string, listItemId: string) => {
+		const current = store.get(risutopottoAtom);
+		setRisutopotto({
+			...current,
+			subLists: current.subLists.map((sl) =>
+				sl.subListId === subListId
+					? { ...sl, listItemIds: [...sl.listItemIds, listItemId] }
+					: sl,
+			),
+		});
+	};
+
+	const removeSubListItem = (subListId: string, listItemId: string) => {
+		const current = store.get(risutopottoAtom);
+		setRisutopotto({
+			...current,
+			subLists: current.subLists.map((sl) =>
+				sl.subListId === subListId
+					? {
+							...sl,
+							listItemIds: sl.listItemIds.filter((id) => id !== listItemId),
+						}
+					: sl,
+			),
+		});
+	};
+
+	const renameSubList = (subListId: string, name: string) => {
+		const current = store.get(risutopottoAtom);
+		setRisutopotto({
+			...current,
+			subLists: current.subLists.map((sl) =>
+				sl.subListId === subListId ? { ...sl, name } : sl,
+			),
+		});
+	};
+
+	const deleteSubList = (subListId: string) => {
+		const current = store.get(risutopottoAtom);
+		setRisutopotto({
+			...current,
+			subLists: current.subLists.filter((sl) => sl.subListId !== subListId),
+		});
+	};
+
+	const clearSubLists = () => {
+		const current = store.get(risutopottoAtom);
+		setRisutopotto({ ...current, subLists: [] });
 	};
 
 	return {
@@ -106,5 +185,12 @@ export function useListLocalStorageRepository() {
 		storeListItem,
 		parseLocalList,
 		clearLocalList,
+		getSubLists,
+		createSubList,
+		addSubListItem,
+		removeSubListItem,
+		renameSubList,
+		deleteSubList,
+		clearSubLists,
 	};
 }

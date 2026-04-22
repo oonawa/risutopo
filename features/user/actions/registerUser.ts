@@ -1,29 +1,23 @@
 "use server";
 
-import crypto from "node:crypto";
-import { headers, cookies } from "next/headers";
+import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { db } from "@/db/client";
 import { eq } from "drizzle-orm";
-import {
-	listsTable,
-	sessionTokensTable,
-	tempSessionTokensTable,
-} from "@/db/schema";
+import { tempSessionTokensTable } from "@/db/schema";
 import type { Result } from "@/features/shared/types/Result";
 import type { LocalList } from "@/features/user/schemas/localListSchema";
 import { localListSchema } from "@/features/user/schemas/localListSchema";
 import { userIdSchema } from "../schemas/userIdSchema";
-import { verifyTempSessionToken } from "@/features/auth/services/session";
-import { generateSessionToken } from "@/features/shared/lib/jwt";
+import { verifyTempSessionTokenService } from "@/features/auth/services/verifyTempSessionTokenService";
 import { generateDeviceId } from "@/features/auth/services/devices";
-import { syncUserListService } from "@/features/list/services/syncUserListService";
-import { insertUser } from "../repositories/userRepository";
-import { replaceUserEmail } from "../repositories/userEmailRepository";
+import { registerUserService } from "../services/registerUserService";
 import { computeHmac } from "@/features/shared/lib/encryption";
 
 const emptyLocalList: LocalList = {
 	listId: "",
 	items: [],
+	subLists: [],
 };
 
 export async function registerUser({
@@ -38,9 +32,9 @@ export async function registerUser({
 	localUserList: LocalList;
 }): Promise<Result<{ userId: string; publicListId: string }>> {
 	const now = new Date();
-	const tempSession = await verifyTempSessionToken({ tempToken, now });
+	const tempSession = await verifyTempSessionTokenService({ tempToken, now });
 
-	if (!tempSession) {
+	if (!tempSession.success) {
 		return {
 			success: false,
 			error: {
@@ -50,7 +44,7 @@ export async function registerUser({
 		};
 	}
 
-	if (tempSession.emailHmac !== computeHmac(email)) {
+	if (tempSession.data.emailHmac !== computeHmac(email)) {
 		return {
 			success: false,
 			error: {
@@ -80,96 +74,42 @@ export async function registerUser({
 		? parsedLocalList.data
 		: emptyLocalList;
 	const validLocalListItems = normalizedLocalList.items;
+	const validLocalSubLists = normalizedLocalList.subLists;
 
-	let transactionResult: {
-		id: number;
-		publicListId: string;
-		sessionToken: string;
-		expiresAt: Date;
-	};
+	const result = await registerUserService({
+		email,
+		publicUserId: data.userId,
+		deviceId,
+		now,
+		items: validLocalListItems,
+		subLists: validLocalSubLists,
+	});
 
-	try {
-		transactionResult = await db.transaction(async (tx) => {
-			const newUser = await insertUser({ tx, publicId: data.userId });
-
-			if (!newUser) {
-				throw new Error("ユーザー作成に失敗しました");
-			}
-
-			await replaceUserEmail({ tx, userId: newUser.id, email });
-
-			const [newList] = await tx
-				.insert(listsTable)
-				.values({
-					publicId: crypto.randomUUID(),
-					userId: newUser.id,
-				})
-				.returning({
-					id: listsTable.id,
-					publicId: listsTable.publicId,
-				});
-
-			if (validLocalListItems.length > 0) {
-				await syncUserListService({
-					listId: newList.id,
-					items: validLocalListItems,
-				});
-			}
-
-			const cookieStore = await cookies();
-			const tempTokenCookie = cookieStore.get("temp_session_token")?.value;
-
-			if (tempTokenCookie) {
-				await tx
-					.delete(tempSessionTokensTable)
-					.where(eq(tempSessionTokensTable.token, tempTokenCookie));
-			}
-
-			const sessionToken = await generateSessionToken({
-				userId: newUser.id,
-				deviceId,
-			});
-			const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-			await tx.insert(sessionTokensTable).values({
-				token: sessionToken,
-				deviceId,
-				userId: newUser.id,
-				expiresAt: expiresAt,
-				createdAt: now,
-			});
-
-			return {
-				id: newUser.id,
-				publicListId: newList.publicId,
-				sessionToken,
-				expiresAt,
-			};
-		});
-
-		const cookieStore = await cookies();
-		cookieStore.set("session_token", transactionResult.sessionToken, {
-			httpOnly: true,
-			secure: true,
-			sameSite: "lax",
-			expires: transactionResult.expiresAt,
-		});
-	} catch (err) {
-		console.error(err);
-		return {
-			success: false,
-			error: {
-				code: "INTERNAL_ERROR",
-				message: "ユーザー登録の処理に失敗しました。",
-			},
-		};
+	if (!result.success) {
+		return result;
 	}
+
+	// 仮トークンの削除
+	const cookieStore = await cookies();
+	const tempTokenCookie = cookieStore.get("temp_session_token")?.value;
+	if (tempTokenCookie) {
+		await db
+			.delete(tempSessionTokensTable)
+			.where(eq(tempSessionTokensTable.token, tempTokenCookie));
+	}
+
+	cookieStore.set("session_token", result.data.sessionToken, {
+		httpOnly: true,
+		secure: true,
+		sameSite: "lax",
+		expires: result.data.expiresAt,
+	});
 
 	return {
 		success: true,
 		data: {
 			userId: data.userId,
-			publicListId: transactionResult.publicListId,
+			publicListId: result.data.publicListId,
 		},
 	};
 }

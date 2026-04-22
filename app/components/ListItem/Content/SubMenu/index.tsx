@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useAtomValue } from "jotai";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,25 +16,91 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import MoreIcon from "@/components/ui/Icons/MoreIcon";
+import SubListSelectDrawer from "@/app/components/SubListSelectDrawer/SubListSelectDrawer";
+import LocalSubListSelectDrawer from "@/app/components/SubListSelectDrawer/LocalSubListSelectDrawer";
+import { risutopottoAtom } from "@/features/shared/store";
+
+type SubList = {
+	publicId: string;
+	name: string;
+};
+
+type LoggedInProps = {
+	isLoggedIn: true;
+	subLists: SubList[];
+	checkedSubListIds: string[];
+};
+
+type LocalProps = {
+	isLoggedIn: false;
+	subLists?: undefined;
+	checkedSubListIds?: undefined;
+};
 
 type Props = {
 	onSearch: () => void;
 	onRemove?: () => void;
 	searchDisabled: boolean;
 	removeDisabled: boolean;
-};
+	listItemId: string;
+	publicListId: string;
+} & (LoggedInProps | LocalProps);
 
 export default function SubMenu({
 	onSearch,
 	onRemove,
 	searchDisabled,
 	removeDisabled,
+	listItemId,
+	publicListId,
+	isLoggedIn,
+	subLists,
+	checkedSubListIds,
 }: Props) {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+	const store = useAtomValue(risutopottoAtom);
+
+	const localSubLists = useMemo(
+		() =>
+			store.subLists.map(({ subListId, name }) => ({
+				publicId: subListId,
+				name,
+			})),
+		[store.subLists],
+	);
+
+	const localCheckedSubListIds = useMemo(
+		() =>
+			store.subLists
+				.filter((sl) => sl.listItemIds.includes(listItemId))
+				.map((sl) => sl.subListId),
+		[store.subLists, listItemId],
+	);
 
 	return (
 		<>
+			{isLoggedIn ? (
+				<SubListSelectDrawer
+					isOpen={isDrawerOpen}
+					onClose={() => setIsDrawerOpen(false)}
+					listItemId={listItemId}
+					publicListId={publicListId}
+					subLists={subLists}
+					checkedSubListIds={checkedSubListIds}
+				/>
+			) : (
+				<LocalSubListSelectDrawer
+					isOpen={isDrawerOpen}
+					onClose={() => setIsDrawerOpen(false)}
+					listItemId={listItemId}
+					publicListId={publicListId}
+					subLists={localSubLists}
+					checkedSubListIds={localCheckedSubListIds}
+				/>
+			)}
 			<DropdownMenu
 				open={isMenuOpen}
 				onOpenChange={setIsMenuOpen}
@@ -57,6 +124,18 @@ export default function SubMenu({
 					>
 						<div className="font-bold w-full p-2 rounded-sm hover:bg-background-light-2">
 							ポスターをさがす
+						</div>
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						onSelect={(event) => {
+							event.preventDefault();
+							setIsMenuOpen(false);
+							setIsDrawerOpen(true);
+						}}
+						className="p-1"
+					>
+						<div className="font-bold w-full p-2 rounded-sm hover:bg-background-light-2">
+							サブリストに追加
 						</div>
 					</DropdownMenuItem>
 					{onRemove && (

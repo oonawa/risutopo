@@ -4,7 +4,10 @@ import {
 	findListItemRowByPublicId,
 	findMovieDirectorNames,
 } from "../repositories/server/listRepository";
-import { buildMovieDirectorMap, mapListItemRow } from "./getUserListService";
+import {
+	buildMovieDirectorMap,
+	mapListItemRow,
+} from "../helpers/listItemMappers";
 
 export const getListItemService = async (
 	listItemPublicId: string,

@@ -24,8 +24,11 @@
 
 jsdom 環境では `useOptimistic` / `useTransition` の非同期スケジューリングを正確に再現できないため、フロントエンドのコンポーネントテストは **Playwright（E2E）で実施する**。
 
-- テストファイルは `tests/e2e/pages/<ページ名>/functional/` に置く。
-  - 例: `tests/e2e/pages/home/functional/watchToggle.test.ts`
+- テストファイルは `tests/e2e/pages/<ページ名>/` に置く。
+  - 機能要件のテストは `functional/`、非機能要件のテストは `non-functional/` に格納する。
+  - ファイル名は機能を示す名前にする。
+    - 機能要件の例: `tests/e2e/pages/list/functional/sublist.test.ts`
+    - 非機能要件の例: `tests/e2e/pages/list/non-functional/sublist.security.test.ts`、`tests/e2e/pages/list/non-functional/sublist.performance.test.ts`
 - デバイスカバレッジは `playwright.config.ts` の 5 プロジェクト（iPhone / Pixel 7 / Desktop Chrome / Firefox / Safari）に対応し、各テストは `test.skip` で対象プロジェクトを絞る。
 - `beforeEach` で `resetDatabase()` + `seedDatabase()`、`afterEach` で `resetDatabase()` を呼ぶ。
 - 認証が必要なテストは `setupAuthenticatedUser()` を使う。

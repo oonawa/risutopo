@@ -20,17 +20,22 @@ export default function LoginForm() {
 	const emailRef = useRef("");
 	const loginDataRef = useRef<LoginData | null>(null);
 	const [syncError, setSyncError] = useState<string | null>(null);
-	const { parseLocalList, clearLocalList } = useListLocalStorageRepository();
+	const { parseLocalList, clearLocalList, getSubLists, clearSubLists } = useListLocalStorageRepository();
 	const { execute: executeSync, networkError: syncNetworkError } = useServerAction();
 
 	const doSync = () => {
 		executeSync(async () => {
 			const localList = parseLocalList();
-			const result = await syncUserList({ localUserListItems: localList.items });
+			const localSubLists = getSubLists();
+			const result = await syncUserList({
+				localUserListItems: localList.items,
+				localSubLists,
+			});
 			if (!result.success) {
 				setSyncError(result.error.message);
 				return;
 			}
+			clearSubLists();
 			clearLocalList();
 			router.push(`/${result.data.publicListId}`);
 		});

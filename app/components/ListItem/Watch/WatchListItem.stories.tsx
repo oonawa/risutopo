@@ -39,6 +39,8 @@ const meta = {
 		isRemovePending: false,
 		handleSearch: () => {},
 		handleRemove: () => {},
+		publicListId: "story-public-list-id",
+		isLoggedIn: false as const,
 	},
 	decorators: [
 		(Story) => (

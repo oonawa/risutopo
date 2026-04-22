@@ -26,6 +26,7 @@ type Props = {
 	isTogglePending?: boolean;
 	storeSuccess?: boolean;
 	isLoggedIn: boolean;
+	publicListId?: string;
 	errorMessage?: string;
 };
 
@@ -42,6 +43,7 @@ export default function EditingListItem({
 	isTogglePending,
 	storeSuccess,
 	isLoggedIn,
+	publicListId = "",
 	errorMessage,
 }: Props) {
 	return (
@@ -82,12 +84,29 @@ export default function EditingListItem({
 										/>
 									}
 									SubMenu={
-										<SubMenu
-											onSearch={handleSearch}
-											onRemove={handleRemove}
-											searchDisabled={isSearchPending}
-											removeDisabled={isRemovePending}
-										/>
+										isLoggedIn ? (
+											<SubMenu
+												onSearch={handleSearch}
+												onRemove={handleRemove}
+												searchDisabled={isSearchPending}
+												removeDisabled={isRemovePending}
+												listItemId={movie && "listItemId" in movie ? movie.listItemId : ""}
+												publicListId={publicListId}
+												isLoggedIn={true}
+												subLists={[]}
+												checkedSubListIds={[]}
+											/>
+										) : (
+											<SubMenu
+												onSearch={handleSearch}
+												onRemove={handleRemove}
+												searchDisabled={isSearchPending}
+												removeDisabled={isRemovePending}
+												listItemId={movie && "listItemId" in movie ? movie.listItemId : ""}
+												publicListId={publicListId}
+												isLoggedIn={false}
+											/>
+										)
 									}
 								/>
 								{handleToggleWatch && (

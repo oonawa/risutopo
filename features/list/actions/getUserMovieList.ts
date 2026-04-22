@@ -4,7 +4,11 @@ import z from "zod";
 import type { Result } from "@/features/shared/types/Result";
 import type { ListItem } from "@/features/list/types/ListItem";
 import { getUserListService } from "../services/getUserListService";
-import { userListId } from "../repositories/server/listRepository";
+import { getSubListService } from "../services/getSubListService";
+import {
+	findSubListIdByPublicId,
+	userListId,
+} from "../repositories/server/listRepository";
 
 const getUserMovieListSchema = z.object({
 	publicListId: z.uuid(),
@@ -29,7 +33,13 @@ export async function getUserMovieList(
 
 	const listId = await userListId(userId, publicListId);
 
-	if (!listId) {
+	if (listId) {
+		return await getUserListService(listId, userId);
+	}
+
+	const subListId = await findSubListIdByPublicId(publicListId);
+
+	if (!subListId) {
 		return {
 			success: false,
 			error: {
@@ -39,5 +49,5 @@ export async function getUserMovieList(
 		};
 	}
 
-	return await getUserListService(listId, userId);
+	return await getSubListService(subListId, userId);
 }
