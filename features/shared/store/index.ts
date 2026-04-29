@@ -9,11 +9,12 @@ export type RisutopottoStorage = {
 		listId: string;
 		items: ListItem[];
 	};
+	subLists: { subListId: string; name: string; listItemIds: string[] }[];
 };
 
 export const risutopottoAtom = atomWithStorage<RisutopottoStorage>(
 	LOCAL_STORAGE_KEY,
-	{ list: { listId: "", items: [] } },
+	{ list: { listId: "", items: [] }, subLists: [] },
 	undefined,
 	{
 		getOnInit: true,
@@ -26,6 +27,7 @@ export const localListAtom = atom(null, (get, set, payload: ListItem) => {
 
 	const next = [...existing, payload];
 	set(risutopottoAtom, {
+		...current,
 		list: {
 			listId: current.list.listId,
 			items: next,

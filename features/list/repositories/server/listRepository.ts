@@ -1,6 +1,7 @@
-import type { Tx } from "@/db/client";
-import type { SupportedServiceSlug, SupportedServiceName } from "@/app/consts";
 import { and, desc, eq, inArray } from "drizzle-orm";
+
+import type { SupportedServiceName, SupportedServiceSlug } from "@/app/consts";
+import type { Tx } from "@/db/client";
 import { db } from "@/db/client";
 import {
 	directorsTable,
@@ -10,11 +11,13 @@ import {
 	movieDirectorsTable,
 	moviesTable,
 	streamingServicesTable,
+	subListItemsTable,
+	subListsTable,
 	watchedItemsTable,
 } from "@/db/schema";
 import type {
-	WatchedState,
 	UnwatchedState,
+	WatchedState,
 } from "@/features/list/types/ListItem";
 
 export type ListItemRow = {
@@ -460,4 +463,158 @@ export async function deleteWatchedItem(listItemId: number): Promise<boolean> {
 		.returning({ id: watchedItemsTable.listItemId });
 
 	return deleted !== undefined;
+}
+
+export async function findSubListIdByPublicId(
+	publicId: string,
+): Promise<number | null> {
+	const [subList] = await db
+		.select({ id: subListsTable.id })
+		.from(subListsTable)
+		.where(eq(subListsTable.publicId, publicId));
+
+	return subList?.id ?? null;
+}
+
+export async function findSubListByPublicId(
+	publicId: string,
+): Promise<{ id: number; listId: number } | null> {
+	const [subList] = await db
+		.select({ id: subListsTable.id, listId: subListsTable.listId })
+		.from(subListsTable)
+		.where(eq(subListsTable.publicId, publicId));
+
+	return subList ?? null;
+}
+
+export async function findSubListItemsBySubListId(
+	subListId: number,
+): Promise<ListItemRow[]> {
+	return await db
+		.select({
+			listItemId: listItemsTable.publicId,
+			title: listItemsTable.titleOnService,
+			url: listItemsTable.watchUrl,
+			createdAt: listItemsTable.createdAt,
+			serviceSlug: streamingServicesTable.slug,
+			serviceName: streamingServicesTable.name,
+			watchedAt: watchedItemsTable.watchedAt,
+			movieId: listItemMovieMatchTable.movieId,
+			officialTitle: moviesTable.title,
+			backgroundImage: moviesTable.backgroundImage,
+			posterImage: moviesTable.posterImage,
+			runningMinutes: moviesTable.runningMinutes,
+			releaseDate: moviesTable.releaseDate,
+			overview: moviesTable.overview,
+			externalDatabaseMovieId: moviesTable.externalDatabaseMovieId,
+		})
+		.from(subListItemsTable)
+		.innerJoin(
+			listItemsTable,
+			eq(subListItemsTable.listItemId, listItemsTable.id),
+		)
+		.innerJoin(
+			streamingServicesTable,
+			eq(listItemsTable.streamingServiceId, streamingServicesTable.id),
+		)
+		.leftJoin(
+			listItemMovieMatchTable,
+			eq(listItemMovieMatchTable.listItemId, listItemsTable.id),
+		)
+		.leftJoin(moviesTable, eq(listItemMovieMatchTable.movieId, moviesTable.id))
+		.leftJoin(
+			watchedItemsTable,
+			eq(watchedItemsTable.listItemId, listItemsTable.id),
+		)
+		.where(eq(subListItemsTable.subListId, subListId))
+		.orderBy(desc(listItemsTable.id));
+}
+
+export async function insertSubList(
+	tx: Tx,
+	{
+		listId,
+		publicId,
+		name,
+	}: { listId: number; publicId: string; name: string },
+): Promise<{ id: number }> {
+	const [subList] = await tx
+		.insert(subListsTable)
+		.values({ listId, publicId, name, createdAt: new Date() })
+		.returning({ id: subListsTable.id });
+
+	return subList;
+}
+
+export async function insertSubListItem(
+	tx: Tx,
+	{ subListId, listItemId }: { subListId: number; listItemId: number },
+): Promise<void> {
+	await tx.insert(subListItemsTable).values({ subListId, listItemId });
+}
+
+export async function insertSubListItems(
+	tx: Tx,
+	items: { subListId: number; listItemId: number }[],
+): Promise<void> {
+	if (items.length === 0) return;
+	await tx.insert(subListItemsTable).values(items);
+}
+
+export async function deleteSubList(subListId: number): Promise<void> {
+	await db.delete(subListsTable).where(eq(subListsTable.id, subListId));
+}
+
+export async function updateSubListName(
+	subListId: number,
+	name: string,
+): Promise<void> {
+	await db
+		.update(subListsTable)
+		.set({ name })
+		.where(eq(subListsTable.id, subListId));
+}
+
+export async function deleteSubListItem(
+	subListId: number,
+	listItemId: number,
+): Promise<void> {
+	await db
+		.delete(subListItemsTable)
+		.where(
+			and(
+				eq(subListItemsTable.subListId, subListId),
+				eq(subListItemsTable.listItemId, listItemId),
+			),
+		);
+}
+
+export async function findCheckedSubListIdsByListId(
+	listId: number,
+): Promise<{ listItemPublicId: string; subListPublicId: string }[]> {
+	return await db
+		.select({
+			listItemPublicId: listItemsTable.publicId,
+			subListPublicId: subListsTable.publicId,
+		})
+		.from(subListItemsTable)
+		.innerJoin(
+			listItemsTable,
+			eq(subListItemsTable.listItemId, listItemsTable.id),
+		)
+		.innerJoin(subListsTable, eq(subListItemsTable.subListId, subListsTable.id))
+		.where(eq(listItemsTable.listId, listId));
+}
+
+export async function findSubListsByListId(
+	listId: number,
+): Promise<{ id: number; publicId: string; name: string }[]> {
+	return await db
+		.select({
+			id: subListsTable.id,
+			publicId: subListsTable.publicId,
+			name: subListsTable.name,
+		})
+		.from(subListsTable)
+		.where(eq(subListsTable.listId, listId));
 }

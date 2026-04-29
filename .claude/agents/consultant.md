@@ -36,9 +36,9 @@ allowed-tools: Bash(gh issue *) Bash(gh pr *)
 - 新しい Issue の作成が必要な場合は内容を提案し、ユーザーの承認を得てから `gh issue create` で作成する
 - Issue のタイトルと本文は日本語で記述する
 
-### 4. TODO.md の作成・承認待ち
+### 4. `plan` スキルによる TODO.md の作成・更新
 
-上記 1〜3 の結果を踏まえ、`plan` スキルを使って TODO.md を作成し、ユーザーの承認を得る。
+1〜3 の内容を踏まえたプランを `TODO.md` を通じてユーザーへ提案し、承認を得る。
 
 ```
 Skill(skill="plan", args="<タスク概要>")

@@ -12,11 +12,17 @@
 features/<name>/
   actions/      # "use server" — 入力バリデーション + サービス呼び出し + Cookie操作
   services/     # ビジネスロジック + 認可
-  repositories/ # Drizzle ORM CRUD
-  hooks/        # フロントエンドの状態管理 + localStorage操作
+  helpers/      # 複数サービス間で共通のロジック（mappers, utils など）
+  repositories/ # アプリケーション外部との接続（DB・外部API・LocalStorage など）
+  hooks/        # フロントエンドの状態管理
   schemas/      # Zodバリデーションスキーマ
   types/        # TypeScript型定義
 ```
+
+### services/ のルール
+
+- `hogeService.ts` がエクスポートするのは `hogeService` 関数ひとつのみ
+- 複数のサービスで共通して使うロジックは `helpers/` に切り出してそこからエクスポートする
 
 Features: `auth`、`list`、`movieDatabase`、`user`、`shared`
 

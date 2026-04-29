@@ -6,6 +6,8 @@ import {
 	listItemsTable,
 	listsTable,
 	streamingServicesTable,
+	subListItemsTable,
+	subListsTable,
 	userEmailsTable,
 	usersTable,
 	watchedItemsTable,
@@ -33,6 +35,7 @@ describe("getUserMovieList", () => {
 	let userBId = 0;
 	let userAPublicListId = "";
 	let userBPublicListId = "";
+	let userAListId = 0;
 
 	beforeEach(async () => {
 		await db.delete(listItemsTable);
@@ -76,6 +79,8 @@ describe("getUserMovieList", () => {
 				userId: userAId,
 			})
 			.returning({ id: listsTable.id });
+
+		userAListId = userAList.id;
 
 		const [userBList] = await db
 			.insert(listsTable)
@@ -197,6 +202,62 @@ describe("getUserMovieList", () => {
 			error: {
 				code: "VALIDATION_ERROR",
 				message: "不正なリクエストです。",
+			},
+		});
+	});
+
+	it("サブリストの publicId でアイテムを取得できる", async () => {
+		const subListPublicId = crypto.randomUUID();
+
+		const [subList] = await db
+			.insert(subListsTable)
+			.values({
+				publicId: subListPublicId,
+				listId: userAListId,
+				name: "テストサブリスト",
+				createdAt: new Date(),
+			})
+			.returning({ id: subListsTable.id });
+
+		const listItem = await db
+			.select({ id: listItemsTable.id })
+			.from(listItemsTable)
+			.where(eq(listItemsTable.publicId, "get-user-movie-list-user-a-item-1"))
+			.then((rows) => rows[0]);
+
+		if (!listItem) throw new Error("listItem not found");
+
+		await db
+			.insert(subListItemsTable)
+			.values({ subListId: subList.id, listItemId: listItem.id });
+
+		const result = await getUserMovieList(subListPublicId, userAId);
+
+		expect(result).toEqual({
+			success: true,
+			data: [
+				{
+					listItemId: "get-user-movie-list-user-a-item-1",
+					title: "ユーザーAの映画1",
+					url: "https://www.netflix.com/jp/title/60002360",
+					serviceSlug: "netflix",
+					serviceName: "Netflix",
+					isWatched: false,
+					watchedAt: null,
+					createdAt: new Date("2026-03-12T00:00:00.000Z"),
+				},
+			],
+		});
+	});
+
+	it("存在しないサブリスト publicId では NOT_FOUND_ERROR を返す", async () => {
+		const result = await getUserMovieList(crypto.randomUUID(), userAId);
+
+		expect(result).toEqual({
+			success: false,
+			error: {
+				code: "NOT_FOUND_ERROR",
+				message: "リストが見つかりませんでした。",
 			},
 		});
 	});

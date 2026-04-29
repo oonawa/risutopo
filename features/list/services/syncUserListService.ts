@@ -1,5 +1,6 @@
 import type { Tx } from "@/db/client";
 import type { ListItem } from "@/features/list/types/ListItem";
+import type { LocalSubList } from "@/features/user/schemas/localListSchema";
 import type { Result } from "@/features/shared/types/Result";
 import { db } from "@/db/client";
 import {
@@ -8,14 +9,18 @@ import {
 	stremaingServiceIdListBySlugList,
 	storeWatchedListItem,
 	storeListItemMovieMatch,
+	insertSubList,
+	insertSubListItems,
 } from "../repositories/server/listRepository";
 
 export const syncUserListService = async ({
 	listId,
 	items,
+	subLists = [],
 }: {
 	listId: number;
 	items: ListItem[];
+	subLists?: LocalSubList[];
 }): Promise<Result> => {
 	const watchUrls = items.map((item) => item.url);
 
@@ -62,6 +67,15 @@ export const syncUserListService = async ({
 					? storeListItemMovieMatch(tx, movieMatches)
 					: undefined,
 			]);
+
+			if (subLists.length > 0) {
+				await syncSubLists({
+					tx,
+					listId,
+					subLists,
+					resolvedItems: resolved,
+				});
+			}
 
 			return {
 				success: true,
@@ -110,6 +124,50 @@ function resolveListItemIds({
 	});
 
 	return [...fromNew, ...fromExisting];
+}
+
+async function syncSubLists({
+	tx,
+	listId,
+	subLists,
+	resolvedItems,
+}: {
+	tx: Tx;
+	listId: number;
+	subLists: LocalSubList[];
+	resolvedItems: { listItemId: number; localItem: ListItem }[];
+}): Promise<void> {
+	// publicId（localのlistItemId）→ DBのlistItemId マッピング
+	const localIdToDbId = new Map<string, number>(
+		resolvedItems.map(({ listItemId, localItem }) => [
+			localItem.listItemId,
+			listItemId,
+		]),
+	);
+
+	// 一括でサブリストをinsert（ループ内クエリ禁止のため直列化を最小限に）
+	const insertedSubLists = await Promise.all(
+		subLists.map((sl) =>
+			insertSubList(tx, {
+				listId,
+				publicId: sl.subListId,
+				name: sl.name,
+			}).then((inserted) => ({ inserted, sl })),
+		),
+	);
+
+	const allSubListItems: { subListId: number; listItemId: number }[] = [];
+
+	for (const { inserted, sl } of insertedSubLists) {
+		for (const localItemId of sl.listItemIds) {
+			const dbListItemId = localIdToDbId.get(localItemId);
+			if (dbListItemId !== undefined) {
+				allSubListItems.push({ subListId: inserted.id, listItemId: dbListItemId });
+			}
+		}
+	}
+
+	await insertSubListItems(tx, allSubListItems);
 }
 
 async function storeNewListItems({

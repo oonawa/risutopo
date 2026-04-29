@@ -7,6 +7,11 @@ import WatchButton from "../Content/WatchButton";
 import Overview from "../Content/Overview";
 import WatchToggleButton from "../Content/WatchToggleButton";
 
+type SubList = {
+	publicId: string;
+	name: string;
+};
+
 type Props = {
 	movie: DraftListItem | ListItem;
 	isSearchPending: boolean;
@@ -16,6 +21,10 @@ type Props = {
 	handleSearch: () => void;
 	handleRemove: () => void;
 	handleToggleWatch?: () => void;
+	publicListId: string;
+	isLoggedIn: boolean;
+	subLists?: SubList[];
+	checkedSubListIds?: string[];
 };
 
 export default function WatchListItem({
@@ -27,6 +36,10 @@ export default function WatchListItem({
 	handleSearch,
 	handleRemove,
 	handleToggleWatch,
+	publicListId,
+	isLoggedIn,
+	subLists,
+	checkedSubListIds,
 }: Props) {
 	return (
 		<Content
@@ -39,12 +52,29 @@ export default function WatchListItem({
 			<Menu
 				Button={<WatchButton url={movie.url} />}
 				SubMenu={
-					<SubMenu
-						onSearch={handleSearch}
-						onRemove={handleRemove}
-						searchDisabled={isSearchPending}
-						removeDisabled={isRemovePending}
-					/>
+					isLoggedIn ? (
+						<SubMenu
+							onSearch={handleSearch}
+							onRemove={handleRemove}
+							searchDisabled={isSearchPending}
+							removeDisabled={isRemovePending}
+							listItemId={"listItemId" in movie ? movie.listItemId : ""}
+							publicListId={publicListId}
+							isLoggedIn={true}
+							subLists={subLists ?? []}
+							checkedSubListIds={checkedSubListIds ?? []}
+						/>
+					) : (
+						<SubMenu
+							onSearch={handleSearch}
+							onRemove={handleRemove}
+							searchDisabled={isSearchPending}
+							removeDisabled={isRemovePending}
+							listItemId={"listItemId" in movie ? movie.listItemId : ""}
+							publicListId={publicListId}
+							isLoggedIn={false}
+						/>
+					)
 				}
 			/>
 			{movie.details && <Overview overview={movie.details.overview} />}

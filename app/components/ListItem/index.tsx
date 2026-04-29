@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
@@ -22,18 +24,29 @@ type Mode =
 	| "storeSuccess"
 	| "storeFailed";
 
+type SubList = {
+	publicId: string;
+	name: string;
+};
+
 type Props = {
 	mode?: Mode;
 	movie: DraftListItem | ListItem;
 	isLoggedIn?: boolean;
+	publicListId?: string;
 	refresh?: () => void;
+	subLists?: SubList[];
+	checkedSubListIds?: string[];
 };
 
 export default function ListItemCard({
 	mode,
 	movie,
 	isLoggedIn = false,
+	publicListId = "",
 	refresh,
+	subLists,
+	checkedSubListIds,
 }: Props) {
 	const [currentMode, setCurrentMode] = useState<Mode | undefined>(undefined);
 
@@ -247,6 +260,35 @@ export default function ListItemCard({
 		return <DrawnListItem movie={movie} />;
 	}
 
+	if (isLoggedIn) {
+		return (
+			<WatchListItem
+				movie={movie}
+				handleSearch={handleSearchDetail}
+				handleRemove={handleRemove}
+				isRemovePending={isRemovePending}
+				isSearchPending={isSearchExternalMovieDatabasePending}
+				isTogglePending={isTogglePending}
+				optimisticIsWatched={optimisticIsWatched}
+				publicListId={publicListId}
+				isLoggedIn={true}
+				subLists={subLists ?? []}
+				checkedSubListIds={checkedSubListIds ?? []}
+				handleToggleWatch={
+					hasListItemId(movie)
+						? () => {
+								handleToggleWatch({
+									listItemId: movie.listItemId,
+									currentIsWatched: optimisticIsWatched,
+									currentListItem: movie,
+								});
+							}
+						: undefined
+				}
+			/>
+		);
+	}
+
 	return (
 		<WatchListItem
 			movie={movie}
@@ -256,6 +298,8 @@ export default function ListItemCard({
 			isSearchPending={isSearchExternalMovieDatabasePending}
 			isTogglePending={isTogglePending}
 			optimisticIsWatched={optimisticIsWatched}
+			publicListId={publicListId}
+			isLoggedIn={false}
 			handleToggleWatch={
 				hasListItemId(movie)
 					? () => {

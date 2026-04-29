@@ -147,6 +147,35 @@ export const watchedItemsTable = sqliteTable("watched_items_table", {
 	watchedAt: int("watched_at", { mode: "timestamp" }).notNull(),
 });
 
+export const subListsTable = sqliteTable("sub_lists_table", {
+	id: int().primaryKey({ autoIncrement: true }),
+	publicId: text("public_id").notNull().unique(),
+	listId: int("list_id")
+		.notNull()
+		.references(() => listsTable.id, { onDelete: "cascade" }),
+	name: text().notNull(),
+	createdAt: int("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const subListItemsTable = sqliteTable(
+	"sub_list_items_table",
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		subListId: int("sub_list_id")
+			.notNull()
+			.references(() => subListsTable.id, { onDelete: "cascade" }),
+		listItemId: int("list_item_id")
+			.notNull()
+			.references(() => listItemsTable.id, { onDelete: "cascade" }),
+	},
+	(table) => [
+		uniqueIndex("sub_list_items_sub_list_id_list_item_id_unique").on(
+			table.subListId,
+			table.listItemId,
+		),
+	],
+);
+
 export const loginCodesTable = sqliteTable("login_codes_table", {
 	token: text("token").notNull().unique(),
 	emailHmac: text("email_hmac").notNull(),

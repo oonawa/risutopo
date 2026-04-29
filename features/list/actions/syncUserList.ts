@@ -1,16 +1,21 @@
 "use server";
 
 import type { Result } from "@/features/shared/types/Result";
-import type { LocalListItems } from "@/features/user/schemas/localListSchema";
-import { localListItemsSchema } from "@/features/user/schemas/localListSchema";
+import type { LocalListItems, LocalSubList } from "@/features/user/schemas/localListSchema";
+import { localListItemsSchema, localSubListSchema } from "@/features/user/schemas/localListSchema";
+import { z } from "zod";
 import { syncUserListService } from "../../list/services/syncUserListService";
 import { currentUserId } from "@/features/shared/actions/currentUserId";
 import { userListIdAndPublicListId } from "../repositories/server/listRepository";
 
+const localSubListsSchema = z.array(localSubListSchema);
+
 export const syncUserList = async ({
 	localUserListItems,
+	localSubLists = [],
 }: {
 	localUserListItems: LocalListItems;
+	localSubLists?: LocalSubList[];
 }): Promise<Result<{ publicListId: string }>> => {
 	const getLoginUserResult = await currentUserId();
 
@@ -36,6 +41,18 @@ export const syncUserList = async ({
 		};
 	}
 
+	const parseSubListsResult = localSubListsSchema.safeParse(localSubLists);
+
+	if (!parseSubListsResult.success) {
+		return {
+			success: false,
+			error: {
+				code: "VALIDATION_ERROR",
+				message: "サブリストのデータが無効のため、同期できませんでした。",
+			},
+		};
+	}
+
 	const userId = getLoginUserResult.data.userId;
 	const list = await userListIdAndPublicListId(userId);
 
@@ -52,6 +69,7 @@ export const syncUserList = async ({
 	const result = await syncUserListService({
 		listId: list.id,
 		items: parseResult.data,
+		subLists: parseSubListsResult.data,
 	});
 
 	if (!result.success) {

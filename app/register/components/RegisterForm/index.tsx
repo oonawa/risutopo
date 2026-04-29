@@ -41,7 +41,7 @@ export default function RegisterForm({ email, token }: Props) {
 
 	const [isSearching, setIsSearching] = useState(false);
 
-	const { parseLocalList, clearLocalList } = useListLocalStorageRepository();
+	const { parseLocalList, clearLocalList, clearSubLists } = useListLocalStorageRepository();
 
 	const {
 		register,
@@ -105,6 +105,7 @@ export default function RegisterForm({ email, token }: Props) {
 			});
 
 			if (result.success) {
+				clearSubLists();
 				clearLocalList();
 				return redirect("/");
 			}
