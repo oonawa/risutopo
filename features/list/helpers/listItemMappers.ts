@@ -58,6 +58,7 @@ export const mapListItemRow = (
 			director: movieDirectors.get(row.movieId) ?? [],
 			runningMinutes: row.runningMinutes,
 			releaseYear: getReleaseYear(row.releaseDate),
+			releaseDate: row.releaseDate,
 			externalDatabaseMovieId: Number(row.externalDatabaseMovieId),
 			overview: row.overview,
 		},

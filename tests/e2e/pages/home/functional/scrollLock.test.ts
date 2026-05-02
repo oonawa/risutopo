@@ -25,7 +25,7 @@ async function seedLocalStorageWithItem(
 		},
 		{
 			key: LOCAL_STORAGE_KEY,
-			value: { list: { listId, items: [item] } },
+			value: { list: { listId, items: [item] }, subLists: [] },
 		},
 	);
 	return item;
@@ -48,10 +48,16 @@ test.describe("スクロールロック - 機能テスト", () => {
 			testInfo.project.name !== "desktop-chromium",
 			"このテストは desktop-chromium プロジェクトのみ対象",
 		);
-		const listId = crypto.randomUUID();
-		await page.goto(`/${listId}`);
+		const listId = "test-list-id-scroll-lock-1";
+		await page.goto("/");
 		await seedLocalStorageWithItem(page, listId);
 		await page.reload();
+
+		// ハイドレーション待ち
+		const listLink = page.getByRole("link", { name: "リスト" });
+		await expect(listLink).not.toHaveAttribute("href", "/undefined", { timeout: 10_000 });
+		await listLink.click();
+		await expect(page.getByText("テスト映画")).toBeVisible({ timeout: 10_000 });
 
 		// カード展開前は body.style.overflow が hidden でないことを確認
 		const overflowBefore = await page.evaluate(
@@ -59,7 +65,7 @@ test.describe("スクロールロック - 機能テスト", () => {
 		);
 		expect(overflowBefore).not.toBe("hidden");
 
-		// カードを展開する
+		// カードを展開する (リスト画面なので「ポスター画像なし」)
 		await page.getByRole("button", { name: "ポスター画像なし" }).click();
 		await expect(
 			page.getByRole("button", { name: "視聴済みにする" }),
@@ -79,19 +85,26 @@ test.describe("スクロールロック - 機能テスト", () => {
 			testInfo.project.name !== "desktop-chromium",
 			"このテストは desktop-chromium プロジェクトのみ対象",
 		);
-		const listId = crypto.randomUUID();
-		await page.goto(`/${listId}`);
+		const listId = "test-list-id-scroll-lock-2";
+		await page.goto("/");
 		await seedLocalStorageWithItem(page, listId);
 		await page.reload();
 
-		// カードを展開する
+		// ハイドレーション待ち
+		const listLink = page.getByRole("link", { name: "リスト" });
+		await expect(listLink).not.toHaveAttribute("href", "/undefined", { timeout: 10_000 });
+		await listLink.click();
+		await expect(page.getByText("テスト映画")).toBeVisible({ timeout: 10_000 });
+
+		// カードを展開する (リスト画面なので「ポスター画像なし」)
 		await page.getByRole("button", { name: "ポスター画像なし" }).click();
 		await expect(
 			page.getByRole("button", { name: "視聴済みにする" }),
 		).toBeVisible();
 
 		// オーバーレイをクリックしてカードを閉じる
-		await page.locator(".fixed.inset-0.z-40").click();
+		// Vaul (Drawer) の背景オーバーレイをクリック
+		await page.mouse.click(10, 10);
 
 		// exit アニメーション完了を待つ
 		await page.waitForTimeout(400);

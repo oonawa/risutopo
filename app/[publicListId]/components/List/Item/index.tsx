@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
-import { formatRelativeDate } from "@/lib/date";
+import { formatRelativeDate, formatFullDate } from "@/lib/date";
 import type { ListItem } from "@/features/list/types/ListItem";
+import type { SortKey } from "@/features/list/helpers/sortListItems";
 import CheckMarkIcon from "@/components/ui/Icons/CheckMarkIcon";
 import SubListSelectDrawer from "@/app/components/SubListSelectDrawer/SubListSelectDrawer";
 import LocalSubListSelectDrawer from "@/app/components/SubListSelectDrawer/LocalSubListSelectDrawer";
@@ -23,18 +24,43 @@ type LoggedInProps = {
 	publicListId: string;
 	subLists: SubList[];
 	checkedSubListIds: string[];
+	sortKey?: SortKey;
 };
 
 type GuestProps = {
 	movie: ListItem;
 	isLoggedIn: false;
 	publicListId: string;
+	sortKey?: SortKey;
 };
 
 type Props = LoggedInProps | GuestProps;
 
+const formatDateLabel = (movie: ListItem, sortKey: SortKey | undefined): string => {
+	if (sortKey === "releaseDate") {
+		if (movie.details?.releaseDate) {
+			return formatFullDate(new Date(movie.details.releaseDate));
+		}
+		return `${movie.details?.releaseYear ?? ""}年`;
+	}
+
+	if (sortKey === "runningMinutes") {
+		if (movie.details?.runningMinutes !== undefined) {
+			return `${movie.details.runningMinutes}分`;
+		}
+		return "";
+	}
+
+	// createdAt（デフォルト）
+	if (sortKey === "createdAt") {
+		return formatFullDate(movie.createdAt);
+	}
+
+	return `${formatRelativeDate(movie.createdAt)}に追加`;
+};
+
 export default function Item(props: Props) {
-	const { movie, isLoggedIn, publicListId } = props;
+	const { movie, isLoggedIn, publicListId, sortKey } = props;
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
 	const store = useAtomValue(risutopottoAtom);
@@ -55,6 +81,8 @@ export default function Item(props: Props) {
 				.map((sl) => sl.subListId),
 		[store.subLists, movie.listItemId],
 	);
+
+	const dateLabel = formatDateLabel(movie, sortKey);
 
 	return (
 		<div className="relative mx-2 py-2 h-full w-full sm:w-[calc(calc(100%-16px*2)/2-16px)] md:w-[calc(calc(100%-16px*2)/3-16px)] flex flex-col first">
@@ -124,9 +152,7 @@ export default function Item(props: Props) {
 										<CheckMarkIcon />
 									</div>
 								)}
-								<p className="text-xs text-foreground-dark-2">
-									{formatRelativeDate(movie.createdAt)}に追加
-								</p>
+								<p className="text-xs text-foreground-dark-2">{dateLabel}</p>
 							</div>
 						</div>
 					</div>

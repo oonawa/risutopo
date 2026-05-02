@@ -43,7 +43,11 @@ next-env.d.ts
 
 # local db
 local.db
+local.db-shm
+local.db-wal
 local.test.db
+local.test.db-shm
+local.test.db-wal
 
 # playwright
 test-results/

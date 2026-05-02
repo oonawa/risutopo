@@ -11,7 +11,7 @@ import {
 import { resetDatabase, seedDatabase } from "../lib/dbHelpers";
 import { db } from "../lib/testDb";
 
-const NETWORK_ERROR_TEXT = "通信エラーが発生しました";
+const NETWORK_ERROR_TEXT = /通信エラーが発生しました/;
 
 // Next.js Server Action のリクエスト（POST + Next-Action ヘッダー）を遮断する
 async function blockServerActions(page: Page) {
@@ -64,7 +64,7 @@ test.describe("ネットワークエラー表示", () => {
 
 		await page.getByRole("button", { name: "ログアウト" }).click();
 
-		await expect(page.getByText(NETWORK_ERROR_TEXT)).toBeVisible({
+		await expect(page.getByText(NETWORK_ERROR_TEXT).first()).toBeVisible({
 			timeout: 10_000,
 		});
 	});
@@ -86,7 +86,7 @@ test.describe("ネットワークエラー表示", () => {
 
 		await page.getByRole("button", { name: "送信" }).click();
 
-		await expect(page.getByText(NETWORK_ERROR_TEXT)).toBeVisible({
+		await expect(page.getByText(NETWORK_ERROR_TEXT).first()).toBeVisible({
 			timeout: 10_000,
 		});
 	});
@@ -152,7 +152,7 @@ test.describe("ネットワークエラー表示", () => {
 
 		await page.getByRole("button", { name: "削除する" }).click();
 
-		await expect(page.getByText(NETWORK_ERROR_TEXT)).toBeVisible({
+		await expect(page.getByText(NETWORK_ERROR_TEXT).first()).toBeVisible({
 			timeout: 10_000,
 		});
 	});
@@ -182,7 +182,7 @@ test.describe("ネットワークエラー表示", () => {
 
 		await page.getByRole("button", { name: "登録" }).click();
 
-		await expect(page.getByText(NETWORK_ERROR_TEXT)).toBeVisible({
+		await expect(page.getByText(NETWORK_ERROR_TEXT).first()).toBeVisible({
 			timeout: 10_000,
 		});
 	});
@@ -240,7 +240,7 @@ test.describe("ネットワークエラー表示", () => {
 
 		await page.getByRole("button", { name: "ランダムに選ぶ！" }).click();
 
-		await expect(page.getByText(NETWORK_ERROR_TEXT)).toBeVisible({
+		await expect(page.getByText(NETWORK_ERROR_TEXT).first()).toBeVisible({
 			timeout: 10_000,
 		});
 	});

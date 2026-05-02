@@ -30,6 +30,10 @@ export const db = drizzle(client, { schema });
 
 await db.run(sql`PRAGMA foreign_keys = ON`);
 
+if (process.env.NODE_ENV !== "production") {
+	await db.run(sql`PRAGMA journal_mode=WAL`);
+}
+
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type Executor = Pick<
 	Tx,
