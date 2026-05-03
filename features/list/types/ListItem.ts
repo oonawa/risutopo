@@ -14,6 +14,7 @@ type ListItemBase = {
 		director: string[];
 		runningMinutes: number;
 		releaseYear: number;
+		releaseDate?: string;
 		externalDatabaseMovieId: number;
 		overview: string;
 	};

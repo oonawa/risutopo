@@ -1,3 +1,5 @@
+import { formatFullDate } from "@/lib/date";
+
 type Props = {
 	title: string;
 	backgroundImage: string;
@@ -5,6 +7,7 @@ type Props = {
 	director: string[];
 	runningMinutes: number;
 	releaseYear: number;
+	releaseDate?: string;
 };
 
 export default function MovieDetail({
@@ -12,9 +15,17 @@ export default function MovieDetail({
 	posterImage,
 	director,
 	releaseYear,
+	releaseDate,
 	runningMinutes,
 	backgroundImage,
 }: Props) {
+	const releaseDateLabel = (() => {
+		if (releaseDate) {
+			return formatFullDate(new Date(releaseDate));
+		}
+		return `${releaseYear}年`;
+	})();
+
 	return (
 		<div className="relative h-full">
 			<div className="absolute w-full h-full top-0 bg-background-dark-1/85">
@@ -44,7 +55,7 @@ export default function MovieDetail({
 									<span className="block text-xs text-foreground-dark-3">
 										公開
 									</span>
-									{releaseYear}年
+									{releaseDateLabel}
 								</p>
 								<p className="font-bold text-foreground-dark-1 text-xs pt-1">
 									<span className="block text-xs text-foreground-dark-3">

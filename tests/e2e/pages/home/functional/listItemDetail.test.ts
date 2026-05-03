@@ -25,7 +25,7 @@ async function seedLocalStorageWithUnwatchedItem(
 		},
 		{
 			key: LOCAL_STORAGE_KEY,
-			value: { list: { listId, items: [item] } },
+			value: { list: { listId, items: [item] }, subLists: [] },
 		},
 	);
 	return item;
@@ -43,19 +43,21 @@ test.describe("ListItemDetail - オーバーレイ機能テスト", () => {
 
 	// ── カード外クリックで詳細が閉じる ───────────────────────────────────────
 
-	test("未認証ユーザーが iPhone でカード外をクリックすると詳細が閉じる", async ({
-		page,
-	}, testInfo) => {
-		test.skip(
-			testInfo.project.name !== "mobile-webkit",
-			"このテストは mobile-webkit プロジェクトのみ対象",
-		);
-		const listId = crypto.randomUUID();
-		await page.goto(`/${listId}`);
+	async function runClickOutsideTest(page: import("@playwright/test").Page, projectName: string) {
+		const listId = "test-list-id-click-outside";
+		await page.goto("/");
 		await seedLocalStorageWithUnwatchedItem(page, listId);
 		await page.reload();
 
-		// カードをクリックしてボトムシートを開く
+		// ハイドレーションを待ち、リンクが確定するのを確認
+		const listLink = page.getByRole("link", { name: "リスト" });
+		await expect(listLink).not.toHaveAttribute("href", "/undefined", { timeout: 10_000 });
+		await listLink.click();
+
+		// 映画が表示されるのを待つ
+		await expect(page.getByText("テスト映画")).toBeVisible({ timeout: 10_000 });
+
+		// リスト画面では「ポスター画像なし」
 		await page.getByRole("button", { name: "ポスター画像なし" }).click();
 		await expect(
 			page.getByRole("button", { name: "視聴済みにする" }),
@@ -64,105 +66,44 @@ test.describe("ListItemDetail - オーバーレイ機能テスト", () => {
 		// オーバーレイ（カード外）をクリック
 		await page.mouse.click(10, 10);
 
-		// ボトムシートが閉じることを確認
+		// 詳細が閉じることを確認
 		await expect(
 			page.getByRole("button", { name: "視聴済みにする" }),
 		).not.toBeVisible();
+	}
+
+	test("未認証ユーザーが iPhone でカード外をクリックすると詳細が閉じる", async ({
+		page,
+	}, testInfo) => {
+		test.skip(testInfo.project.name !== "mobile-webkit", "mobile-webkitのみ対象");
+		await runClickOutsideTest(page, testInfo.project.name);
 	});
 
 	test("未認証ユーザーが Pixel 7 でカード外をクリックすると詳細が閉じる", async ({
 		page,
 	}, testInfo) => {
-		test.skip(
-			testInfo.project.name !== "mobile-chromium",
-			"このテストは mobile-chromium プロジェクトのみ対象",
-		);
-		const listId = crypto.randomUUID();
-		await page.goto(`/${listId}`);
-		await seedLocalStorageWithUnwatchedItem(page, listId);
-		await page.reload();
-
-		await page.getByRole("button", { name: "ポスター画像なし" }).click();
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).toBeVisible();
-
-		await page.mouse.click(10, 10);
-
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).not.toBeVisible();
+		test.skip(testInfo.project.name !== "mobile-chromium", "mobile-chromiumのみ対象");
+		await runClickOutsideTest(page, testInfo.project.name);
 	});
 
 	test("未認証ユーザーが Desktop Chrome でカード外をクリックすると詳細が閉じる", async ({
 		page,
 	}, testInfo) => {
-		test.skip(
-			testInfo.project.name !== "desktop-chromium",
-			"このテストは desktop-chromium プロジェクトのみ対象",
-		);
-		const listId = crypto.randomUUID();
-		await page.goto(`/${listId}`);
-		await seedLocalStorageWithUnwatchedItem(page, listId);
-		await page.reload();
-
-		await page.getByRole("button", { name: "ポスター画像なし" }).click();
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).toBeVisible();
-
-		await page.mouse.click(10, 10);
-
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).not.toBeVisible();
+		test.skip(testInfo.project.name !== "desktop-chromium", "desktop-chromiumのみ対象");
+		await runClickOutsideTest(page, testInfo.project.name);
 	});
 
 	test("未認証ユーザーが Desktop Firefox でカード外をクリックすると詳細が閉じる", async ({
 		page,
 	}, testInfo) => {
-		test.skip(
-			testInfo.project.name !== "desktop-firefox",
-			"このテストは desktop-firefox プロジェクトのみ対象",
-		);
-		const listId = crypto.randomUUID();
-		await page.goto(`/${listId}`);
-		await seedLocalStorageWithUnwatchedItem(page, listId);
-		await page.reload();
-
-		await page.getByRole("button", { name: "ポスター画像なし" }).click();
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).toBeVisible();
-
-		await page.mouse.click(10, 10);
-
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).not.toBeVisible();
+		test.skip(testInfo.project.name !== "desktop-firefox", "desktop-firefoxのみ対象");
+		await runClickOutsideTest(page, testInfo.project.name);
 	});
 
 	test("未認証ユーザーが Desktop Safari でカード外をクリックすると詳細が閉じる", async ({
 		page,
 	}, testInfo) => {
-		test.skip(
-			testInfo.project.name !== "desktop-webkit",
-			"このテストは desktop-webkit プロジェクトのみ対象",
-		);
-		const listId = crypto.randomUUID();
-		await page.goto(`/${listId}`);
-		await seedLocalStorageWithUnwatchedItem(page, listId);
-		await page.reload();
-
-		await page.getByRole("button", { name: "ポスター画像なし" }).click();
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).toBeVisible();
-
-		await page.mouse.click(10, 10);
-
-		await expect(
-			page.getByRole("button", { name: "視聴済みにする" }),
-		).not.toBeVisible();
+		test.skip(testInfo.project.name !== "desktop-webkit", "desktop-webkitのみ対象");
+		await runClickOutsideTest(page, testInfo.project.name);
 	});
 });

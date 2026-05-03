@@ -25,6 +25,7 @@ const listItemDetailsSchema = z.object({
 	director: z.array(z.string().min(1)),
 	runningMinutes: z.number().int().positive(),
 	releaseYear: z.number().int(),
+	releaseDate: z.string().optional(),
 	externalDatabaseMovieId: z.number().int().nonnegative(),
 	overview: z.string().min(1),
 });

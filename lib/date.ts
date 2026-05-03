@@ -10,6 +10,11 @@ export const formatDate = (date: Date, format?: string) => {
 	return dayjs(date).tz().format(format ?? "YYYY-MM-DD");
 };
 
+export const formatFullDate = (date: Date): string => {
+	const d = dayjs(date).tz();
+	return `${d.year()}年${d.month() + 1}月${d.date()}日`;
+};
+
 export const formatRelativeDate = (date: Date) => {
 	const now = dayjs().tz();
 	const target = dayjs(date).tz();
