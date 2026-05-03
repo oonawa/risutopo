@@ -1,5 +1,6 @@
 import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
 import { getRouletteListItemIds } from "@/features/list/actions/getRouletteListItemIds";
+import { getSubLists } from "@/features/list/actions/getSubLists";
 import RouletteContent from "./Content";
 
 export default async function Roulette() {
@@ -14,5 +15,9 @@ export default async function Roulette() {
 			)
 		: undefined;
 
-	return <RouletteContent listItemIds={listItemIds} />;
+	const subLists = publicListId
+		? await getSubLists().then((r) => (r.success ? r.data : undefined))
+		: undefined;
+
+	return <RouletteContent listItemIds={listItemIds} subLists={subLists} />;
 }
