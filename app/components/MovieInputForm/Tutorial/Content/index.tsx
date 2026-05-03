@@ -167,7 +167,7 @@ export default function TutorialContent() {
 									const isDim = activeStep === null || index !== activeStep;
 
 									return (
-										<Fragment key={`${index}-${step.description}`}>
+										<Fragment key={`${step.mark}-${step.description}`}>
 											{step.mark === "share" ? (
 												<ShareMark
 													dimmed={isDim}
