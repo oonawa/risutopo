@@ -361,6 +361,8 @@ test.describe("SortButton - ネストドロップダウン機能テスト", () =
 		await page.getByText("追加日").hover();
 		// ドロップダウンを閉じて再度開くことで hoveredGroupKey がリセットされ、activeSortKey のハイライトが復活する
 		await page.keyboard.press("Escape");
+		// Escape後、マウスをドロップダウン外へ明示的に退避させてから再オープン
+		await page.mouse.move(0, 0);
 		await page.getByRole("button", { name: "並べ替え" }).click();
 		const highlightedTrigger = page.locator("[data-group-active='true']");
 		await expect(highlightedTrigger).toBeVisible();
