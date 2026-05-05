@@ -31,6 +31,38 @@ async function seedLocalStorageWithUnwatchedItem(
 	return item;
 }
 
+/** localStorageからlistIdを取得するポーリングヘルパー */
+async function waitForListId(page: import("@playwright/test").Page): Promise<string> {
+	const listId = await page.waitForFunction(
+		({ key }: { key: string }) => {
+			const raw = localStorage.getItem(key);
+			if (!raw) return null;
+			try {
+				const parsed: unknown = JSON.parse(raw);
+				if (
+					parsed !== null &&
+					typeof parsed === "object" &&
+					"list" in parsed &&
+					parsed.list !== null &&
+					typeof parsed.list === "object" &&
+					"listId" in parsed.list &&
+					typeof parsed.list.listId === "string"
+				) {
+					return parsed.list.listId;
+				}
+			} catch {
+				// ignore
+			}
+			return null;
+		},
+		{ key: LOCAL_STORAGE_KEY },
+		{ timeout: 10_000 },
+	);
+	const value: unknown = await listId.jsonValue();
+	if (typeof value !== "string") throw new Error("listId が取得できませんでした");
+	return value;
+}
+
 test.describe("ListItemDetail - オーバーレイ機能テスト", () => {
 	test.beforeEach(async () => {
 		await resetDatabase();
@@ -44,8 +76,8 @@ test.describe("ListItemDetail - オーバーレイ機能テスト", () => {
 	// ── カード外クリックで詳細が閉じる ───────────────────────────────────────
 
 	async function runClickOutsideTest(page: import("@playwright/test").Page, projectName: string) {
-		const listId = "test-list-id-click-outside";
 		await page.goto("/");
+		const listId = await waitForListId(page);
 		await seedLocalStorageWithUnwatchedItem(page, listId);
 		await page.reload();
 

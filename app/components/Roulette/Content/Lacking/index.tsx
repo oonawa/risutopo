@@ -22,8 +22,8 @@ export default function Lacking({ handleClick, itemsNeeded }: Props) {
 			>
 				<h3 className="font-bold">
 					あと
-					<span className="text-xl px-1">{itemsNeeded}本</span>
-					リスト登録してください！
+					<span className="text-xl px-1">{itemsNeeded}作品</span>
+					登録してください！
 				</h3>
 			</Button>
 		</motion.div>

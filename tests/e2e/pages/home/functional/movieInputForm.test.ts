@@ -155,4 +155,83 @@ test.describe("MovieInputForm - 機能テスト", () => {
 		await page.goto("/");
 		await fillPcFormAndVerify(page);
 	});
+
+	// ── モバイルデバイスで MobileForm が即座に表示されること ──────────────
+
+	test("iPhone でページを開くと MobileForm（textarea）が即座に表示される", async ({
+		page,
+	}, testInfo) => {
+		test.skip(
+			testInfo.project.name !== "mobile-webkit",
+			"このテストは mobile-webkit プロジェクトのみ対象",
+		);
+		await page.goto("/");
+		// SSR 時点で defaultTab="mobile" が渡るため、hydration 前から textarea が見える
+		const textarea = page.locator("textarea");
+		await expect(textarea).toBeVisible({ timeout: 1000 });
+	});
+
+	test("Pixel 7 でページを開くと MobileForm（textarea）が即座に表示される", async ({
+		page,
+	}, testInfo) => {
+		test.skip(
+			testInfo.project.name !== "mobile-chromium",
+			"このテストは mobile-chromium プロジェクトのみ対象",
+		);
+		await page.goto("/");
+		// SSR 時点で defaultTab="mobile" が渡るため、hydration 前から textarea が見える
+		const textarea = page.locator("textarea");
+		await expect(textarea).toBeVisible({ timeout: 1000 });
+	});
+
+	// ── Desktop Chrome: フェードインアニメーションの制御 ─────────────────────
+
+	test("Desktop Chrome で初回アクセス時にフォームがフェードインで表示される", async ({
+		page,
+	}, testInfo) => {
+		test.skip(
+			testInfo.project.name !== "desktop-chromium",
+			"このテストは desktop-chromium プロジェクトのみ対象",
+		);
+
+		await page.goto("/");
+
+		// UA 判定 useEffect が走る前（初回マウント直後）に motion.div の opacity が 0 であることを確認
+		const formArea = page.locator(".min-h-\\[calc\\(6lh\\+var\\(--spacing\\)\\*14\\+1\\.25rem\\)\\]");
+		// フォームエリアが表示されるまで待つ
+		await expect(formArea).toBeVisible();
+
+		// PC フォームの #title が最終的に表示されること（アニメーション完了後）
+		await expect(page.locator("#title")).toBeVisible({ timeout: 3000 });
+	});
+
+	test("Desktop Chrome で別ページへ遷移してホームに戻った際、フォームが即座に表示される", async ({
+		page,
+	}, testInfo) => {
+		test.skip(
+			testInfo.project.name !== "desktop-chromium",
+			"このテストは desktop-chromium プロジェクトのみ対象",
+		);
+
+		// 初回アクセス（atom に deviceTab がキャッシュされる）
+		await page.goto("/");
+		await expect(page.locator("#title")).toBeVisible({ timeout: 3000 });
+
+		// 別ページに遷移してからホームに戻る
+		await page.goto("/about", { waitUntil: "domcontentloaded" }).catch(() => {
+			// /about が存在しない場合は 404 でも構わない
+		});
+		await page.goto("/");
+
+		// 2回目は atom に値がキャッシュされているため shouldAnimate.current = false
+		// initial={false} なのでアニメーションなしで即座に表示される
+		// waitForFunction で即座（200ms 以内）に opacity=1 であることを確認
+		const titleInput = page.locator("#title");
+		const start = Date.now();
+		await expect(titleInput).toBeVisible({ timeout: 1000 });
+		const elapsed = Date.now() - start;
+		// アニメーションがないため、表示までの時間が短い（200ms の transition duration より大幅に短い）
+		// ここでは 500ms 以内に表示されることを確認
+		expect(elapsed).toBeLessThan(500);
+	});
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { Activity, useCallback, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
@@ -15,11 +15,8 @@ import Loading from "@/components/Loading";
 import BottomSheetContent from "@/app/components/BottomSheetContent";
 import Tab from "./Tab";
 import MobileForm from "./MobileForm";
+import PcForm from "./PcForm";
 
-const PcForm = dynamic(() => import("./PcForm"), {
-	ssr: false,
-	loading: Loading,
-});
 const DraftNewItem = dynamic(() => import("./DraftNewItem"), {
 	ssr: false,
 	loading: Loading,
@@ -32,10 +29,12 @@ const PossibleDuplicateItems = dynamic(
 type Props = {
 	items?: ListItem[];
 	isLoggedIn?: boolean;
+	defaultTab?: "mobile";
 };
 
-export default function MovieInputForm({ items, isLoggedIn = false }: Props) {
-	const { activeTab, setActiveTab } = useActiveTab();
+export default function MovieInputForm({ items, isLoggedIn = false, defaultTab }: Props) {
+	const { activeTab, setActiveTab, deviceTab } = useActiveTab(defaultTab);
+	const shouldAnimate = useRef(defaultTab === undefined && deviceTab === undefined);
 
 	const [extractedMovie, setExtractedMovie] = useState<DraftListItem | null>(
 		null,
@@ -75,6 +74,7 @@ export default function MovieInputForm({ items, isLoggedIn = false }: Props) {
 		clearDuplicateItem();
 	}, [clearDuplicateItem]);
 
+
 	return (
 		<>
 			<div className="w-full h-full flex flex-col items-center justify-center">
@@ -90,17 +90,63 @@ export default function MovieInputForm({ items, isLoggedIn = false }: Props) {
 					</Tab>
 				</div>
 
-				{activeTab === "pc" ? (
-					<PcForm
-						disabled={extractedMovie !== null}
-						handleExtract={handleExtract}
-					/>
-				) : (
-					<MobileForm
-						disabled={extractedMovie !== null}
-						handleExtract={handleExtract}
-					/>
-				)}
+				<div className="min-h-[calc(6lh+var(--spacing)*14+1.25rem)] md:min-h-[calc(4lh+var(--spacing)*14+1.25rem)] w-full flex items-center justify-center">
+					{defaultTab === undefined ? (
+						<>
+							<Activity mode={activeTab === "pc" ? "visible" : "hidden"}>
+								<AnimatePresence>
+									{activeTab === "pc" && (
+										<motion.div
+											initial={shouldAnimate.current ? { opacity: 0, y: 8 } : false}
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: 8 }}
+											transition={{ duration: 0.2, ease: "easeOut" }}
+											className="w-full"
+										>
+											<PcForm
+												disabled={extractedMovie !== null}
+												handleExtract={handleExtract}
+											/>
+										</motion.div>
+									)}
+								</AnimatePresence>
+							</Activity>
+							<Activity mode={activeTab === "mobile" ? "visible" : "hidden"}>
+								<AnimatePresence>
+									{activeTab === "mobile" && (
+										<motion.div
+											initial={shouldAnimate.current ? { opacity: 0, y: 8 } : false}
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: 8 }}
+											transition={{ duration: 0.2, ease: "easeOut" }}
+											className="w-full"
+										>
+											<MobileForm
+												disabled={extractedMovie !== null}
+												handleExtract={handleExtract}
+											/>
+										</motion.div>
+									)}
+								</AnimatePresence>
+							</Activity>
+						</>
+					) : (
+						<>
+							{activeTab === "pc" && (
+								<PcForm
+									disabled={extractedMovie !== null}
+									handleExtract={handleExtract}
+								/>
+							)}
+							{activeTab === "mobile" && (
+								<MobileForm
+									disabled={extractedMovie !== null}
+									handleExtract={handleExtract}
+								/>
+							)}
+						</>
+					)}
+				</div>
 			</div>
 
 			<AnimatePresence>

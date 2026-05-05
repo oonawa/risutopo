@@ -46,12 +46,21 @@ const DESKTOP_CHROME_UA = devices["Desktop Chrome"].userAgent ?? "";
 
 // ── テストヘルパー ─────────────────────────────────────────────────────────
 
-// 3G スロットリングを設定してページを読み込み、テキストエリアが 2 秒以内に表示されることを検証
-async function testDisplaySpeed(context: BrowserContext, page: Page) {
+async function testMobileDisplaySpeed(context: BrowserContext, page: Page) {
 	const cdpSession = await context.newCDPSession(page);
 	await cdpSession.send("Network.emulateNetworkConditions", THROTTLING_3G);
 	await page.goto("/", { waitUntil: "domcontentloaded" });
-	await expect(page.locator("textarea")).toBeVisible({ timeout: 2000 });
+	await expect(page.locator('textarea[name="value"]')).toBeVisible({
+		timeout: 2000,
+	});
+}
+
+async function testPcDisplaySpeed(context: BrowserContext, page: Page) {
+	const cdpSession = await context.newCDPSession(page);
+	await cdpSession.send("Network.emulateNetworkConditions", THROTTLING_3G);
+	await page.goto("/", { waitUntil: "domcontentloaded" });
+	await expect(page.locator("#title")).toBeVisible({ timeout: 2000 });
+	await expect(page.locator("#watch-url")).toBeVisible({ timeout: 2000 });
 }
 
 /**
@@ -67,8 +76,8 @@ async function testMobileReactivity(context: BrowserContext, page: Page) {
 	const cdpSession = await context.newCDPSession(page);
 	await cdpSession.send("Network.emulateNetworkConditions", THROTTLING_3G);
 	await page.goto("/");
-	await expect(page.locator("textarea")).toBeVisible();
-	await page.locator("textarea").fill(UNEXT_SHARE_LINK);
+	await expect(page.locator('textarea[name="value"]')).toBeVisible();
+	await page.locator('textarea[name="value"]').fill(UNEXT_SHARE_LINK);
 	await expect(page.getByRole("status")).toBeVisible({
 		timeout: IMMEDIATE_RESPONSE_TIMEOUT_MS,
 	});
@@ -114,7 +123,7 @@ test.describe("MovieInputForm - 非機能テスト（認証済み × iPhone × C
 	});
 
 	test("3G 下で MovieInputForm が 2 秒以内に表示される", async () => {
-		await testDisplaySpeed(context, page);
+		await testMobileDisplaySpeed(context, page);
 	});
 
 	test("3G 下でフォーム入力に即座に反応する", async () => {
@@ -147,7 +156,7 @@ test.describe("MovieInputForm - 非機能テスト（未認証 × Pixel 7 × Chr
 	});
 
 	test("3G 下で MovieInputForm が 2 秒以内に表示される", async () => {
-		await testDisplaySpeed(context, page);
+		await testMobileDisplaySpeed(context, page);
 	});
 
 	test("3G 下でフォーム入力に即座に反応する", async () => {
@@ -180,7 +189,7 @@ test.describe("MovieInputForm - 非機能テスト（未認証 × PC × Chromium
 	});
 
 	test("3G 下で MovieInputForm が 2 秒以内に表示される", async () => {
-		await testDisplaySpeed(context, page);
+		await testPcDisplaySpeed(context, page);
 	});
 
 	test("3G 下でフォーム入力に即座に反応する", async () => {
@@ -214,7 +223,7 @@ test.describe("MovieInputForm - 非機能テスト（認証済み × PC × Chrom
 	});
 
 	test("3G 下で MovieInputForm が 2 秒以内に表示される", async () => {
-		await testDisplaySpeed(context, page);
+		await testPcDisplaySpeed(context, page);
 	});
 
 	test("3G 下でフォーム入力に即座に反応する", async () => {

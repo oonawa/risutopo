@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import Section from "./components/Section";
 import SectionTitle from "./components/Section/Title";
 import HomeTutorial from "./components/HomeTutorial";
@@ -10,14 +11,20 @@ type Props = {
 	}>;
 };
 
+const MOBILE_UA_PATTERN = /Android|iPhone|iPod|Opera Mini|IEMobile|WPDesktop/i;
+
 export default async function HomePage({ searchParams }: Props) {
 	const params = await searchParams;
 	const homeWithTutorial = params?.home === "true";
 
+	const headersList = await headers();
+	const ua = headersList.get("user-agent") ?? "";
+	const defaultTab = MOBILE_UA_PATTERN.test(ua) ? ("mobile" as const) : undefined;
+
 	if (homeWithTutorial) {
 		return (
 			<HomeTutorial
-				ItemRegisterForm={<MovieInputForm />}
+				ItemRegisterForm={<MovieInputForm defaultTab={defaultTab} />}
 				Roulette={<Roulette />}
 			/>
 		);
@@ -27,7 +34,7 @@ export default async function HomePage({ searchParams }: Props) {
 		<>
 			<Section>
 				<SectionTitle>Make a List</SectionTitle>
-				<MovieInputForm />
+				<MovieInputForm defaultTab={defaultTab} />
 			</Section>
 			<Section>
 				<SectionTitle>Roulette</SectionTitle>
