@@ -7,64 +7,9 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { setupAuthenticatedUser } from "../../../helpers/auth";
+import { seedLocalStorageViaInitScript } from "../../../helpers/localStorageSeed";
 import { resetDatabase, seedDatabase } from "../../../lib/dbHelpers";
 import { db } from "../../../lib/testDb";
-
-const LOCAL_STORAGE_KEY = "risutopotto";
-
-/** ローカルストレージに未視聴の映画アイテムを1件セットする */
-async function seedLocalStorageWithUnwatchedItem(
-	page: import("@playwright/test").Page,
-	listId: string,
-) {
-	const item = {
-		listItemId: crypto.randomUUID(),
-		title: "テスト映画",
-		url: "https://www.netflix.com/jp/title/80100172",
-		serviceSlug: "netflix",
-		serviceName: "Netflix",
-		createdAt: new Date().toISOString(),
-		isWatched: false,
-		watchedAt: null,
-	};
-	await page.evaluate(
-		({ key, value }) => {
-			localStorage.setItem(key, JSON.stringify(value));
-		},
-		{
-			key: LOCAL_STORAGE_KEY,
-			value: { list: { listId, items: [item] }, subLists: [] },
-		},
-	);
-	return item;
-}
-
-/** ローカルストレージに視聴済みの映画アイテムを1件セットする */
-async function seedLocalStorageWithWatchedItem(
-	page: import("@playwright/test").Page,
-	listId: string,
-) {
-	const item = {
-		listItemId: crypto.randomUUID(),
-		title: "テスト映画",
-		url: "https://www.netflix.com/jp/title/80100172",
-		serviceSlug: "netflix",
-		serviceName: "Netflix",
-		createdAt: new Date().toISOString(),
-		isWatched: true,
-		watchedAt: new Date().toISOString(),
-	};
-	await page.evaluate(
-		({ key, value }) => {
-			localStorage.setItem(key, JSON.stringify(value));
-		},
-		{
-			key: LOCAL_STORAGE_KEY,
-			value: { list: { listId, items: [item] }, subLists: [] },
-		},
-	);
-	return item;
-}
 
 /** DB にログイン済みユーザーのリストアイテムを1件作成する */
 async function createDbListItem(userId: number) {
@@ -93,57 +38,52 @@ async function createDbListItem(userId: number) {
 	return { list, item };
 }
 
-/** localStorageからlistIdを取得するポーリングヘルパー */
-async function waitForListId(page: import("@playwright/test").Page): Promise<string> {
-	const listId = await page.waitForFunction(
-		({ key }: { key: string }) => {
-			const raw = localStorage.getItem(key);
-			if (!raw) return null;
-			try {
-				const parsed: unknown = JSON.parse(raw);
-				if (
-					parsed !== null &&
-					typeof parsed === "object" &&
-					"list" in parsed &&
-					parsed.list !== null &&
-					typeof parsed.list === "object" &&
-					"listId" in parsed.list &&
-					typeof parsed.list.listId === "string"
-				) {
-					return parsed.list.listId;
-				}
-			} catch {
-				// ignore
-			}
-			return null;
-		},
-		{ key: LOCAL_STORAGE_KEY },
-		{ timeout: 10_000 },
-	);
-	const value: unknown = await listId.jsonValue();
-	if (typeof value !== "string") throw new Error("listId が取得できませんでした");
-	return value;
-}
-
-/** 未認証ユーザー用のリスト画面遷移ヘルパー */
+/** 未認証ユーザー用のリスト画面遷移ヘルパー（未視聴アイテム） */
 async function navigateToLocalList(page: import("@playwright/test").Page) {
+	const listId = crypto.randomUUID();
+	const item = {
+		listItemId: crypto.randomUUID(),
+		title: "テスト映画",
+		url: "https://www.netflix.com/jp/title/80100172",
+		serviceSlug: "netflix",
+		serviceName: "Netflix",
+		createdAt: new Date().toISOString(),
+		isWatched: false,
+		watchedAt: null,
+	};
+	await seedLocalStorageViaInitScript(page, {
+		list: { listId, items: [item] },
+		subLists: [],
+	});
 	await page.goto("/");
-	const listId = await waitForListId(page);
-	await seedLocalStorageWithUnwatchedItem(page, listId);
-	await page.reload();
 
+	// ハイドレーション待ち
 	const listLink = page.getByRole("link", { name: "リスト" });
 	await expect(listLink).not.toHaveAttribute("href", "/undefined", { timeout: 10_000 });
 	await listLink.click();
 	await expect(page.getByText("テスト映画")).toBeVisible({ timeout: 10_000 });
 }
 
+/** 未認証ユーザー用のリスト画面遷移ヘルパー（視聴済みアイテム） */
 async function navigateToLocalWatchedList(page: import("@playwright/test").Page) {
+	const listId = crypto.randomUUID();
+	const item = {
+		listItemId: crypto.randomUUID(),
+		title: "テスト映画",
+		url: "https://www.netflix.com/jp/title/80100172",
+		serviceSlug: "netflix",
+		serviceName: "Netflix",
+		createdAt: new Date().toISOString(),
+		isWatched: true,
+		watchedAt: new Date().toISOString(),
+	};
+	await seedLocalStorageViaInitScript(page, {
+		list: { listId, items: [item] },
+		subLists: [],
+	});
 	await page.goto("/");
-	const listId = await waitForListId(page);
-	await seedLocalStorageWithWatchedItem(page, listId);
-	await page.reload();
 
+	// ハイドレーション待ち
 	const listLink = page.getByRole("link", { name: "リスト" });
 	await expect(listLink).not.toHaveAttribute("href", "/undefined", { timeout: 10_000 });
 	await listLink.click();

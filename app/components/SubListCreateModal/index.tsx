@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createSubList } from "@/features/list/actions/createSubList";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "@/features/list/hooks/useListLocalStorageRepository";
 
 type Props = {
 	isOpen: boolean;

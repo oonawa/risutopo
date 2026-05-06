@@ -19,7 +19,7 @@ import {
 	renameSubList,
 	replaceListItems,
 	storeListItem,
-} from "./listLocalStorageRepository";
+} from "../repositories/client/listLocalStorageRepository";
 
 export function useListLocalStorageRepository() {
 	const appendListItem = useSetAtom(localListAtom);

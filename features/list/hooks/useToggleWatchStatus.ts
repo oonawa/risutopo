@@ -5,7 +5,7 @@ import type { ListItem } from "@/features/list/types/ListItem";
 import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
 import { toggleWatchStatus } from "@/features/list/actions/toggleWatchStatus";
 import { useServerAction } from "@/features/shared/hooks/useServerAction";
-import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "./useListLocalStorageRepository";
 
 export const useToggleWatchStatus = ({
 	onSuccess,

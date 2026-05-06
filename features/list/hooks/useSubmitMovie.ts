@@ -4,7 +4,7 @@ import { currentUserPublicListId } from "@/features/shared/actions/currentUserPu
 import { storeListItem } from "@/features/list/actions/storeListItem";
 import { removeListItem } from "@/features/list/actions/removeListItem";
 import { useServerAction } from "@/features/shared/hooks/useServerAction";
-import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "./useListLocalStorageRepository";
 
 export const useSubmitMovie = ({ onSuccess }: { onSuccess?: () => void }) => {
 	const [success, setSuccess] = useState<boolean | undefined>(undefined);

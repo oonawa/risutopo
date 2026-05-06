@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "@/features/list/hooks/useListLocalStorageRepository";
 import { userIdSchema } from "@/features/user/schemas/userIdSchema";
 import { searchDuplicateUserId } from "@/features/user/actions/searchDuplicateUserId";
 import { registerUser } from "@/features/user/actions/registerUser";

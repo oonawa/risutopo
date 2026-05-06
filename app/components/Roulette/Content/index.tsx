@@ -7,7 +7,7 @@ import type { ListItem } from "@/features/list/types/ListItem";
 import { getListItemById } from "@/features/list/actions/getListItemById";
 import { getRouletteListItemIdsBySubList } from "@/features/list/actions/getRouletteListItemIdsBySubList";
 import { useServerAction } from "@/features/shared/hooks/useServerAction";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "@/features/list/hooks/useListLocalStorageRepository";
 import RisuPot from "@/components/RisuPot";
 import { Button } from "@/components/ui/button";
 import {

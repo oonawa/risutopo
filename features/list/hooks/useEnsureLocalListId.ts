@@ -3,18 +3,15 @@
 import { useCallback } from "react";
 import { useListLocalStorageRepository } from "./useListLocalStorageRepository";
 
-export function useLocalListId() {
+export const useEnsureLocalListId = () => {
 	const { getListId, initializeEmptyList } = useListLocalStorageRepository();
 
-	const getOrCreateListId = useCallback((): string => {
+	const ensureListId = useCallback((): void => {
 		const existing = getListId();
-		if (existing) {
-			return existing;
+		if (!existing) {
+			initializeEmptyList();
 		}
-
-		initializeEmptyList();
-		return getListId();
 	}, [getListId, initializeEmptyList]);
 
-	return { getOrCreateListId };
+	return { ensureListId };
 }

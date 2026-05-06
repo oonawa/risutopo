@@ -6,7 +6,7 @@ import { useState } from "react";
 import { renameSubList } from "@/features/list/actions/renameSubList";
 import { deleteSubList } from "@/features/list/actions/deleteSubList";
 import { useServerAction } from "@/features/shared/hooks/useServerAction";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "@/features/list/hooks/useListLocalStorageRepository";
 import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import {
