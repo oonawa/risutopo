@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import type { DraftListItem, ListItem } from "@/features/list/types/ListItem";
 import { useActiveTab } from "@/features/list/hooks/useActiveTab";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "@/features/list/hooks/useListLocalStorageRepository";
 import { useSearchDuplicateMovie } from "@/features/list/hooks/useSearchDuplicateMovie";
 import { Button } from "@/components/ui/button";
 import WebBrowserIcon from "@/components/ui/Icons/WebBrowserIcon";

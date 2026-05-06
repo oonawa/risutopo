@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { sendLoginCode } from "@/features/auth/actions/sendLoginCode";
 import { login } from "@/features/auth/actions/login";
 import { syncUserList } from "@/features/list/actions/syncUserList";
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "@/features/list/hooks/useListLocalStorageRepository";
 import { useServerAction } from "@/features/shared/hooks/useServerAction";
 import type { Result } from "@/features/shared/types/Result";
 import VerifyForm from "@/app/components/auth/VerifyForm";

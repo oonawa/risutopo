@@ -1,67 +1,7 @@
 import crypto from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { resetDatabase, seedDatabase } from "../../../lib/dbHelpers";
-
-const LOCAL_STORAGE_KEY = "risutopotto";
-
-/** ローカルストレージに未視聴の映画アイテムを1件セットする */
-async function seedLocalStorageWithUnwatchedItem(
-	page: import("@playwright/test").Page,
-	listId: string,
-) {
-	const item = {
-		listItemId: crypto.randomUUID(),
-		title: "テスト映画",
-		url: "https://www.netflix.com/jp/title/80100172",
-		serviceSlug: "netflix",
-		serviceName: "Netflix",
-		createdAt: new Date().toISOString(),
-		isWatched: false,
-		watchedAt: null,
-	};
-	await page.evaluate(
-		({ key, value }) => {
-			localStorage.setItem(key, JSON.stringify(value));
-		},
-		{
-			key: LOCAL_STORAGE_KEY,
-			value: { list: { listId, items: [item] }, subLists: [] },
-		},
-	);
-	return item;
-}
-
-/** localStorageからlistIdを取得するポーリングヘルパー */
-async function waitForListId(page: import("@playwright/test").Page): Promise<string> {
-	const listId = await page.waitForFunction(
-		({ key }: { key: string }) => {
-			const raw = localStorage.getItem(key);
-			if (!raw) return null;
-			try {
-				const parsed: unknown = JSON.parse(raw);
-				if (
-					parsed !== null &&
-					typeof parsed === "object" &&
-					"list" in parsed &&
-					parsed.list !== null &&
-					typeof parsed.list === "object" &&
-					"listId" in parsed.list &&
-					typeof parsed.list.listId === "string"
-				) {
-					return parsed.list.listId;
-				}
-			} catch {
-				// ignore
-			}
-			return null;
-		},
-		{ key: LOCAL_STORAGE_KEY },
-		{ timeout: 10_000 },
-	);
-	const value: unknown = await listId.jsonValue();
-	if (typeof value !== "string") throw new Error("listId が取得できませんでした");
-	return value;
-}
+import { seedLocalStorageViaInitScript } from "../../../helpers/localStorageSeed";
 
 test.describe("ListItemDetail - オーバーレイ機能テスト", () => {
 	test.beforeEach(async () => {
@@ -76,10 +16,22 @@ test.describe("ListItemDetail - オーバーレイ機能テスト", () => {
 	// ── カード外クリックで詳細が閉じる ───────────────────────────────────────
 
 	async function runClickOutsideTest(page: import("@playwright/test").Page, projectName: string) {
+		const listId = crypto.randomUUID();
+		const item = {
+			listItemId: crypto.randomUUID(),
+			title: "テスト映画",
+			url: "https://www.netflix.com/jp/title/80100172",
+			serviceSlug: "netflix",
+			serviceName: "Netflix",
+			createdAt: new Date().toISOString(),
+			isWatched: false,
+			watchedAt: null,
+		};
+		await seedLocalStorageViaInitScript(page, {
+			list: { listId, items: [item] },
+			subLists: [],
+		});
 		await page.goto("/");
-		const listId = await waitForListId(page);
-		await seedLocalStorageWithUnwatchedItem(page, listId);
-		await page.reload();
 
 		// ハイドレーションを待ち、リンクが確定するのを確認
 		const listLink = page.getByRole("link", { name: "リスト" });

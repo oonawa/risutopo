@@ -1,7 +1,7 @@
 import { useState, useTransition, useCallback } from "react";
 import type { DraftListItem, ListItem } from "../types/ListItem";
 import { useSearchDuplicateMovie } from "./useSearchDuplicateMovie";
-import { useListLocalStorageRepository } from "../repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "./useListLocalStorageRepository";
 
 type Props = {
 	items?: ListItem[];

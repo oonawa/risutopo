@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Menu from "@/components/Menu";
+import LocalListInitializer from "@/app/components/LocalListInitializer";
+import { currentUserPublicListId } from "@/features/shared/actions/currentUserPublicListId";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,12 +35,19 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	const publicListIdResult = await currentUserPublicListId();
+	const publicListId = publicListIdResult.success
+		? publicListIdResult.data.publicListId
+		: null;
+
 	return (
 		<html lang="ja">
 			<head>
 				<meta name="apple-mobile-web-app-title" content="りすとぽっと" />
 			</head>
 			<body className={`antialiased`}>
+				{!publicListId && <LocalListInitializer />}
+
 				<Header />
 
 				<main className="min-h-[calc(100dvh-var(--header-height))] pb-20">

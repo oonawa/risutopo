@@ -1,6 +1,6 @@
 "use client";
 
-import { useListLocalStorageRepository } from "@/features/list/repositories/client/useListLocalStorageRepository";
+import { useListLocalStorageRepository } from "@/features/list/hooks/useListLocalStorageRepository";
 import SubListSelectDrawerLayout from "./SubListSelectDrawerLayout";
 import { useSubListToggle } from "./useSubListToggle";
 

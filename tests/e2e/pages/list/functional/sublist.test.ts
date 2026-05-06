@@ -4,30 +4,13 @@ import { subListsTable, listsTable } from "@/db/schema";
 import { setupAuthenticatedUser } from "../../../helpers/auth";
 import { resetDatabase, seedDatabase } from "../../../lib/dbHelpers";
 import { db } from "../../../lib/testDb";
-
-const LOCAL_STORAGE_KEY = "risutopotto";
+import { seedLocalStorageViaInitScript } from "../../../helpers/localStorageSeed";
 
 type SubListEntry = {
 	subListId: string;
 	name: string;
 	listItemIds: string[];
 };
-
-async function seedLocalStorageWithSubLists(
-	page: import("@playwright/test").Page,
-	listId: string,
-	subLists: SubListEntry[],
-) {
-	await page.evaluate(
-		({ key, value }) => {
-			localStorage.setItem(key, JSON.stringify(value));
-		},
-		{
-			key: LOCAL_STORAGE_KEY,
-			value: { list: { listId, items: [] }, subLists },
-		},
-	);
-}
 
 test.describe("SubListTabBar - サブリストタブバー機能テスト", () => {
 	test.beforeEach(async () => {
@@ -48,17 +31,8 @@ test.describe("SubListTabBar - サブリストタブバー機能テスト", () =
 			"このテストは mobile-webkit プロジェクトのみ対象",
 		);
 		const listId = crypto.randomUUID();
+		await seedLocalStorageViaInitScript(page, { list: { listId, items: [] }, subLists: [] });
 		await page.goto(`/${listId}`);
-		await page.evaluate(
-			({ key, value }) => {
-				localStorage.setItem(key, JSON.stringify(value));
-			},
-			{
-				key: LOCAL_STORAGE_KEY,
-				value: { list: { listId, items: [] }, subLists: [] },
-			},
-		);
-		await page.reload();
 
 		await expect(page.getByRole("link", { name: "すべて" })).toBeVisible();
 		await expect(
@@ -83,9 +57,8 @@ test.describe("SubListTabBar - サブリストタブバー機能テスト", () =
 			{ subListId: crypto.randomUUID(), name: "アクション", listItemIds: [] },
 			{ subListId: crypto.randomUUID(), name: "ドラマ", listItemIds: [] },
 		];
+		await seedLocalStorageViaInitScript(page, { list: { listId, items: [] }, subLists });
 		await page.goto(`/${listId}`);
-		await seedLocalStorageWithSubLists(page, listId, subLists);
-		await page.reload();
 
 		const tabBar = page.getByTestId("sublist-tab-bar");
 		await expect(tabBar).toBeVisible();
@@ -114,9 +87,8 @@ test.describe("SubListTabBar - サブリストタブバー機能テスト", () =
 		const subLists: SubListEntry[] = [
 			{ subListId, name: "アクション", listItemIds: [] },
 		];
+		await seedLocalStorageViaInitScript(page, { list: { listId, items: [] }, subLists });
 		await page.goto(`/${subListId}`);
-		await seedLocalStorageWithSubLists(page, listId, subLists);
-		await page.reload();
 
 		const allTab = page.getByRole("link", { name: "すべて" });
 		await expect(allTab).toHaveAttribute("data-active", "false");
@@ -179,17 +151,8 @@ test.describe("SubListTabBar - サブリストタブバー機能テスト", () =
 			"このテストは mobile-webkit プロジェクトのみ対象",
 		);
 		const listId = crypto.randomUUID();
+		await seedLocalStorageViaInitScript(page, { list: { listId, items: [] }, subLists: [] });
 		await page.goto(`/${listId}`);
-		await page.evaluate(
-			({ key, value }) => {
-				localStorage.setItem(key, JSON.stringify(value));
-			},
-			{
-				key: LOCAL_STORAGE_KEY,
-				value: { list: { listId, items: [] }, subLists: [] },
-			},
-		);
-		await page.reload();
 
 		await page.getByRole("button", { name: "サブリストを作成" }).click();
 		await expect(

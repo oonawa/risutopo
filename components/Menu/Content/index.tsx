@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname, useParams } from "next/navigation";
-import { useLocalListId } from "@/features/list/hooks/useLocalListId";
+import { useAtomValue } from "jotai";
+import { usePathname } from "next/navigation";
+import { risutopottoAtom } from "@/features/shared/store";
 import HomeIcon from "../../ui/Icons/HomeIcon";
 import ListIcon from "../../ui/Icons/ListIcon";
 import MenuItem from "../MenuItem";
@@ -13,26 +13,10 @@ type Props = {
 };
 
 export default function MenuContent({ publicListId }: Props) {
-	const [localListId, setLocalListId] = useState<string | undefined>(undefined);
-
+	const store = useAtomValue(risutopottoAtom);
 	const pathname = usePathname();
-	const params = useParams<{ publicListId?: string }>();
-	const { getOrCreateListId } = useLocalListId();
 
-	useEffect(() => {
-		if (publicListId) {
-			return;
-		}
-
-		if (
-			typeof params.publicListId === "string" &&
-			params.publicListId.length > 0
-		) {
-			return setLocalListId(params.publicListId);
-		}
-
-		setLocalListId(getOrCreateListId());
-	}, [publicListId, params.publicListId, getOrCreateListId]);
+	const listId = publicListId ?? store.list.listId;
 
 	return (
 		<nav className="h-(--navigation-height) fixed bottom-(--navigation-bottom) w-full flex justify-center gap-2">
@@ -43,13 +27,9 @@ export default function MenuContent({ publicListId }: Props) {
 					</MenuLink>
 				</MenuItem>
 
-				<MenuItem
-					isCurrentPage={
-						pathname === `/${localListId}` || pathname === `/${publicListId}`
-					}
-				>
+				<MenuItem isCurrentPage={pathname === `/${listId}`}>
 					<MenuLink
-						href={publicListId ? `/${publicListId}` : `/${localListId}`}
+						href={`/${listId}`}
 						prefetch={true}
 					>
 						<ListIcon className="size-6" />
