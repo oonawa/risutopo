@@ -9,10 +9,9 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { setupAuthenticatedUser } from "../../../helpers/auth";
+import { seedLocalStorageViaInitScript } from "../../../helpers/localStorageSeed";
 import { resetDatabase, seedDatabase } from "../../../lib/dbHelpers";
 import { db } from "../../../lib/testDb";
-
-const LOCAL_STORAGE_KEY = "risutopotto";
 
 async function findNetflixId() {
 	const [service] = await db
@@ -270,52 +269,42 @@ test.describe("ルーレット - サブリスト選択", () => {
 		const item2Id = crypto.randomUUID();
 		const subListId = crypto.randomUUID();
 
-		await page.goto("/");
-
-		await page.evaluate(
-			({ key, value }) => {
-				localStorage.setItem(key, JSON.stringify(value));
-			},
-			{
-				key: LOCAL_STORAGE_KEY,
-				value: {
-					list: {
-						listId,
-						items: [
-							{
-								listItemId: item1Id,
-								title: "ゲスト映画1",
-								url: "https://www.netflix.com/jp/title/1",
-								serviceSlug: "netflix",
-								serviceName: "Netflix",
-								createdAt: new Date().toISOString(),
-								isWatched: false,
-								watchedAt: null,
-							},
-							{
-								listItemId: item2Id,
-								title: "ゲスト映画2",
-								url: "https://www.netflix.com/jp/title/2",
-								serviceSlug: "netflix",
-								serviceName: "Netflix",
-								createdAt: new Date().toISOString(),
-								isWatched: false,
-								watchedAt: null,
-							},
-						],
+		await seedLocalStorageViaInitScript(page, {
+			list: {
+				listId,
+				items: [
+					{
+						listItemId: item1Id,
+						title: "ゲスト映画1",
+						url: "https://www.netflix.com/jp/title/1",
+						serviceSlug: "netflix",
+						serviceName: "Netflix",
+						createdAt: new Date().toISOString(),
+						isWatched: false,
+						watchedAt: null,
 					},
-					subLists: [
-						{
-							subListId,
-							name: "お気に入り",
-							listItemIds: [item1Id, item2Id],
-						},
-					],
-				},
+					{
+						listItemId: item2Id,
+						title: "ゲスト映画2",
+						url: "https://www.netflix.com/jp/title/2",
+						serviceSlug: "netflix",
+						serviceName: "Netflix",
+						createdAt: new Date().toISOString(),
+						isWatched: false,
+						watchedAt: null,
+					},
+				],
 			},
-		);
+			subLists: [
+				{
+					subListId,
+					name: "お気に入り",
+					listItemIds: [item1Id, item2Id],
+				},
+			],
+		});
 
-		await page.reload();
+		await page.goto("/");
 
 		await page.getByRole("combobox").click();
 		await page.getByRole("option", { name: "お気に入り" }).click();

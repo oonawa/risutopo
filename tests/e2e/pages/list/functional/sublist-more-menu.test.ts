@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
 import { subListsTable, listsTable } from "@/db/schema";
 import { setupAuthenticatedUser } from "../../../helpers/auth";
+import { seedLocalStorageViaInitScript } from "../../../helpers/localStorageSeed";
 import { resetDatabase, seedDatabase } from "../../../lib/dbHelpers";
 import { db } from "../../../lib/testDb";
 
@@ -109,17 +110,11 @@ test.describe("SubListMoreMenu - サブリストMoreMenuテスト", () => {
 	}) => {
 		const listId = crypto.randomUUID();
 
+		await seedLocalStorageViaInitScript(page, {
+			list: { listId, items: [] },
+			subLists: [],
+		});
 		await page.goto(`/${listId}`);
-		await page.evaluate(
-			({ key, value }) => {
-				localStorage.setItem(key, JSON.stringify(value));
-			},
-			{
-				key: LOCAL_STORAGE_KEY,
-				value: { list: { listId, items: [] }, subLists: [] },
-			},
-		);
-		await page.reload();
 
 		await expect(
 			page.getByRole("button", { name: "その他のメニュー" }),

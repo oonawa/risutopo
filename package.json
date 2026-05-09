@@ -63,6 +63,7 @@
 		"dotenv-cli": "^11.0.0",
 		"drizzle-kit": "^0.31.10",
 		"react-email": "6.1.1",
+		"resend-local": "^0.0.7",
 		"storybook": "^10.2.8",
 		"tailwindcss": "^4",
 		"tsx": "^4.21.0",

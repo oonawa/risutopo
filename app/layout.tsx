@@ -56,9 +56,7 @@ export default async function RootLayout({
 
 				<Footer />
 
-				<Suspense fallback={null}>
-					<Menu />
-				</Suspense>
+				<Menu />
 			</body>
 		</html>
 	);

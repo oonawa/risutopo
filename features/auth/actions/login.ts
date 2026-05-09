@@ -77,7 +77,7 @@ export async function login(
 
 	cookieStore.set(key, token, {
 		httpOnly: true,
-		secure: true,
+		secure: process.env.COOKIE_SECURE !== "false",
 		sameSite: "lax",
 		expires: expiresAt,
 	});
