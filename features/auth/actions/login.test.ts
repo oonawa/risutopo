@@ -141,7 +141,7 @@ describe("login", () => {
 			expect.objectContaining({
 				httpOnly: true,
 				sameSite: "lax",
-				secure: true,
+				secure: process.env.COOKIE_SECURE !== "false",
 				expires: expect.any(Date),
 			}),
 		);
@@ -221,7 +221,7 @@ describe("login", () => {
 			expect.objectContaining({
 				httpOnly: true,
 				sameSite: "lax",
-				secure: true,
+				secure: process.env.COOKIE_SECURE !== "false",
 				expires: expect.any(Date),
 			}),
 		);
@@ -233,7 +233,7 @@ describe("login", () => {
 			expect.objectContaining({
 				httpOnly: true,
 				sameSite: "lax",
-				secure: true,
+				secure: process.env.COOKIE_SECURE !== "false",
 				expires: expect.any(Date),
 			}),
 		);

@@ -15,14 +15,21 @@ export default defineConfig({
 		baseURL: "http://localhost:3001",
 	},
 
-	webServer: {
-		command: process.env.CI
-			? "npm run build && npx dotenv-cli -e .env.test -- npm run start -- -p 3001"
-			: "npx dotenv-cli -e .env.test -- npm run start -- -p 3001",
-		url: "http://localhost:3001",
-		reuseExistingServer: !process.env.CI,
-		timeout: 180_000,
-	},
+	webServer: [
+		{
+			command: "npx resend-local --port 8005",
+			url: "http://localhost:8005",
+			reuseExistingServer: !process.env.CI,
+		},
+		{
+			command: process.env.CI
+				? "npm run build && npx dotenv-cli -e .env.test -- npm run start -- -p 3001"
+				: "npx dotenv-cli -e .env.test -- npm run start -- -p 3001",
+			url: "http://localhost:3001",
+			reuseExistingServer: !process.env.CI,
+			timeout: 180_000,
+		},
+	],
 
 	projects: [
 		{

@@ -13,6 +13,29 @@ import { computeHmac, encrypt } from "@/features/shared/lib/encryption";
 import { generateSessionToken } from "@/features/shared/lib/jwt";
 import { db } from "../lib/testDb";
 
+/**
+ * セッションなしの既存ユーザーをDBに作成する（ログインフローテスト用）
+ */
+export async function setupExistingUser(email: string) {
+	const [user] = await db
+		.insert(usersTable)
+		.values({ publicId: crypto.randomUUID() })
+		.returning({ id: usersTable.id });
+
+	await db.insert(userEmailsTable).values({
+		userId: user.id,
+		encryptedEmail: encrypt(email),
+		emailHmac: computeHmac(email),
+	});
+
+	await db.insert(listsTable).values({
+		publicId: crypto.randomUUID(),
+		userId: user.id,
+	});
+
+	return { userId: user.id };
+}
+
 export async function setupAuthenticatedUser(
 	context: BrowserContext,
 	userAgent: string,
